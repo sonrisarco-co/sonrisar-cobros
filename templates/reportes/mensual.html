@@ -1,0 +1,70 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Reporte Mensual</title>
+    <link rel="stylesheet" href="{% static 'css/sonrisar-pro.css' %}">
+</head>
+<body class="app-body">
+
+<div class="app-container" style="padding: 30px; max-width:900px; margin:auto;">
+
+    
+
+    <!-- TITULOS -->
+    <h1 style="color:#26ABA5; margin-bottom:0;">Reporte Mensual</h1>
+    <h2 style="margin-top:5px;">{{ mes_nombre }} {{ year }}</h2>
+
+    <!-- BOTONES -->
+    <div style="margin: 20px 0;">
+        <a href="{% url 'reportes:reporte_pdf' year month %}"
+        style="background:#26ABA5; color:white; padding:10px 20px; 
+                border-radius:6px; text-decoration:none; margin-right:15px;">
+            📄 Exportar PDF
+        </a>
+
+
+        <a href="{% url 'caja:tablero' %}"
+           style="color:#26ABA5; font-weight:bold;">
+            ← Volver a Caja del Día
+        </a>
+    </div>
+
+    <hr><br>
+
+    <!-- RESUMEN GENERAL -->
+    <h3 style="color:#26ABA5;">Resumen General</h3>
+
+    <p><strong>Total Pagado del Mes:</strong> ${{ total_pagado }}</p>
+    <p><strong>Entradas de Caja:</strong> ${{ entradas }}</p>
+    <p><strong>Salidas de Caja:</strong> ${{ salidas }}</p>
+    <p><strong>Balance de Movimientos:</strong> ${{ balance_mov }}</p>
+
+    <br><hr><br>
+
+    <!-- MÉTODOS DE PAGO -->
+    <h3 style="color:#26ABA5;">Métodos de Pago</h3>
+
+    {% if pagos_por_metodo %}
+        <table style="width:100%; border-collapse:collapse;">
+            <tr style="background:#26ABA5; color:white;">
+                <th style="padding:8px; text-align:left;">Método</th>
+                <th style="padding:8px; text-align:left;">Total</th>
+            </tr>
+
+            {% for p in pagos_por_metodo %}
+            <tr style="border-bottom:1px solid #ddd;">
+                <td style="padding:8px;">{{ p.metodo|capfirst }}</td>
+                <td style="padding:8px;">${{ p.total }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    {% else %}
+        <p>No hay pagos este mes.</p>
+    {% endif %}
+
+</div>
+
+</body>
+</html>

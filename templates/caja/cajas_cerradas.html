@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Cajas cerradas | Sonrisar{% endblock %}
+
+{% block content %}
+
+<div class="page-wrap">
+  <div class="page-head">
+    <h1 class="h1-soft">Cajas cerradas</h1>
+    <a href="{% url 'caja:tablero' %}" class="btn-sonrisar">Volver a Caja del día</a>
+  </div>
+
+  {% if cajas %}
+    <div class="grid-cerradas">
+
+      {% for c in cajas %}
+        <article class="cerrada-card glass">
+
+          <!-- FECHA Y ESTADO -->
+          <div class="cerrada-fecha">
+            <span class="pill">{{ c.fecha|date:"d/m/Y" }}</span>
+            <span class="estado-tag cerrada">CERRADA</span>
+          </div>
+
+          <!-- CONTENIDO DE LA CARD -->
+          <div class="cerrada-body">
+
+            <!-- SALDO INICIAL -->
+            <div class="cerrada-row">
+              <span>Saldo inicial</span>
+              <strong>${{ c.saldo_inicial|floatformat:2 }}</strong>
+            </div>
+
+            <!-- 🔥 NUEVO: TOTALES POR MEDIOS DE PAGO -->
+            <div class="cerrada-mp" style="margin: 10px 0 8px 0; padding-left: 8px; border-left: 3px solid #26ABA5;">
+              
+              <div class="cerrada-row" style="margin: 2px 0;">
+                <span>Efectivo</span>
+                <strong>${{ c.efectivo|floatformat:2 }}</strong>
+              </div>
+
+              <div class="cerrada-row" style="margin: 2px 0;">
+                <span>Tarjeta</span>
+                <strong>${{ c.tarjeta|floatformat:2 }}</strong>
+              </div>
+
+              <div class="cerrada-row" style="margin: 2px 0;">
+                <span>Transferencias</span>
+                <strong>${{ c.transferencia|floatformat:2 }}</strong>
+              </div>
+
+              <div class="cerrada-row total" style="margin-top: 6px;">
+                <span>Total pagos</span>
+                <strong>${{ c.total_pagos|floatformat:2 }}</strong>
+              </div>
+            </div>
+
+            <!-- RESTO DE DATOS -->
+            <div class="cerrada-row">
+              <span>Pagos</span>
+              <strong>${{ c.total_pagos_calc|floatformat:2 }}</strong>
+            </div>
+
+            <div class="cerrada-row">
+              <span>Balance mov.</span>
+              <strong>${{ c.balance_mov_calc|floatformat:2 }}</strong>
+            </div>
+
+            <div class="cerrada-row total">
+              <span>Total calculado</span>
+              <strong>${{ c.total_caja_calc|floatformat:2 }}</strong>
+            </div>
+
+            <div class="cerrada-row declared">
+              <span>Saldo final declarado</span>
+              <strong>
+                {% if c.saldo_final_declarado %}
+                  ${{ c.saldo_final_declarado|floatformat:2 }}
+                {% else %}
+                  —
+                {% endif %}
+              </strong>
+            </div>
+
+          </div>
+
+        </article>
+      {% endfor %}
+
+    </div>
+
+  {% else %}
+    <p class="muted">Todavía no hay cajas cerradas.</p>
+  {% endif %}
+
+</div>
+
+{% endblock %}

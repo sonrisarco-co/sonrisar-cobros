@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 25px;
+            color: #333;
+        }
+
+        /* Encabezado */
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            width: 180px;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            font-size: 28px;
+            margin: 0;
+            color: #26ABA5;
+        }
+
+        h2 {
+            font-size: 20px;
+            margin-top: 5px;
+            color: #444;
+        }
+
+        /* Tarjetas */
+        .card {
+            border: 1px solid #d9d9d9;
+            border-radius: 10px;
+            padding: 15px 20px;
+            margin-bottom: 22px;
+            background: #f9f9f9;
+        }
+
+        .card h3 {
+            margin-top: 0;
+            font-size: 17px;
+            color: #26ABA5;
+            border-bottom: 1px solid #26ABA5;
+            padding-bottom: 5px;
+        }
+
+        /* Tablas */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th {
+            background: #26ABA5;
+            color: white;
+            padding: 8px;
+            text-align: left;
+        }
+
+        td {
+            padding: 8px;
+            border-bottom: 1px solid #dcdcdc;
+        }
+
+        .no-data {
+            font-style: italic;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- LOGO + TÍTULO -->
+    <div class="header">
+        <img src="https://i.imgur.com/yrOIF2a.png" class="logo">
+        <h1>Reporte Mensual</h1>
+        <h2>{{ mes_nombre }} {{ year }}</h2>
+    </div>
+
+    <!-- RESUMEN GENERAL -->
+    <div class="card">
+        <h3>Resumen General</h3>
+        <p><strong>Total Pagado en el Mes:</strong> ${{ total_pagado }}</p>
+        <p><strong>Entradas de Caja:</strong> ${{ entradas }}</p>
+        <p><strong>Salidas de Caja:</strong> ${{ salidas }}</p>
+        <p><strong>Balance de Movimientos:</strong> ${{ balance_mov }}</p>
+    </div>
+
+    <!-- MÉTODOS DE PAGO -->
+    <div class="card">
+        <h3>Métodos de Pago</h3>
+
+        {% if pagos_por_metodo %}
+            <table>
+                <tr>
+                    <th>Método</th>
+                    <th>Total</th>
+                </tr>
+
+                {% for item in pagos_por_metodo %}
+                <tr>
+                    <td>{{ item.metodo }}</td>
+                    <td>${{ item.total }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        {% else %}
+            <p class="no-data">No hay pagos registrados.</p>
+        {% endif %}
+    </div>
+
+</body>
+</html>

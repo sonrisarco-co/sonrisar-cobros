@@ -1,0 +1,93 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Reporte Mensual</title>
+    <link rel="stylesheet" href="{% static 'css/sonrisar-pro.css' %}">
+</head>
+
+<body class="app-body">
+    <main class="app-container">
+
+        <!-- ENCABEZADO CON BOTONES -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+            
+            <!-- Botón Exportar PDF -->
+            <a href="{% url 'reportes:reporte_pdf' year month %}"
+               style="
+               padding: 10px 18px;
+               border: 2px solid #26ABA5;
+               border-radius: 8px;
+               background: white;
+               color: #26ABA5;
+               font-weight: 600;
+               text-decoration: none;
+               font-size: 15px;
+               ">
+                📄 Exportar PDF
+            </a>
+
+            <!-- Botón Volver -->
+            <a href="{% url 'caja:tablero' %}"
+               style="
+               padding: 10px 18px;
+               border: 2px solid #999;
+               border-radius: 8px;
+               background: white;
+               color: #444;
+               font-weight: 600;
+               text-decoration: none;
+               font-size: 15px;
+               ">
+                Volver a Caja del día
+            </a>
+
+        </div>
+
+        <!-- TÍTULO -->
+        <h1 style="font-size: 32px; margin-bottom: 5px;">Reporte Mensual</h1>
+        <h2 style="font-size: 22px; color: #26ABA5; margin-bottom: 25px;">
+            {{ mes_nombre }}
+        </h2>
+
+        <!-- TARJETA RESUMEN GENERAL -->
+        <div class="card" style="padding: 20px; margin-bottom: 30px; border-radius: 12px;">
+            <h3>Resumen General</h3>
+
+            <p><strong>Total Pagado del Mes:</strong> ${{ total_pagado|floatformat:2 }}</p>
+            <p><strong>Entradas de Caja:</strong> ${{ entradas|floatformat:2 }}</p>
+            <p><strong>Salidas de Caja:</strong> ${{ salidas|floatformat:2 }}</p>
+            <p><strong>Balance de Movimientos:</strong> ${{ balance_mov|floatformat:2 }}</p>
+        </div>
+
+        <!-- MÉTODOS DE PAGO -->
+        <div class="card" style="padding: 20px; margin-bottom: 40px; border-radius: 12px;">
+            <h3>Métodos de Pago</h3>
+
+            {% if pagos_por_metodo %}
+            <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                <thead>
+                    <tr style="background: #26ABA5; color: white; text-align: left;">
+                        <th style="padding: 10px;">Método</th>
+                        <th style="padding: 10px;">Total</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for item in pagos_por_metodo %}
+                    <tr style="border-bottom: 1px solid #ddd;">
+                        <td style="padding: 8px;">{{ item.metodo }}</td>
+                        <td style="padding: 8px;">${{ item.total|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+                <p>No hay pagos registrados.</p>
+            {% endif %}
+        </div>
+
+    </main>
+</body>
+</html>

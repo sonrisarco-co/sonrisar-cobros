@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Cerrar caja | Sonrisar{% endblock %}
+
+{% block content %}
+
+<div class="card card-cierre">
+
+    <h1 class="titulo">Cierre de caja</h1>
+
+    <div class="resumen-cierre">
+        <span class="label">Total calculado del día</span>
+        <span class="monto">${{ total|floatformat:2 }}</span>
+    </div>
+
+    <form method="post" class="form-cierre">
+        {% csrf_token %}
+
+        <div class="form-row">
+            <label for="saldo">Saldo final declarado</label>
+            <input
+                type="number"
+                step="0.01"
+                name="saldo"
+                id="saldo"
+                required
+            >
+        </div>
+
+        <button type="submit" class="btn-sonrisar primary full">
+            Confirmar cierre
+        </button>
+    </form>
+
+</div>
+
+{% endblock %}

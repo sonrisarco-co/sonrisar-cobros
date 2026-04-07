@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block title %}Caja del día | Sonrisar{% endblock %}
+
+{% block content %}
+
+<div class="tablero-grid">
+
+  <!-- IZQUIERDA: MOVIMIENTOS -->
+  <section class="movimientos-card glass">
+    <div class="section-head">
+      <h2 class="h2-soft">Movimientos de caja</h2>
+      <span class="pill">Manual</span>
+    </div>
+
+    <form method="POST" action="{% url 'caja:movimiento_nuevo' %}" class="form-mov">
+      {% csrf_token %}
+
+      <div class="field">
+        <label>Tipo</label>
+        <select name="tipo" required>
+          <option value="entrada">Entrada</option>
+          <option value="salida">Salida</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Concepto</label>
+        <input type="text" name="concepto" required placeholder="Ej: Compra insumos / Retiro / Etc">
+      </div>
+
+      <div class="field">
+        <label>Monto</label>
+        <input type="number" step="0.01" name="monto" required placeholder="0.00">
+      </div>
+
+      <button class="btn-sonrisar primary" type="submit">Agregar movimiento</button>
+    </form>
+
+    <div class="mini-kpis">
+      <div class="mini-kpi">
+        <span>Entradas</span>
+        <strong>${{ total_entradas|floatformat:2 }}</strong>
+      </div>
+      <div class="mini-kpi">
+        <span>Salidas</span>
+        <strong>${{ total_salidas|floatformat:2 }}</strong>
+      </div>
+      <div class="mini-kpi">
+        <span>Balance</span>
+        <strong>${{ balance|floatformat:2 }}</strong>
+      </div>
+    </div>
+
+    <h3 class="h3-soft">Últimos movimientos</h3>
+
+    {% if ultimos_mov %}
+      <ul class="lista-mov">
+        {% for m in ultimos_mov %}
+          <li class="mov-row">
+            <div class="mov-left">
+              <strong class="mov-tipo">{{ m.get_tipo_display }}</strong>
+              <span class="mov-concepto">{{ m.concepto }}</span>
+            </div>
+            <div class="mov-right">
+              <span class="mov-monto">${{ m.monto|floatformat:2 }}</span>
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="muted">No hay movimientos registrados</p>
+    {% endif %}
+  </section>
+
+
+  <!-- DERECHA: KPI + ACCIONES -->
+  <section class="kpi-derecha">
+
+    <div class="caja-head">
+      <div>
+        <h1 class="h1-soft">Caja del día</h1>
+        <div class="meta">
+          <span class="date">{{ caja.fecha|date:"d/m/Y" }}</span>
+          <span class="estado-tag {{ caja.estado }}">{{ caja.estado|upper }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="kpi-grid">
+
+      <!-- SALDO INICIAL EDITABLE -->
+      <div class="kpi glass kpi-compact">
+        <span>Saldo inicial</span>
+
+        <form action="{% url 'caja:saldo_inicial' %}" 
+              method="POST" 
+              style="display:flex; gap:6px; align-items:center; margin-top:6px;">
+          {% csrf_token %}
+          <input 
+            type="number"
+            step="0.01"
+            name="saldo_inicial"
+            value="{{ caja.saldo_inicial }}"
+            style="width:85px; padding:4px; border-radius:6px; border:1px solid #ccc;">
+          <button type="submit" class="btn-sonrisar secondary" style="padding:4px 10px;">Guardar</button>
+        </form>
+      </div>
+
+      <!-- TOTAL DEL DÍA (NO incluye saldo inicial) -->
+      <div class="kpi glass kpi-compact">
+        <span>Total del día</span>
+        <strong>${{ total_del_dia|floatformat:2 }}</strong>
+      </div>
+
+      <!-- CANTIDAD DE PAGOS -->
+      <div class="kpi glass kpi-compact">
+        <span>Pagos</span>
+        <strong>{{ cantidad_pagos }}</strong>
+      </div>
+
+      <!-- PROMEDIO -->
+      <div class="kpi glass kpi-compact">
+        <span>Promedio</span>
+        <strong>${{ promedio|floatformat:2 }}</strong>
+      </div>
+
+      <!-- ÚLTIMO PAGO -->
+      <div class="kpi glass kpi-compact">
+        <span>Último pago</span>
+        <strong>
+          {% if ultimo_pago %}
+            ${{ ultimo_pago.monto|floatformat:2 }}
+          {% else %}
+            —
+          {% endif %}
+        </strong>
+      </div>
+
+      <!-- TOTAL PAGOS -->
+      <div class="kpi glass kpi-compact">
+        <span>Pagos del día</span>
+        <strong>${{ total_pagos|floatformat:2 }}</strong>
+      </div>
+
+      <!-- TOTAL CALCULADO (Saldo inicial + Total del día) -->
+      <div class="kpi glass kpi-compact">
+        <span>Total calculado</span>
+        <strong>${{ total_caja|floatformat:2 }}</strong>
+      </div>
+    </div>
+
+    <div class="caja-acciones">
+      <a href="{% url 'pagos:nuevo' %}" class="btn-sonrisar primary">+ Nuevo pago</a>
+
+      {% if caja.estado == "abierta" %}
+        <a href="{% url 'caja:cerrar' %}" class="btn-sonrisar danger">Cerrar caja</a>
+      {% endif %}
+    </div>
+
+  </section>
+
+</div>
+
+
+<!-- ========================= -->
+<!-- BOTONERA FLOTANTE DERECHA -->
+<!-- ========================= -->
+
+<div class="botonera-fija">
+    <a href="{% url 'caja:tablero' %}" class="btn-sonrisar secondary">Caja</a>
+    <a href="{% url 'pagos:historial' %}" class="btn-sonrisar secondary">Historial</a>
+    <a href="{% url 'caja:cerradas' %}" class="btn-sonrisar secondary">Cajas cerradas</a>
+    <a href="{% url 'reportes:selector' %}" class="btn-sonrisar secondary">Reportes</a>
+</div>
+
+{% endblock %}

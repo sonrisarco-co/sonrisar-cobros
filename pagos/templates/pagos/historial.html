@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}Historial de pagos | Sonrisar{% endblock %}
+
+{% block content %}
+
+<div class="historial-pagos-page contenedor-page">
+
+  <!-- Encabezado -->
+  <div class="header-flex hp-header">
+    <h1 class="h1-soft">Historial de pagos</h1>
+
+    <a href="{% url 'caja:tablero' %}" class="btn-sonrisar secondary">
+      Volver a Caja del día
+    </a>
+  </div>
+
+  {% for mes, pagos_del_mes in pagos_por_mes.items %}
+
+    <h2 class="h2-soft hp-mes">{{ mes }}</h2>
+
+    <!-- CONTENEDOR DEL MES -->
+    <div class="hp-mes-container glass">
+
+        <!-- GRID DE TARJETAS DENTRO DEL MES -->
+        <div class="hp-grid-inside">
+            {% for pago in pagos_del_mes %}
+            <div class="hp-card glass">
+
+                <div class="hp-top">
+                    <span class="hp-fecha">{{ pago.fecha|date:"d/m/Y" }}</span>
+                    <span class="hp-tag">PAGO</span>
+                </div>
+
+                <div class="hp-row">
+                    <span>Monto</span>
+                    <strong>${{ pago.monto|floatformat:2 }}</strong>
+                </div>
+
+                <div class="hp-row">
+                    <span>Método</span>
+                    <strong>{{ pago.get_metodo_display }}</strong>
+                </div>
+
+                {% if pago.paciente %}
+                <div class="hp-row">
+                    <span>Paciente</span>
+                    <strong>{{ pago.paciente }}</strong>
+                </div>
+                {% endif %}
+
+                {% if pago.concepto %}
+                <div class="hp-row">
+                    <span>Concepto</span>
+                    <strong>{{ pago.concepto }}</strong>
+                </div>
+                {% endif %}
+
+            </div>
+            {% endfor %}
+        </div>
+
+    </div>
+
+{% endfor %}
+
+
+</div>
+
+<!-- CSS SOLO para Historial de pagos (no rompe nada global) -->
+<style>
+  .historial-pagos-page .hp-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:16px;
+  }
+  .historial-pagos-page .hp-mes{
+    margin-top:22px;
+    margin-bottom:12px;
+  }
+  .historial-pagos-page .hp-grid{
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap:14px;
+  }
+  .historial-pagos-page .hp-card{
+    padding:14px 14px;
+    border-radius:16px;
+    border: 1px solid rgba(38,171,165,.22);
+    box-shadow: 0 8px 20px rgba(0,0,0,.06);
+  }
+  .historial-pagos-page .hp-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:10px;
+  }
+  .historial-pagos-page .hp-fecha{
+    opacity:.85;
+    font-weight:600;
+  }
+  .historial-pagos-page .hp-tag{
+    padding:4px 10px;
+    border-radius:999px;
+    font-size:12px;
+    font-weight:700;
+    opacity:.9;
+    border:1px solid rgba(0,0,0,.08);
+  }
+  .historial-pagos-page .hp-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:8px 0;
+    border-top:1px solid rgba(0,0,0,.06);
+  }
+  .historial-pagos-page .hp-row span{
+    opacity:.8;
+  }
+</style>
+
+{% endblock %}

@@ -1,0 +1,78 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Seleccionar Mes</title>
+    <link rel="stylesheet" href="{% static 'css/sonrisar-pro.css' %}">
+    
+    <style>
+        header img { display: none !important; }
+
+        .selector-wrapper {
+            max-width: 400px;
+            margin: 60px auto;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+            text-align: center;
+        }
+
+        h1 {
+            color: #26ABA5;
+            margin-bottom: 20px;
+        }
+
+        select {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+        }
+
+        .btn-sonrisar {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background: #26ABA5;
+            color: white;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body class="app-body">
+
+<div class="selector-wrapper">
+
+    <img src="{% static 'img/logo.png' %}" style="width:120px; opacity:0.8; margin-bottom:15px;">
+
+    <h1>Reporte Mensual</h1>
+
+    <form method="GET" action="{% url 'reportes:reporte_mensual' 2026 1 %}"
+          onsubmit="this.action = `/reportes/${document.getElementById('year').value}/${document.getElementById('month').value}/`">
+
+        <select id="year" required>
+            {% for y in years %}
+                <option value="{{ y }}">{{ y }}</option>
+            {% endfor %}
+        </select>
+
+        <select id="month" required>
+            {% for n, nombre in meses %}
+                <option value="{{ n }}">{{ nombre }}</option>
+            {% endfor %}
+        </select>
+
+        <button class="btn-sonrisar">Generar Reporte</button>
+    </form>
+
+</div>
+
+</body>
+</html>

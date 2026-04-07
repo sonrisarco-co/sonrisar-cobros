@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Cerrar caja | Sonrisar{% endblock %}
+
+{% block content %}
+
+<div class="card card-cierre">
+
+    <h1 class="titulo">Cierre de caja</h1>
+
+    <!-- 🔵 DESGLOSE POR MEDIOS DE PAGO -->
+    <div class="desglose-mp">
+        <h3 class="subtitulo" style="color:#26ABA5; font-size:1rem; margin-bottom:10px;">
+            Totales por medio de pago
+        </h3>
+
+        <div class="fila">
+            <span>Efectivo</span>
+            <strong>${{ efectivo|floatformat:2 }}</strong>
+        </div>
+
+        <div class="fila">
+            <span>Tarjeta</span>
+            <strong>${{ tarjeta|floatformat:2 }}</strong>
+        </div>
+
+        <div class="fila">
+            <span>Transferencias</span>
+            <strong>${{ transferencia|floatformat:2 }}</strong>
+        </div>
+
+        <hr>
+
+        <div class="fila total-final">
+            <span><strong>Total pagos</strong></span>
+            <strong>${{ total_pagos|floatformat:2 }}</strong>
+        </div>
+    </div>
+    <!-- 🔵 FIN DEL BLOQUE NUEVO -->
+
+    <div class="resumen-cierre">
+        <span class="label">Total calculado</span>
+        <span class="monto">${{ total_caja|floatformat:2 }}</span>
+    </div>
+
+    <div class="resumen-cierre">
+        <span class="label">Pagos</span>
+        <span class="monto">${{ total_pagos|floatformat:2 }}</span>
+    </div>
+
+    <div class="resumen-cierre">
+        <span class="label">Balance movimientos</span>
+        <span class="monto">${{ balance|floatformat:2 }}</span>
+    </div>
+
+    <form method="post" class="form-cierre">
+        {% csrf_token %}
+
+        <div class="form-row">
+            <label for="saldo">Saldo final declarado</label>
+            <input
+                type="number"
+                step="0.01"
+                name="saldo_final"
+                id="saldo"
+                required
+            >
+            <small>Acá ponés lo que contaste físicamente.</small>
+        </div>
+
+        <button type="submit" class="btn-sonrisar primary full">
+            Confirmar cierre
+        </button>
+
+        <a href="{% url 'caja:home' %}" class="btn-sonrisar secondary full" style="margin-top:10px;">
+            Volver
+        </a>
+    </form>
+
+</div>
+
+{% endblock %}

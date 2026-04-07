@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}Nuevo pago | Sonrisar{% endblock %}
+
+{% block content %}
+
+<div class="nuevo-pago-page">
+
+    <div class="np-card glass">
+
+        <h1 class="h1-soft">Nuevo pago</h1>
+
+        {% if initial.paciente or initial.ci or initial.fecha_cita %}
+            <div class="np-info-box">
+                <div><strong>Paciente:</strong> {{ initial.paciente|default:"-" }}</div>
+                {% if initial.ci %}
+                    <div><strong>CI:</strong> {{ initial.ci }}</div>
+                {% endif %}
+                {% if initial.fecha_cita %}
+                    <div><strong>Fecha de cita:</strong> {{ initial.fecha_cita }}</div>
+                {% endif %}
+                <div class="np-info-small">Datos recibidos desde Sonrisar Pro</div>
+            </div>
+        {% endif %}
+
+        <form method="POST" class="np-form">
+            {% csrf_token %}
+
+            <input type="hidden" name="next" value="{{ initial.next }}">
+
+            <div class="np-field">
+                <label>Monto</label>
+                <input type="number" name="monto" step="0.01" required placeholder="0.00" value="{{ initial.monto }}">
+            </div>
+
+            <div class="np-field">
+                <label>Paciente</label>
+                <input type="text" name="paciente" placeholder="Ej: Luis Hernández" value="{{ initial.paciente }}">
+            </div>
+
+            <div class="np-field">
+                <label>Concepto</label>
+                <input type="text" name="concepto" placeholder="Ej: Control / Ortodoncia / Limpieza" value="{{ initial.concepto }}">
+            </div>
+
+            <div class="np-field">
+                <label>Método de pago</label>
+                <select name="metodo" required>
+                    <option value="">Seleccione…</option>
+                    {% for value, label in metodos %}
+                        <option value="{{ value }}" {% if initial.metodo == value %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="np-actions">
+                <button type="submit" class="btn-sonrisar primary">
+                    Cobrar
+                </button>
+
+                {% if initial.next %}
+                    <a href="{{ initial.next }}" class="btn-sonrisar secondary">
+                        Volver
+                    </a>
+                {% endif %}
+            </div>
+
+        </form>
+    </div>
+
+</div>
+
+<style>
+.nuevo-pago-page {
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+.np-card {
+    padding: 28px 30px;
+    border-radius: 18px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.07);
+    backdrop-filter: blur(12px);
+}
+
+.np-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.np-field label {
+    font-weight: 600;
+    margin-bottom: 4px;
+    display: block;
+    opacity: .82;
+}
+
+.np-field input,
+.np-field select {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(0,0,0,0.18);
+    background: rgba(255,255,255,0.55);
+    font-size: 15px;
+}
+
+.np-field input:focus,
+.np-field select:focus {
+    outline: 2px solid #26ABA5;
+    border-color: #26ABA5;
+}
+
+.np-info-box {
+    margin-bottom: 18px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: rgba(38, 171, 165, 0.08);
+    border: 1px solid rgba(38, 171, 165, 0.22);
+    color: #184b4b;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.np-info-small {
+    margin-top: 4px;
+    font-size: 13px;
+    opacity: .75;
+}
+
+.np-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+    flex-wrap: wrap;
+}
+</style>
+
+{% endblock %}

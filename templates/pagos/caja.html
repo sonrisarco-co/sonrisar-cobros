@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Caja | Sonrisar{% endblock %}
+
+{% block contenido %}
+<style>
+.caja-card {
+    max-width: 780px;
+    margin: 40px auto;
+    padding: 32px;
+    border-radius: 18px;
+    background: rgba(255,255,255,0.82);
+    backdrop-filter: blur(6px);
+    box-shadow: 0 12px 30px rgba(0,0,0,.08);
+}
+
+.caja-total {
+    font-size: 42px;
+    font-weight: 600;
+    color: #1f6f6b;
+    margin: 10px 0 20px;
+}
+
+.caja-actions a {
+    display: inline-block;
+    padding: 10px 18px;
+    background: #26ABA5;
+    color: #fff;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.caja-metrics {
+    display: flex;
+    gap: 40px;
+    margin: 30px 0;
+    color: #555;
+}
+
+.ultimos-pagos li {
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(0,0,0,.08);
+}
+</style>
+
+<div class="caja-card">
+    <h2>Caja del día</h2>
+
+    <div class="caja-total">
+        ${{ total_caja }}
+    </div>
+
+    <div class="caja-actions">
+        <a href="{% url 'pagos:nuevo' %}">+ Nuevo pago</a>
+    </div>
+
+    <div class="caja-metrics">
+        <div>
+            <strong>Pagos</strong><br>
+            {{ cantidad_pagos }}
+        </div>
+        <div>
+            <strong>Promedio</strong><br>
+            ${{ promedio }}
+        </div>
+    </div>
+
+    <h3>Últimos pagos</h3>
+    <ul class="ultimos-pagos">
+        {% for p in ultimos_pagos %}
+            <li>
+                <strong>{{ p.paciente }}</strong><br>
+                ${{ p.monto }}
+            </li>
+        {% empty %}
+            <li>No hay pagos aún</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}

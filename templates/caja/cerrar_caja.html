@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Cerrar caja | Sonrisar{% endblock %}
+
+{% block content %}
+
+<div class="card card-cierre" style="padding: 25px; border-radius: 14px;">
+
+    <h1 class="titulo" style="margin-bottom: 25px;">Cierre de caja</h1>
+
+    <!-- GRID AJUSTADO PERFECTAMENTE -->
+    <div style="
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 25px;
+        align-items: start;
+    ">
+
+        <!-- 🟦 IZQUIERDA TRANSPARENTE -->
+        <div style="border-left: 4px solid #26ABA5; padding-left: 14px;">
+
+            <h3 style="color:#26ABA5; font-size:1rem; margin-bottom:10px;">
+                Totales por medio de pago
+            </h3>
+
+            <p style="margin:4px 0;">Efectivo <strong>${{ efectivo|floatformat:2 }}</strong></p>
+            <p style="margin:4px 0;">Tarjeta <strong>${{ tarjeta|floatformat:2 }}</strong></p>
+            <p style="margin:4px 0;">Transferencias <strong>${{ transferencia|floatformat:2 }}</strong></p>
+
+            <hr style="margin: 10px 0;">
+
+            <p style="margin:4px 0; font-size:1.05rem;">
+                <strong>Total pagos ${{ total_pagos|floatformat:2 }}</strong>
+            </p>
+        </div>
+
+        <!-- 🟩 DERECHA — CARD SONRISAR TRANSPARENTE -->
+        <div style="
+            background: rgba(255,255,255,0.75);
+            border: 1px solid #e5e5e5;
+            border-radius: 12px;
+            padding: 16px 18px;
+        ">
+
+            <h3 style="color:#26ABA5; font-size:1rem; margin-bottom:12px;">
+                Resumen general
+            </h3>
+
+            <p style="margin:4px 0;">Total calculado <strong>${{ total_caja|floatformat:2 }}</strong></p>
+            <p style="margin:4px 0;">Pagos <strong>${{ total_pagos|floatformat:2 }}</strong></p>
+            <p style="margin:4px 0;">Balance movimientos <strong>${{ balance|floatformat:2 }}</strong></p>
+
+        </div>
+
+    </div>
+
+    <!-- FORMULARIO -->
+    <form method="post" class="form-cierre" style="margin-top:30px;">
+        {% csrf_token %}
+
+        <label for="saldo" 
+               style="font-weight:500; margin-bottom:6px; display:block;">
+               Saldo final declarado
+        </label>
+
+        <input
+            type="number"
+            step="0.01"
+            name="saldo_final"
+            id="saldo"
+            class="form-control"
+            style="
+                border-radius:10px;
+                height: 42px;
+                font-size: 1rem;
+                margin-bottom: 5px;
+            "
+            required
+        >
+
+        <small style="color:#666; display:block; margin-bottom:12px;">
+            Acá ponés lo que contaste físicamente.
+        </small>
+
+        <!-- BOTONES -->
+        <button type="submit" 
+                class="btn-sonrisar primary"
+                style="padding: 8px 25px; font-size:0.9rem;">
+            Confirmar cierre
+        </button>
+
+        <a href="{% url 'caja:tablero' %}"
+           class="btn-sonrisar secondary"
+           style="
+                padding: 8px 25px;
+                font-size:0.9rem;
+                margin-left: 10px;
+                display:inline-block;
+           ">
+            Volver
+        </a>
+
+    </form>
+
+</div>
+
+{% endblock %}

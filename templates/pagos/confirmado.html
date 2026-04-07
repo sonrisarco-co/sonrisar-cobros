@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Pago registrado{% endblock %}
+
+{% block content %}
+
+<div class="card confirmado">
+
+    <div class="check">
+        ✓
+    </div>
+
+    <h2>Pago registrado</h2>
+    <p>El cobro se guardó correctamente.</p>
+
+    <a href="{% url 'caja:dashboard' %}" class="btn-principal">
+        Volver a Caja
+    </a>
+
+    <a href="{% url 'pagos:nuevo' %}" class="btn-secundario">
+        Nuevo Pago
+    </a>
+
+</div>
+
+{% endblock %}

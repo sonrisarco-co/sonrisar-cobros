@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Error{% endblock %}
+
+{% block content %}
+
+<div class="card" style="max-width:420px; margin:0 auto; text-align:center;">
+    <h2>Error</h2>
+    <p>{{ mensaje }}</p>
+
+    <a href="{% url 'caja:dashboard' %}" class="btn-principal">
+        Volver a Caja
+    </a>
+</div>
+
+{% endblock %}

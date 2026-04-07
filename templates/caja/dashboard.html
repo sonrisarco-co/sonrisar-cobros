@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Caja | Sonrisar{% endblock %}
+
+{% block content %}
+
+<div class="card">
+    <div>Caja del día</div>
+    <div class="total-caja">
+        ${{ total_caja }}
+    </div>
+</div>
+
+<a href="{% url 'pagos:nuevo' %}" class="btn-principal" style="margin-bottom:16px;">
+    + Nuevo pago
+</a>
+
+<div class="card">
+    <h3>Últimos pagos</h3>
+
+    {% for p in ultimos_pagos %}
+        <div class="pago-item">
+            <div class="pago-info">
+                <strong>{{ p.paciente_nombre }}</strong><br>
+                <small>{{ p.metodo.nombre }}</small>
+            </div>
+            <div class="pago-monto">
+                ${{ p.monto }}
+            </div>
+        </div>
+    {% empty %}
+        <p>No hay pagos todavía</p>
+    {% endfor %}
+</div>
+
+{% endblock %}

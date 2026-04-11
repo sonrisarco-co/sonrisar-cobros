@@ -26,13 +26,17 @@ def nuevo_pago(request):
         concepto = request.POST.get("concepto", "")
         metodo = request.POST.get("metodo")
         next_url = request.POST.get("next", "").strip()
+        appointment_id = request.POST.get("appointment_id") or None
+        patient_id = request.POST.get("patient_id") or None
 
         Pago.objects.create(
             monto=monto,
             paciente=paciente,
             concepto=concepto,
             metodo=metodo,
-            caja=caja
+            caja=caja,
+            appointment_id=appointment_id,
+            patient_id=patient_id,
         )
 
         if next_url:
@@ -105,11 +109,62 @@ def api_pagos_por_paciente(request):
             "metodo": pago.get_metodo_display(),
             "concepto": pago.concepto or "",
             "fecha": localtime(pago.fecha).strftime("%d/%m/%Y %H:%M"),
+            "appointment_id": pago.appointment_id,
+            "patient_id": pago.patient_id,
         })
 
     return JsonResponse({
         "ok": True,
         "paciente": paciente,
         "total": len(data),
+        "pagos": data,
+    })
+
+
+def api_pago_por_cita(request):
+    appointment_id = request.GET.get("appointment_id", "").strip()
+
+    if not appointment_id:
+        return JsonResponse({
+            "ok": False,
+            "error": "Falta el parámetro appointment_id."
+        }, status=400)
+
+    pagos = (
+        Pago.objects
+        .filter(appointment_id=appointment_id)
+        .order_by("-fecha")
+    )
+
+    data = []
+    total_pagado = 0
+    tipo_pago = "pagado"
+
+    for pago in pagos:
+        monto = pago.monto or 0
+        total_pagado += monto
+
+        concepto_texto = (pago.concepto or "").strip().lower()
+
+        if "seña" in concepto_texto or "sena" in concepto_texto or "adelanto" in concepto_texto:
+            tipo_pago = "sena"
+
+        data.append({
+            "id": pago.id,
+            "paciente": pago.paciente,
+            "monto": str(pago.monto),
+            "metodo": pago.get_metodo_display(),
+            "concepto": pago.concepto or "",
+            "fecha": localtime(pago.fecha).strftime("%d/%m/%Y %H:%M"),
+            "appointment_id": pago.appointment_id,
+            "patient_id": pago.patient_id,
+        })
+
+    return JsonResponse({
+        "ok": True,
+        "appointment_id": appointment_id,
+        "total": len(data),
+        "total_pagado": str(total_pagado),
+        "tipo_pago": tipo_pago,
         "pagos": data,
     })

@@ -3,17 +3,18 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Sonrisar{% endblock %}</title>
+
     <link rel="stylesheet" href="{% static 'css/sonrisar-pro.css' %}">
+    {% block extra_css %}{% endblock %}
 </head>
-<body class="app-body">
+<body>
 
     <main class="app-container">
         {% block content %}{% endblock %}
     </main>
 
-    
-
+    {% block extra_js %}{% endblock %}
 </body>
-
 </html>

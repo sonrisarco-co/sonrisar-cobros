@@ -26,6 +26,8 @@
             {% csrf_token %}
 
             <input type="hidden" name="next" value="{{ initial.next }}">
+            <input type="hidden" name="appointment_id" value="{{ initial.appointment_id }}">
+            <input type="hidden" name="patient_id" value="{{ initial.patient_id }}">
 
             <div class="np-field">
                 <label>Monto</label>

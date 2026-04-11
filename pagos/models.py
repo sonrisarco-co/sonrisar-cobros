@@ -26,7 +26,9 @@ class Pago(models.Model):
     metodo = models.CharField(max_length=20, choices=METODOS)
     concepto = models.CharField(max_length=200, blank=True)
 
-    # 🔥 CAMBIO IMPORTANTE
+    appointment_id = models.IntegerField(null=True, blank=True)
+    patient_id = models.IntegerField(null=True, blank=True)
+
     fecha = models.DateTimeField(default=timezone.now)
 
     def __str__(self):

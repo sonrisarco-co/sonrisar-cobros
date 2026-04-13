@@ -20,6 +20,9 @@
                 {% endif %}
                 <div class="np-info-small">Datos recibidos desde Sonrisar Pro</div>
             </div>
+                <div><strong>appointment_id:</strong> {{ initial.appointment_id|default:"VACÍO" }}</div>
+                <div><strong>patient_id:</strong> {{ initial.patient_id|default:"VACÍO" }}</div>
+                <div><strong>next:</strong> {{ initial.next|default:"VACÍO" }}</div>
         {% endif %}
 
         <form method="POST" class="np-form">

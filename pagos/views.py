@@ -22,12 +22,28 @@ def nuevo_pago(request):
         caja = CashSession.obtener_caja_del_dia()
 
         monto = request.POST.get("monto")
-        paciente = request.POST.get("paciente", "")
-        concepto = request.POST.get("concepto", "")
+        concepto = request.POST.get("concepto", "").strip()
         metodo = request.POST.get("metodo")
         next_url = request.POST.get("next", "").strip()
+
         appointment_id = request.POST.get("appointment_id") or None
-        patient_id = request.POST.get("patient_id") or None
+
+        appointment_obj = None
+
+        if appointment_id:
+            try:
+                appointment_obj = Appointment.objects.select_related("paciente").get(id=appointment_id)
+            except Appointment.DoesNotExist:
+                appointment_obj = None
+                appointment_id = None
+
+        # 🔥 SI HAY CITA → FORZAMOS PACIENTE CORRECTO
+        if appointment_obj:
+            paciente = f"{appointment_obj.paciente.apellido}, {appointment_obj.paciente.nombre}".strip(", ")
+            patient_id = appointment_obj.paciente_id
+        else:
+            paciente = request.POST.get("paciente", "").strip()
+            patient_id = request.POST.get("patient_id") or None
 
         Pago.objects.create(
             monto=monto,

@@ -16,6 +16,8 @@ from django.utils.translation import gettext as _
 
 from django.http import JsonResponse
 
+from core.models import Appointment
+
 
 def nuevo_pago(request):
     if request.method == "POST":

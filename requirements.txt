@@ -4,3 +4,4 @@ psycopg2-binary
 whitenoise
 Pillow==10.4.0
 reportlab
+dj-database-url

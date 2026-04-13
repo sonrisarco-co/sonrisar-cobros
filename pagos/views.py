@@ -16,7 +16,6 @@ from django.utils.translation import gettext as _
 
 from django.http import JsonResponse
 
-from core.models import Appointment
 
 
 def nuevo_pago(request):
@@ -28,24 +27,13 @@ def nuevo_pago(request):
         metodo = request.POST.get("metodo")
         next_url = request.POST.get("next", "").strip()
 
-        appointment_id = request.POST.get("appointment_id") or None
+        appointment_id = request.POST.get("appointment_id")
+        patient_id = request.POST.get("patient_id")
 
-        appointment_obj = None
+        appointment_id = int(appointment_id) if appointment_id else None
+        patient_id = int(patient_id) if patient_id else None
 
-        if appointment_id:
-            try:
-                appointment_obj = Appointment.objects.select_related("paciente").get(id=appointment_id)
-            except Appointment.DoesNotExist:
-                appointment_obj = None
-                appointment_id = None
-
-        # 🔥 SI HAY CITA → FORZAMOS PACIENTE CORRECTO
-        if appointment_obj:
-            paciente = f"{appointment_obj.paciente.apellido}, {appointment_obj.paciente.nombre}".strip(", ")
-            patient_id = appointment_obj.paciente_id
-        else:
-            paciente = request.POST.get("paciente", "").strip()
-            patient_id = request.POST.get("patient_id") or None
+        paciente = request.POST.get("paciente", "").strip()
 
         Pago.objects.create(
             monto=monto,
@@ -61,23 +49,6 @@ def nuevo_pago(request):
             return redirect(next_url)
 
         return redirect("caja:tablero")
-
-    initial = {
-        "monto": request.GET.get("monto", ""),
-        "paciente": request.GET.get("paciente", ""),
-        "concepto": request.GET.get("concepto", ""),
-        "metodo": request.GET.get("metodo", ""),
-        "ci": request.GET.get("ci", ""),
-        "next": request.GET.get("next", ""),
-        "appointment_id": request.GET.get("appointment_id", ""),
-        "patient_id": request.GET.get("patient_id", ""),
-        "fecha_cita": request.GET.get("fecha_cita", ""),
-    }
-
-    return render(request, "pagos/nuevo.html", {
-        "metodos": Pago.METODOS,
-        "initial": initial,
-    })
 
 
 def historial(request):

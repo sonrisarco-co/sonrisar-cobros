@@ -30,8 +30,15 @@ def nuevo_pago(request):
         appointment_id = request.POST.get("appointment_id")
         patient_id = request.POST.get("patient_id")
 
-        appointment_id = int(appointment_id) if appointment_id else None
-        patient_id = int(patient_id) if patient_id else None
+        try:
+            appointment_id = int(appointment_id) if appointment_id else None
+        except:
+            appointment_id = None
+
+        try:
+            patient_id = int(patient_id) if patient_id else None
+        except:
+            patient_id = None
 
         paciente = request.POST.get("paciente", "").strip()
 
@@ -49,6 +56,24 @@ def nuevo_pago(request):
             return redirect(next_url)
 
         return redirect("caja:tablero")
+
+    # 🔥 SIEMPRE RETORNAR ALGO EN GET
+    initial = {
+        "monto": request.GET.get("monto", ""),
+        "paciente": request.GET.get("paciente", ""),
+        "concepto": request.GET.get("concepto", ""),
+        "metodo": request.GET.get("metodo", ""),
+        "ci": request.GET.get("ci", ""),
+        "next": request.GET.get("next", ""),
+        "appointment_id": request.GET.get("appointment_id", ""),
+        "patient_id": request.GET.get("patient_id", ""),
+        "fecha_cita": request.GET.get("fecha_cita", ""),
+    }
+
+    return render(request, "pagos/nuevo.html", {
+        "metodos": Pago.METODOS,
+        "initial": initial,
+    })
 
 
 def historial(request):

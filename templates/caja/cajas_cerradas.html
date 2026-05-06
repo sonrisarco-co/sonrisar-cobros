@@ -22,7 +22,7 @@
             <span class="estado-tag cerrada">CERRADA</span>
           </div>
 
-          <!-- CONTENIDO DE LA CARD -->
+          <!-- CONTENIDO -->
           <div class="cerrada-body">
 
             <!-- SALDO INICIAL -->
@@ -31,40 +31,75 @@
               <strong>${{ c.saldo_inicial|floatformat:2 }}</strong>
             </div>
 
-            <!-- 🔥 NUEVO: TOTALES POR MEDIOS DE PAGO -->
-            <div class="cerrada-mp" style="margin: 10px 0 8px 0; padding-left: 8px; border-left: 3px solid #26ABA5;">
-              
-              <div class="cerrada-row" style="margin: 2px 0;">
+            <!-- ======================= -->
+            <!-- 💰 RESUMEN FINANCIERO -->
+            <!-- ======================= -->
+
+            <div class="cerrada-mp" style="margin: 10px 0 10px 0; padding-left: 8px; border-left: 3px solid #26ABA5;">
+
+              <div class="cerrada-row">
+                <span>Ingresos</span>
+                <strong>${{ c.total_pagos_calc|floatformat:2 }}</strong>
+              </div>
+
+              <div class="cerrada-row">
+                <span>Gastos</span>
+                <strong style="color:#b42318;">
+                  -${{ c.total_gastos_calc|floatformat:2 }}
+                </strong>
+              </div>
+
+              <div class="cerrada-row total">
+                <span>Resultado real</span>
+                <strong style="
+                  color:{% if c.resultado_calc < 0 %}#b42318{% else %}#15803d{% endif %};
+                ">
+                  ${{ c.resultado_calc|floatformat:2 }}
+                </strong>
+              </div>
+
+            </div>
+
+            <!-- ======================= -->
+            <!-- 💳 MEDIOS DE PAGO -->
+            <!-- ======================= -->
+
+            <div class="cerrada-mp" style="margin: 10px 0 8px 0; padding-left: 8px; border-left: 3px solid #ccc;">
+
+              <div class="cerrada-row">
                 <span>Efectivo</span>
                 <strong>${{ c.efectivo|floatformat:2 }}</strong>
               </div>
 
-              <div class="cerrada-row" style="margin: 2px 0;">
+              <div class="cerrada-row">
                 <span>Tarjeta</span>
                 <strong>${{ c.tarjeta|floatformat:2 }}</strong>
               </div>
 
-              <div class="cerrada-row" style="margin: 2px 0;">
+              <div class="cerrada-row">
                 <span>Transferencias</span>
                 <strong>${{ c.transferencia|floatformat:2 }}</strong>
               </div>
 
-              <div class="cerrada-row total" style="margin-top: 6px;">
+              <div class="cerrada-row total">
                 <span>Total pagos</span>
                 <strong>${{ c.total_pagos|floatformat:2 }}</strong>
               </div>
+
             </div>
 
-            <!-- RESTO DE DATOS -->
-            <div class="cerrada-row">
-              <span>Pagos</span>
-              <strong>${{ c.total_pagos_calc|floatformat:2 }}</strong>
-            </div>
+            <!-- ======================= -->
+            <!-- ⚙️ MOVIMIENTOS -->
+            <!-- ======================= -->
 
             <div class="cerrada-row">
               <span>Balance mov.</span>
               <strong>${{ c.balance_mov_calc|floatformat:2 }}</strong>
             </div>
+
+            <!-- ======================= -->
+            <!-- 📊 TOTAL FINAL -->
+            <!-- ======================= -->
 
             <div class="cerrada-row total">
               <span>Total calculado</span>

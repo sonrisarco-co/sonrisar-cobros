@@ -1,12 +1,54 @@
 # reportes/utils_pdf.py
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
-from reportlab.lib.units import mm
 from reportlab.lib import colors
 from django.conf import settings
 import os
 
 COLOR_SONRISAR = colors.HexColor("#26ABA5")
+COLOR_TEXTO = colors.HexColor("#263238")
+COLOR_ROJO = colors.HexColor("#B42318")
+COLOR_VERDE = colors.HexColor("#15803D")
+COLOR_GRIS = colors.HexColor("#F4F8F8")
+
+
+def money(valor):
+    try:
+        return f"${valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    except:
+        return f"${valor}"
+
+
+def nueva_pagina_si_necesita(c, y, minimo=90):
+    if y < minimo:
+        c.showPage()
+        return 720
+    return y
+
+
+def titulo_seccion(c, y, texto):
+    c.setFillColor(COLOR_SONRISAR)
+    c.setFont("Helvetica-Bold", 14)
+    c.drawString(40, y, texto)
+    c.setStrokeColor(COLOR_SONRISAR)
+    c.line(40, y - 6, 555, y - 6)
+    return y - 24
+
+
+def fila_tabla(c, y, col1, col2, color_col2=COLOR_TEXTO):
+    c.setFillColor(COLOR_TEXTO)
+    c.setFont("Helvetica", 10)
+    c.drawString(50, y, str(col1))
+
+    c.setFillColor(color_col2)
+    c.setFont("Helvetica-Bold", 10)
+    c.drawRightString(545, y, str(col2))
+
+    c.setStrokeColor(colors.HexColor("#E6EEEE"))
+    c.line(45, y - 6, 550, y - 6)
+
+    return y - 18
+
 
 def generar_pdf_reporte(mes_nombre, year, datos):
     ruta_pdf = os.path.join(settings.BASE_DIR, "reporte_temp.pdf")
@@ -14,96 +56,130 @@ def generar_pdf_reporte(mes_nombre, year, datos):
     c = canvas.Canvas(ruta_pdf, pagesize=letter)
     ancho, alto = letter
 
-    # ============================
-    #  MARCA DE AGUA SONRISAR
-    # ============================
     logo_path = os.path.join(settings.BASE_DIR, "static/img/logo.png")
+
+    # MARCA DE AGUA
     if os.path.exists(logo_path):
         c.saveState()
-        c.setFillAlpha(0.08)          # transparencia suave
-        marca_ancho = 420             # tamaño grande
-        marca_alto = 420
+        c.setFillAlpha(0.06)
+        marca_ancho = 430
+        marca_alto = 430
         c.drawImage(
             logo_path,
             (ancho - marca_ancho) / 2,
-            (alto - marca_alto) / 2,
+            210,
             width=marca_ancho,
             height=marca_alto,
             preserveAspectRatio=True,
-            mask='auto'
+            mask="auto"
         )
         c.restoreState()
 
-    # ============================
-    #  LOGO CHICO ARRIBA
-    # ============================
+    # LOGO ARRIBA
     if os.path.exists(logo_path):
-        c.drawImage(logo_path, 30, alto - 80, width=150, preserveAspectRatio=True)
+        c.drawImage(
+            logo_path,
+            40,
+            alto - 82,
+            width=130,
+            height=55,
+            preserveAspectRatio=True,
+            mask="auto"
+        )
 
-    # ============================
-    #  TÍTULOS
-    # ============================
-    c.setFont("Helvetica-Bold", 20)
+    # TITULO
+    c.setFillColor(COLOR_TEXTO)
+    c.setFont("Helvetica-Bold", 24)
+    c.drawRightString(ancho - 40, alto - 45, "Reporte Mensual")
+
     c.setFillColor(COLOR_SONRISAR)
-    c.drawCentredString(ancho / 2, alto - 40, "Reporte Mensual")
+    c.setFont("Helvetica-Bold", 15)
+    c.drawRightString(ancho - 40, alto - 68, f"{mes_nombre} {year}")
 
-    c.setFont("Helvetica", 14)
-    c.setFillColor(colors.black)
-    c.drawCentredString(ancho / 2, alto - 60, f"{mes_nombre} {year}")
+    y = alto - 120
 
-    y = alto - 110
+    total_pagado = datos.get("total_pagado", 0)
+    total_gastos = datos.get("total_gastos", 0)
+    resultado_real = datos.get("resultado_real", total_pagado - total_gastos)
 
-    # ============================
-    #  RESUMEN GENERAL
-    # ============================
-    c.setFont("Helvetica-Bold", 14)
-    c.setFillColor(COLOR_SONRISAR)
-    c.drawString(30, y, "Resumen General")
-    y -= 20
+    # KPIS
+    card_w = 165
+    card_h = 62
+    x_positions = [40, 215, 390]
 
-    c.setFont("Helvetica", 12)
-    c.setFillColor(colors.black)
-    c.drawString(40, y, f"Total Pagado del Mes: ${datos['total_pagado']:,}")
-    y -= 20
-    c.drawString(40, y, f"Entradas de Caja: ${datos['entradas']:,}")
-    y -= 20
-    c.drawString(40, y, f"Salidas de Caja: ${datos['salidas']:,}")
-    y -= 20
+    kpis = [
+        ("Ingresos por pagos", money(total_pagado), COLOR_TEXTO),
+        ("Gastos del mes", "-" + money(total_gastos), COLOR_ROJO),
+        ("Resultado real", money(resultado_real), COLOR_VERDE if resultado_real >= 0 else COLOR_ROJO),
+    ]
 
-    balance = datos["entradas"] - datos["salidas"]
-    c.drawString(40, y, f"Balance de Movimientos: ${balance:,}")
-    y -= 35
+    for i, (label, valor, color_valor) in enumerate(kpis):
+        x = x_positions[i]
+        c.setFillColor(colors.white)
+        c.setStrokeColor(colors.HexColor("#D9EEEE"))
+        c.roundRect(x, y - card_h, card_w, card_h, 10, fill=True, stroke=True)
 
-    # ============================
-    #  MÉTODOS DE PAGO
-    # ============================
-    c.setFont("Helvetica-Bold", 14)
-    c.setFillColor(COLOR_SONRISAR)
-    c.drawString(30, y, "Métodos de Pago")
-    y -= 25
+        c.setFillColor(colors.HexColor("#667777"))
+        c.setFont("Helvetica-Bold", 9)
+        c.drawString(x + 12, y - 22, label)
 
-    # Encabezado
-    c.setFillColor(colors.white)
-    c.setStrokeColor(COLOR_SONRISAR)
-    c.setFillColor(COLOR_SONRISAR)
-    c.rect(30, y - 20, 500, 20, fill=True, stroke=False)
+        c.setFillColor(color_valor)
+        c.setFont("Helvetica-Bold", 16)
+        c.drawString(x + 12, y - 45, valor)
 
-    c.setFillColor(colors.white)
-    c.setFont("Helvetica-Bold", 12)
-    c.drawString(40, y - 15, "Método")
-    c.drawString(300, y - 15, "Total")
+    y -= 95
 
-    y -= 35
-    c.setFont("Helvetica", 12)
-    c.setFillColor(colors.black)
+    # MOVIMIENTOS
+    y = titulo_seccion(c, y, "Movimientos de caja")
+    y = fila_tabla(c, y, "Entradas manuales", money(datos.get("entradas", 0)))
+    y = fila_tabla(c, y, "Salidas manuales", money(datos.get("salidas", 0)), COLOR_ROJO)
+    y = fila_tabla(c, y, "Balance de movimientos", money(datos.get("balance_mov", 0)))
+    y -= 18
 
-    for item in datos["pagos_por_metodo"]:
-        metodo = item["metodo"].capitalize()
-        total = f"${item['total']:,}"
+    # METODOS DE PAGO
+    y = nueva_pagina_si_necesita(c, y)
+    y = titulo_seccion(c, y, "Métodos de pago")
 
-        c.drawString(40, y, metodo)
-        c.drawString(300, y, total)
+    pagos_por_metodo = datos.get("pagos_por_metodo", [])
+    if pagos_por_metodo:
+        for item in pagos_por_metodo:
+            y = nueva_pagina_si_necesita(c, y)
+            metodo = str(item.get("metodo", "")).capitalize()
+            total = item.get("total", 0)
+            y = fila_tabla(c, y, metodo, money(total))
+    else:
+        c.setFillColor(colors.gray)
+        c.setFont("Helvetica-Oblique", 10)
+        c.drawString(50, y, "No hay pagos registrados.")
         y -= 20
+
+    y -= 18
+
+    # GASTOS POR CATEGORIA
+    y = nueva_pagina_si_necesita(c, y)
+    y = titulo_seccion(c, y, "Gastos por categoría")
+
+    gastos_por_categoria = datos.get("gastos_por_categoria", [])
+    if gastos_por_categoria:
+        for item in gastos_por_categoria:
+            y = nueva_pagina_si_necesita(c, y)
+            categoria = str(item.get("categoria", "")).capitalize()
+            total = item.get("total", 0)
+            y = fila_tabla(c, y, categoria, "-" + money(total), COLOR_ROJO)
+    else:
+        c.setFillColor(colors.gray)
+        c.setFont("Helvetica-Oblique", 10)
+        c.drawString(50, y, "No hay gastos registrados.")
+        y -= 20
+
+    y -= 18
+
+    
+
+    # FOOTER
+    c.setFillColor(colors.gray)
+    c.setFont("Helvetica", 9)
+    c.drawCentredString(ancho / 2, 30, "Sonrisar Centro Odontológico - Reporte generado automáticamente")
 
     c.showPage()
     c.save()

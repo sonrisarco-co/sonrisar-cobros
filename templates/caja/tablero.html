@@ -87,6 +87,33 @@
       </div>
     </div>
 
+    <!-- ========================= -->
+    <!-- 💰 RESUMEN FINANCIERO REAL -->
+    <!-- ========================= -->
+
+    <div class="kpi-grid" style="margin-bottom: 14px;">
+
+      <div class="kpi glass kpi-compact">
+        <span>Ingresos</span>
+        <strong>${{ total_pagos|floatformat:2 }}</strong>
+      </div>
+
+      <div class="kpi glass kpi-compact">
+        <span>Gastos</span>
+        <strong style="color:#b42318;">-${{ total_gastos|floatformat:2 }}</strong>
+      </div>
+
+      <div class="kpi glass kpi-compact">
+        <span>Resultado real</span>
+        <strong style="
+            color:{% if resultado_real < 0 %}#b42318{% else %}#15803d{% endif %};
+        ">
+          ${{ resultado_real|floatformat:2 }}
+        </strong>
+      </div>
+
+    </div>
+
     <div class="kpi-grid">
 
       <!-- SALDO INICIAL EDITABLE -->
@@ -151,11 +178,15 @@
     </div>
 
     <div class="caja-acciones">
-      <a href="{% url 'pagos:nuevo' %}" class="btn-sonrisar primary">+ Nuevo pago</a>
+        <a href="{% url 'pagos:nuevo' %}" class="btn-sonrisar primary">+ Nuevo pago</a>
 
-      {% if caja.estado == "abierta" %}
-        <a href="{% url 'caja:cerrar' %}" class="btn-sonrisar danger">Cerrar caja</a>
-      {% endif %}
+        <a href="{% url 'pagos:nuevo_gasto' %}" class="btn-sonrisar secondary">+ Gasto</a>
+
+        <a href="{% url 'pagos:lista_gastos' %}" class="btn-sonrisar secondary">Ver gastos</a>
+
+        {% if caja.estado == "abierta" %}
+            <a href="{% url 'caja:cerrar' %}" class="btn-sonrisar danger">Cerrar caja</a>
+        {% endif %}
     </div>
 
   </section>

@@ -7,7 +7,6 @@
 
     <h1 class="titulo" style="margin-bottom: 25px;">Cierre de caja</h1>
 
-    <!-- GRID AJUSTADO PERFECTAMENTE -->
     <div style="
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -15,7 +14,7 @@
         align-items: start;
     ">
 
-        <!-- 🟦 IZQUIERDA TRANSPARENTE -->
+        <!-- MEDIOS DE PAGO -->
         <div style="border-left: 4px solid #26ABA5; padding-left: 14px;">
 
             <h3 style="color:#26ABA5; font-size:1rem; margin-bottom:10px;">
@@ -33,7 +32,7 @@
             </p>
         </div>
 
-        <!-- 🟩 DERECHA — CARD SONRISAR TRANSPARENTE -->
+        <!-- RESUMEN GENERAL -->
         <div style="
             background: rgba(255,255,255,0.75);
             border: 1px solid #e5e5e5;
@@ -45,9 +44,24 @@
                 Resumen general
             </h3>
 
-            <p style="margin:4px 0;">Total calculado <strong>${{ total_caja|floatformat:2 }}</strong></p>
-            <p style="margin:4px 0;">Pagos <strong>${{ total_pagos|floatformat:2 }}</strong></p>
+            <p style="margin:4px 0;">Ingresos <strong>${{ total_pagos|floatformat:2 }}</strong></p>
+
+            <p style="margin:4px 0;">
+                Gastos
+                <strong style="color:#b42318;">-${{ total_gastos|floatformat:2 }}</strong>
+            </p>
+
+            <p style="margin:4px 0;">
+                Resultado real
+                <strong style="color:{% if resultado < 0 %}#b42318{% else %}#15803d{% endif %};">
+                    ${{ resultado|floatformat:2 }}
+                </strong>
+            </p>
+
+            <hr style="margin: 10px 0;">
+
             <p style="margin:4px 0;">Balance movimientos <strong>${{ balance|floatformat:2 }}</strong></p>
+            <p style="margin:4px 0;">Total calculado <strong>${{ total_caja|floatformat:2 }}</strong></p>
 
         </div>
 
@@ -57,9 +71,8 @@
     <form method="post" class="form-cierre" style="margin-top:30px;">
         {% csrf_token %}
 
-        <label for="saldo" 
-               style="font-weight:500; margin-bottom:6px; display:block;">
-               Saldo final declarado
+        <label for="saldo" style="font-weight:500; margin-bottom:6px; display:block;">
+            Saldo final declarado
         </label>
 
         <input
@@ -81,21 +94,16 @@
             Acá ponés lo que contaste físicamente.
         </small>
 
-        <!-- BOTONES -->
-        <button type="submit" 
-                class="btn-sonrisar primary"
-                style="padding: 8px 25px; font-size:0.9rem;">
+        <button type="submit" class="btn-sonrisar primary" style="padding: 8px 25px; font-size:0.9rem;">
             Confirmar cierre
         </button>
 
-        <a href="{% url 'caja:tablero' %}"
-           class="btn-sonrisar secondary"
-           style="
-                padding: 8px 25px;
-                font-size:0.9rem;
-                margin-left: 10px;
-                display:inline-block;
-           ">
+        <a href="{% url 'caja:tablero' %}" class="btn-sonrisar secondary" style="
+            padding: 8px 25px;
+            font-size:0.9rem;
+            margin-left: 10px;
+            display:inline-block;
+        ">
             Volver
         </a>
 

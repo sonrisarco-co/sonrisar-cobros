@@ -1,70 +1,286 @@
 {% load static %}
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Reporte Mensual</title>
+    <title>Reporte Mensual | Sonrisar</title>
     <link rel="stylesheet" href="{% static 'css/sonrisar-pro.css' %}">
+
+    <style>
+        body {
+            background: #f4f8f8;
+            font-family: Arial, sans-serif;
+            color: #263238;
+        }
+
+        .reporte-wrap {
+            max-width: 1100px;
+            margin: 35px auto;
+            padding: 30px;
+            position: relative;
+        }
+
+        .marca-agua {
+            position: fixed;
+            inset: 0;
+            background: url("{% static 'img/logo.png' %}") center/520px no-repeat;
+            opacity: 0.055;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .contenido {
+            position: relative;
+            z-index: 1;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 28px;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            border-radius: 999px;
+            padding: 11px 18px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 14px;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: #26ABA5;
+            color: white;
+            border: 2px solid #26ABA5;
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #26ABA5;
+            border: 2px solid #26ABA5;
+        }
+
+        .titulo-card {
+            background: rgba(255,255,255,0.82);
+            border-radius: 22px;
+            padding: 26px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+            margin-bottom: 22px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 36px;
+            color: #12343b;
+        }
+
+        h2 {
+            margin: 6px 0 0 0;
+            color: #26ABA5;
+            font-size: 22px;
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .kpi {
+            background: rgba(255,255,255,0.86);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.06);
+            border: 1px solid rgba(38,171,165,0.15);
+        }
+
+        .kpi span {
+            display: block;
+            color: #667;
+            font-size: 14px;
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+
+        .kpi strong {
+            font-size: 26px;
+        }
+
+        .positivo {
+            color: #15803d;
+        }
+
+        .negativo {
+            color: #b42318;
+        }
+
+        .card {
+            background: rgba(255,255,255,0.88);
+            border-radius: 20px;
+            padding: 22px;
+            margin-bottom: 22px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.06);
+            border: 1px solid rgba(38,171,165,0.12);
+        }
+
+        .card h3 {
+            margin-top: 0;
+            color: #26ABA5;
+            font-size: 20px;
+            border-bottom: 1px solid #dceeee;
+            padding-bottom: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            overflow: hidden;
+            border-radius: 14px;
+        }
+
+        th {
+            background: #26ABA5;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #eef1f1;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .muted {
+            color: #777;
+        }
+
+        @media (max-width: 800px) {
+            .kpi-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .reporte-wrap {
+                padding: 18px;
+                margin: 15px auto;
+            }
+
+            h1 {
+                font-size: 28px;
+            }
+        }
+    </style>
 </head>
-<body class="app-body">
 
-<div class="app-container" style="padding: 30px; max-width:900px; margin:auto;">
+<body>
 
-    
+<div class="marca-agua"></div>
 
-    <!-- TITULOS -->
-    <h1 style="color:#26ABA5; margin-bottom:0;">Reporte Mensual</h1>
-    <h2 style="margin-top:5px;">{{ mes_nombre }} {{ year }}</h2>
+<main class="reporte-wrap">
+    <div class="contenido">
 
-    <!-- BOTONES -->
-    <div style="margin: 20px 0;">
-        <a href="{% url 'reportes:reporte_pdf' year month %}"
-        style="background:#26ABA5; color:white; padding:10px 20px; 
-                border-radius:6px; text-decoration:none; margin-right:15px;">
-            📄 Exportar PDF
-        </a>
+        <div class="top-bar">
+            <a href="{% url 'reportes:reporte_pdf' year month %}" class="btn btn-primary">
+                📄 Exportar PDF
+            </a>
 
+            <a href="{% url 'caja:tablero' %}" class="btn btn-secondary">
+                Volver a Caja del día
+            </a>
+        </div>
 
-        <a href="{% url 'caja:tablero' %}"
-           style="color:#26ABA5; font-weight:bold;">
-            ← Volver a Caja del Día
-        </a>
+        <section class="titulo-card">
+            <h1>Reporte Mensual</h1>
+            <h2>{{ mes_nombre }} {{ year }}</h2>
+        </section>
+
+        <section class="kpi-grid">
+            <div class="kpi">
+                <span>Ingresos por pagos</span>
+                <strong>${{ total_pagado|floatformat:2 }}</strong>
+            </div>
+
+            <div class="kpi">
+                <span>Gastos del mes</span>
+                <strong class="negativo">-${{ total_gastos|floatformat:2 }}</strong>
+            </div>
+
+            <div class="kpi">
+                <span>Resultado real</span>
+                <strong class="{% if resultado_real < 0 %}negativo{% else %}positivo{% endif %}">
+                    ${{ resultado_real|floatformat:2 }}
+                </strong>
+            </div>
+        </section>
+
+        <section class="card">
+            <h3>Movimientos de caja</h3>
+            <p><strong>Entradas manuales:</strong> ${{ entradas|floatformat:2 }}</p>
+            <p><strong>Salidas manuales:</strong> ${{ salidas|floatformat:2 }}</p>
+            <p><strong>Balance de movimientos:</strong> ${{ balance_mov|floatformat:2 }}</p>
+        </section>
+
+        <section class="card">
+            <h3>Métodos de pago</h3>
+
+            {% if pagos_por_metodo %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Método</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in pagos_por_metodo %}
+                            <tr>
+                                <td>{{ item.metodo|capfirst }}</td>
+                                <td>${{ item.total|floatformat:2 }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p class="muted">No hay pagos registrados.</p>
+            {% endif %}
+        </section>
+
+        <section class="card">
+            <h3>Gastos por categoría</h3>
+
+            {% if gastos_por_categoria %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Categoría</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in gastos_por_categoria %}
+                            <tr>
+                                <td>{{ item.categoria|capfirst }}</td>
+                                <td class="negativo">-${{ item.total|floatformat:2 }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p class="muted">No hay gastos registrados.</p>
+            {% endif %}
+        </section>
+
+        
     </div>
-
-    <hr><br>
-
-    <!-- RESUMEN GENERAL -->
-    <h3 style="color:#26ABA5;">Resumen General</h3>
-
-    <p><strong>Total Pagado del Mes:</strong> ${{ total_pagado }}</p>
-    <p><strong>Entradas de Caja:</strong> ${{ entradas }}</p>
-    <p><strong>Salidas de Caja:</strong> ${{ salidas }}</p>
-    <p><strong>Balance de Movimientos:</strong> ${{ balance_mov }}</p>
-
-    <br><hr><br>
-
-    <!-- MÉTODOS DE PAGO -->
-    <h3 style="color:#26ABA5;">Métodos de Pago</h3>
-
-    {% if pagos_por_metodo %}
-        <table style="width:100%; border-collapse:collapse;">
-            <tr style="background:#26ABA5; color:white;">
-                <th style="padding:8px; text-align:left;">Método</th>
-                <th style="padding:8px; text-align:left;">Total</th>
-            </tr>
-
-            {% for p in pagos_por_metodo %}
-            <tr style="border-bottom:1px solid #ddd;">
-                <td style="padding:8px;">{{ p.metodo|capfirst }}</td>
-                <td style="padding:8px;">${{ p.total }}</td>
-            </tr>
-            {% endfor %}
-        </table>
-    {% else %}
-        <p>No hay pagos este mes.</p>
-    {% endif %}
-
-</div>
+</main>
 
 </body>
 </html>

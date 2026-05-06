@@ -3,7 +3,7 @@ from django.shortcuts import render
 from django.http import FileResponse, HttpResponse
 from django.db.models import Sum
 
-from pagos.models import Pago
+from pagos.models import Pago, Gasto
 from caja.models import MovimientoCaja
 
 from .utils_pdf import generar_pdf_reporte
@@ -29,6 +29,18 @@ def obtener_contexto_reporte(year, month):
     )
 
     total_pagado = pagos_mes.aggregate(Sum("monto"))["monto__sum"] or 0
+
+    gastos_mes = Gasto.objects.filter(
+        fecha__year=year,
+        fecha__month=month
+    )
+
+    total_gastos = gastos_mes.aggregate(Sum("monto"))["monto__sum"] or 0
+    resultado_real = total_pagado - total_gastos
+
+    gastos_por_categoria = gastos_mes.values("categoria").annotate(
+        total=Sum("monto")
+    ).order_by("-total")
 
     pagos_por_metodo = pagos_mes.values("metodo").annotate(total=Sum("monto"))
     promedio_por_paciente = pagos_mes.values("paciente").annotate(total=Sum("monto"))
@@ -60,6 +72,9 @@ def obtener_contexto_reporte(year, month):
         "entradas": entradas,
         "salidas": salidas,
         "balance_mov": balance_mov,
+        "total_gastos": total_gastos,
+        "resultado_real": resultado_real,
+        "gastos_por_categoria": gastos_por_categoria,
     }
 
     return contexto

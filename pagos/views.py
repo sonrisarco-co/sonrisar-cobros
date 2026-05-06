@@ -16,6 +16,9 @@ from django.utils.translation import gettext as _
 
 from django.http import JsonResponse
 
+from .models import Gasto
+
+
 
 
 def nuevo_pago(request):
@@ -182,3 +185,38 @@ def api_pago_por_cita(request):
         "tipo_pago": tipo_pago,
         "pagos": data,
     })
+
+
+
+def nuevo_gasto(request):
+    if request.method == "POST":
+        caja = CashSession.obtener_caja_del_dia()
+
+        Gasto.objects.create(
+            proveedor=request.POST.get("proveedor"),
+            categoria=request.POST.get("categoria"),
+            concepto=request.POST.get("concepto"),
+            monto=request.POST.get("monto"),
+            metodo=request.POST.get("metodo"),
+            caja=caja,
+        )
+
+        return redirect("caja:tablero")
+
+    return render(request, "pagos/nuevo_gasto.html", {
+        "metodos": Gasto.METODOS,
+        "categorias": Gasto.CATEGORIAS,
+    })
+
+
+def lista_gastos(request):
+    gastos = Gasto.objects.order_by("-fecha")
+
+    total = sum(g.monto for g in gastos)
+
+    return render(request, "pagos/lista_gastos.html", {
+        "gastos": gastos,
+        "total": total,
+    })
+
+

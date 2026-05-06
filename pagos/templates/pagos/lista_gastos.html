@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Gastos | Sonrisar{% endblock %}
+
+{% block content %}
+
+<div class="page-wrap">
+
+    <!-- CABECERA -->
+    <div class="page-head">
+        <h1 class="h1-soft">Gastos del consultorio</h1>
+
+        <div>
+            <a href="{% url 'pagos:nuevo_gasto' %}" class="btn-sonrisar primary">+ Nuevo gasto</a>
+            <a href="{% url 'caja:tablero' %}" class="btn-sonrisar secondary">Volver</a>
+        </div>
+    </div>
+
+    <!-- RESUMEN -->
+    <div class="kpi-grid" style="margin-bottom: 14px;">
+        <div class="kpi glass kpi-compact">
+            <span>Total registrado</span>
+            <strong>${{ total|floatformat:2 }}</strong>
+        </div>
+
+        <div class="kpi glass kpi-compact">
+            <span>Cantidad</span>
+            <strong>{{ gastos|length }}</strong>
+        </div>
+
+        <div class="kpi glass kpi-compact">
+            <span>Tipo</span>
+            <strong>Egresos</strong>
+        </div>
+    </div>
+
+    <!-- TABLA -->
+    <div class="glass" style="
+        padding: 20px;
+        border-radius: 14px;
+        position: relative;
+        overflow: hidden;
+    ">
+
+        <!-- MARCA DE AGUA -->
+        <div style="
+            position:absolute;
+            inset:0;
+            background:url('{% static "img/logo.png" %}') center/350px no-repeat;
+            opacity:0.05;
+            pointer-events:none;
+        "></div>
+
+        <div style="position:relative;">
+
+            {% if gastos %}
+                <table style="width:100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="border-bottom:1px solid #eee;">
+                            <th style="text-align:left; padding:10px;">Fecha</th>
+                            <th style="text-align:left; padding:10px;">Proveedor</th>
+                            <th style="text-align:left; padding:10px;">Categoría</th>
+                            <th style="text-align:left; padding:10px;">Concepto</th>
+                            <th style="text-align:left; padding:10px;">Método</th>
+                            <th style="text-align:left; padding:10px;">Monto</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for g in gastos %}
+                        <tr style="border-bottom:1px solid #f0f0f0;">
+                            <td style="padding:10px;">{{ g.fecha|date:"d/m/Y H:i" }}</td>
+
+                            <td style="padding:10px;">
+                                {{ g.proveedor|default:"-" }}
+                            </td>
+
+                            <td style="padding:10px;">
+                                <span class="pill">
+                                    {{ g.get_categoria_display }}
+                                </span>
+                            </td>
+
+                            <td style="padding:10px;">
+                                {{ g.concepto }}
+                                {% if g.observaciones %}
+                                    <div style="font-size:12px; color:#777;">
+                                        {{ g.observaciones }}
+                                    </div>
+                                {% endif %}
+                            </td>
+
+                            <td style="padding:10px;">
+                                {{ g.get_metodo_display }}
+                            </td>
+
+                            <td style="padding:10px;">
+                                <strong style="color:#b42318;">
+                                    ${{ g.monto|floatformat:2 }}
+                                </strong>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+            {% else %}
+                <p style="text-align:center; color:#777;">
+                    No hay gastos registrados.
+                </p>
+            {% endif %}
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

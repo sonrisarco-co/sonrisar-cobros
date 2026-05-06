@@ -3,57 +3,94 @@
 <head>
     <meta charset="UTF-8">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            padding: 25px;
-            color: #333;
+        @page {
+            size: A4;
+            margin: 22mm 18mm;
         }
 
-        /* Encabezado */
+        body {
+            font-family: Arial, sans-serif;
+            color: #263238;
+            font-size: 13px;
+        }
+
         .header {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 22px;
         }
 
         .logo {
-            width: 180px;
-            margin-bottom: 10px;
+            width: 150px;
+            margin-bottom: 8px;
         }
 
         h1 {
-            font-size: 28px;
-            margin: 0;
             color: #26ABA5;
+            font-size: 26px;
+            margin: 0;
         }
 
         h2 {
-            font-size: 20px;
-            margin-top: 5px;
+            font-size: 18px;
+            margin: 4px 0 0;
             color: #444;
         }
 
-        /* Tarjetas */
         .card {
-            border: 1px solid #d9d9d9;
+            border: 1px solid #d9eeee;
             border-radius: 10px;
-            padding: 15px 20px;
-            margin-bottom: 22px;
-            background: #f9f9f9;
+            padding: 14px 16px;
+            margin-bottom: 16px;
+            background: #fbfefe;
         }
 
         .card h3 {
-            margin-top: 0;
-            font-size: 17px;
             color: #26ABA5;
-            border-bottom: 1px solid #26ABA5;
-            padding-bottom: 5px;
+            font-size: 16px;
+            margin: 0 0 10px;
+            border-bottom: 1px solid #d9eeee;
+            padding-bottom: 6px;
         }
 
-        /* Tablas */
+        .kpi-row {
+            display: table;
+            width: 100%;
+            margin-bottom: 16px;
+        }
+
+        .kpi {
+            display: table-cell;
+            width: 33.33%;
+            border: 1px solid #d9eeee;
+            padding: 12px;
+            background: #fbfefe;
+        }
+
+        .kpi span {
+            display: block;
+            color: #666;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+
+        .kpi strong {
+            font-size: 18px;
+        }
+
+        .positivo {
+            color: #15803d;
+            font-weight: bold;
+        }
+
+        .negativo {
+            color: #b42318;
+            font-weight: bold;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 10px;
+            margin-top: 8px;
         }
 
         th {
@@ -61,40 +98,67 @@
             color: white;
             padding: 8px;
             text-align: left;
+            font-size: 12px;
         }
 
         td {
             padding: 8px;
-            border-bottom: 1px solid #dcdcdc;
+            border-bottom: 1px solid #e5e5e5;
+            font-size: 12px;
         }
 
         .no-data {
+            color: #777;
             font-style: italic;
-            color: #888;
+        }
+
+        .footer {
+            margin-top: 24px;
+            text-align: center;
+            font-size: 11px;
+            color: #777;
+            border-top: 1px solid #ddd;
+            padding-top: 8px;
         }
     </style>
 </head>
+
 <body>
 
-    <!-- LOGO + TÍTULO -->
     <div class="header">
         <img src="https://i.imgur.com/yrOIF2a.png" class="logo">
         <h1>Reporte Mensual</h1>
         <h2>{{ mes_nombre }} {{ year }}</h2>
     </div>
 
-    <!-- RESUMEN GENERAL -->
-    <div class="card">
-        <h3>Resumen General</h3>
-        <p><strong>Total Pagado en el Mes:</strong> ${{ total_pagado }}</p>
-        <p><strong>Entradas de Caja:</strong> ${{ entradas }}</p>
-        <p><strong>Salidas de Caja:</strong> ${{ salidas }}</p>
-        <p><strong>Balance de Movimientos:</strong> ${{ balance_mov }}</p>
+    <div class="kpi-row">
+        <div class="kpi">
+            <span>Ingresos por pagos</span>
+            <strong>${{ total_pagado }}</strong>
+        </div>
+
+        <div class="kpi">
+            <span>Gastos del mes</span>
+            <strong class="negativo">-${{ total_gastos }}</strong>
+        </div>
+
+        <div class="kpi">
+            <span>Resultado real</span>
+            <strong class="{% if resultado_real < 0 %}negativo{% else %}positivo{% endif %}">
+                ${{ resultado_real }}
+            </strong>
+        </div>
     </div>
 
-    <!-- MÉTODOS DE PAGO -->
     <div class="card">
-        <h3>Métodos de Pago</h3>
+        <h3>Movimientos de caja</h3>
+        <p><strong>Entradas manuales:</strong> ${{ entradas }}</p>
+        <p><strong>Salidas manuales:</strong> ${{ salidas }}</p>
+        <p><strong>Balance de movimientos:</strong> ${{ balance_mov }}</p>
+    </div>
+
+    <div class="card">
+        <h3>Métodos de pago</h3>
 
         {% if pagos_por_metodo %}
             <table>
@@ -105,7 +169,7 @@
 
                 {% for item in pagos_por_metodo %}
                 <tr>
-                    <td>{{ item.metodo }}</td>
+                    <td>{{ item.metodo|capfirst }}</td>
                     <td>${{ item.total }}</td>
                 </tr>
                 {% endfor %}
@@ -113,6 +177,54 @@
         {% else %}
             <p class="no-data">No hay pagos registrados.</p>
         {% endif %}
+    </div>
+
+    <div class="card">
+        <h3>Gastos por categoría</h3>
+
+        {% if gastos_por_categoria %}
+            <table>
+                <tr>
+                    <th>Categoría</th>
+                    <th>Total</th>
+                </tr>
+
+                {% for item in gastos_por_categoria %}
+                <tr>
+                    <td>{{ item.categoria|capfirst }}</td>
+                    <td class="negativo">-${{ item.total }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        {% else %}
+            <p class="no-data">No hay gastos registrados.</p>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <h3>Pacientes con mayor aporte</h3>
+
+        {% if ranking_pacientes %}
+            <table>
+                <tr>
+                    <th>Paciente</th>
+                    <th>Total</th>
+                </tr>
+
+                {% for item in ranking_pacientes %}
+                <tr>
+                    <td>{{ item.paciente }}</td>
+                    <td>${{ item.total }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        {% else %}
+            <p class="no-data">No hay pacientes registrados.</p>
+        {% endif %}
+    </div>
+
+    <div class="footer">
+        Sonrisar Centro Odontológico · Reporte generado automáticamente
     </div>
 
 </body>

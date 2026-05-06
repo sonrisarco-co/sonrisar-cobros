@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Nuevo gasto | Sonrisar{% endblock %}
+
+{% block content %}
+
+<div class="page-wrap">
+
+    <div class="page-head">
+        <h1 class="h1-soft">Registrar gasto</h1>
+        <a href="{% url 'pagos:lista_gastos' %}" class="btn-sonrisar secondary">Ver gastos</a>
+    </div>
+
+    <!-- CONTENEDOR -->
+    <div class="glass" style="
+        max-width: 750px;
+        margin: 0 auto;
+        padding: 25px;
+        border-radius: 14px;
+        position: relative;
+        overflow: hidden;
+    ">
+
+        <!-- LOGO MARCA DE AGUA -->
+        <div style="
+            position:absolute;
+            inset:0;
+            background:url('{% static "img/logo.png" %}') center/300px no-repeat;
+            opacity:0.05;
+            pointer-events:none;
+        "></div>
+
+        <form method="post" style="position:relative;">
+            {% csrf_token %}
+
+            <div class="field">
+                <label>Proveedor</label>
+                <input type="text" name="proveedor" placeholder="Ej: Dental Med, UTE, laboratorio...">
+            </div>
+
+            <div class="field">
+                <label>Categoría</label>
+                <select name="categoria" required>
+                    <option value="">Seleccionar</option>
+                    {% for value, label in categorias %}
+                        <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="field">
+                <label>Concepto</label>
+                <input type="text" name="concepto" required placeholder="Ej: Compra de insumos, laboratorio...">
+            </div>
+
+            <div class="field">
+                <label>Monto</label>
+                <input type="number" step="0.01" name="monto" required placeholder="0.00">
+                <small style="color:#777;">Ingresar solo el número, sin símbolo $</small>
+            </div>
+
+            <div class="field">
+                <label>Método de pago</label>
+                <select name="metodo" required>
+                    <option value="">Seleccionar</option>
+                    {% for value, label in metodos %}
+                        <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="field">
+                <label>Observaciones</label>
+                <textarea 
+                    name="observaciones" 
+                    rows="3"
+                    placeholder="Detalle opcional..."
+                    style="
+                        width:100%;
+                        box-sizing:border-box;
+                        padding:10px 12px;
+                        border:1px solid #d8dddd;
+                        border-radius:10px;
+                        font-size:14px;
+                        font-family:inherit;
+                        background:white;
+                        resize:vertical;
+                        min-height:72px;
+                    "
+                ></textarea>
+            </div>
+
+            <div style="margin-top:20px;">
+                <button class="btn-sonrisar primary">Guardar gasto</button>
+                <a href="{% url 'caja:tablero' %}" class="btn-sonrisar secondary">Cancelar</a>
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+{% endblock %}

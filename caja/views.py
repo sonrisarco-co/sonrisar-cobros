@@ -2,7 +2,7 @@ from decimal import Decimal
 from django.shortcuts import render, redirect
 from django.utils import timezone
 from .models import CashSession, MovimientoCaja
-from pagos.models import Pago
+from pagos.models import Pago, Gasto   # 🔥 IMPORTANTE
 
 
 def _sum_montos(queryset):
@@ -18,7 +18,9 @@ def _sum_montos(queryset):
 def tablero(request):
     caja_actual = CashSession.obtener_caja_del_dia()
 
-    # PAGOS DEL DÍA
+    # ============================
+    # PAGOS (INGRESOS)
+    # ============================
     pagos = Pago.objects.filter(
         fecha__date=caja_actual.fecha
     ).order_by("-fecha")
@@ -28,7 +30,18 @@ def tablero(request):
     promedio = total_pagos / cantidad_pagos if cantidad_pagos > 0 else 0
     ultimo_pago = pagos.first() if cantidad_pagos > 0 else None
 
+    # ============================
+    # GASTOS (EGRESOS) 🔥 NUEVO
+    # ============================
+    gastos = Gasto.objects.filter(
+        fecha__date=caja_actual.fecha
+    )
+
+    total_gastos = sum(g.monto for g in gastos)
+
+    # ============================
     # MOVIMIENTOS MANUALES
+    # ============================
     movimientos = MovimientoCaja.objects.filter(caja=caja_actual).order_by("-fecha")
     entradas = movimientos.filter(tipo="entrada")
     salidas = movimientos.filter(tipo="salida")
@@ -38,13 +51,14 @@ def tablero(request):
     balance_mov = total_entradas - total_salidas
 
     # ============================
-    # CÁLCULOS IMPORTANTES
+    # 💰 RESULTADO REAL 🔥
     # ============================
+    resultado_real = total_pagos - total_gastos
 
-    # ❗❗ Total del día → SOLO pagos + movimientos
+    # ============================
+    # CÁLCULOS EXISTENTES
+    # ============================
     total_del_dia = total_pagos + balance_mov
-
-    # ❗❗ Total calculado de la caja → saldo inicial incluido
     total_caja = (caja_actual.saldo_inicial or Decimal("0.00")) + total_del_dia
 
     return render(request, "caja/tablero.html", {
@@ -57,6 +71,13 @@ def tablero(request):
         "promedio": promedio,
         "ultimo_pago": ultimo_pago,
 
+        # GASTOS 🔥
+        "gastos": gastos,
+        "total_gastos": total_gastos,
+
+        # RESULTADO REAL 🔥
+        "resultado_real": resultado_real,
+
         # MOVIMIENTOS
         "movimientos": movimientos,
         "ultimos_mov": movimientos[:5],
@@ -65,8 +86,8 @@ def tablero(request):
         "balance": balance_mov,
 
         # TOTALES
-        "total_del_dia": total_del_dia,   # ← Este es el nuevo correcto
-        "total_caja": total_caja,         # ← Este incluye saldo inicial
+        "total_del_dia": total_del_dia,
+        "total_caja": total_caja,
     })
 
 
@@ -119,10 +140,11 @@ def cerrar_caja(request):
     pagos = Pago.objects.filter(caja=caja)
     total_pagos = _sum_montos(pagos)
 
-    # 🔥 DESGLOSE POR MEDIO DE PAGO
-    efectivo = _sum_montos(pagos.filter(metodo="efectivo"))
-    tarjeta = _sum_montos(pagos.filter(metodo="tarjeta"))
-    transferencia = _sum_montos(pagos.filter(metodo="transferencia"))
+    gastos = Gasto.objects.filter(caja=caja)
+    total_gastos = _sum_montos(gastos)
+
+    # 🔥 CORREGIDO
+    resultado = total_pagos - total_gastos
 
     movimientos = MovimientoCaja.objects.filter(caja=caja)
     total_entradas = _sum_montos(movimientos.filter(tipo="entrada"))
@@ -130,21 +152,17 @@ def cerrar_caja(request):
     balance_mov = total_entradas - total_salidas
 
     total_caja = (caja.saldo_inicial or Decimal("0.00")) + total_pagos + balance_mov
-    
-    # Calcular por medio de pago
+
+    # POR MEDIO DE PAGO
     efectivo = _sum_montos(pagos.filter(metodo="efectivo"))
     tarjeta = _sum_montos(pagos.filter(metodo="tarjeta"))
     transferencia = _sum_montos(pagos.filter(metodo="transferencia"))
 
     total_pagos = efectivo + tarjeta + transferencia
 
-    # =================================
-    # POST → CERRAR DEFINITIVAMENTE
-    # =================================
     if request.method == "POST":
         saldo_final = request.POST.get("saldo_final", "").strip()
 
-        # 🔥 GUARDAR TOTALES POR MEDIO DE PAGO
         caja.efectivo = efectivo
         caja.tarjeta = tarjeta
         caja.transferencia = transferencia
@@ -157,16 +175,16 @@ def cerrar_caja(request):
 
         return redirect("caja:cerradas")
 
-    # ================================
-    # GET → MOSTRAR CIERRE PREVIO
-    # ================================
     return render(request, "caja/cerrar_caja.html", {
         "caja": caja,
         "total_caja": total_caja,
         "total_pagos": total_pagos,
         "balance": balance_mov,
 
-        # 🔥 ENVIARLOS AL TEMPLATE
+        # 🔥 NUEVO
+        "total_gastos": total_gastos,
+        "resultado": resultado,
+
         "efectivo": efectivo,
         "tarjeta": tarjeta,
         "transferencia": transferencia,
@@ -185,12 +203,18 @@ def cajas_cerradas(request):
         pagos = Pago.objects.filter(caja=c)
         total_pagos = _sum_montos(pagos)
 
+        gastos = Gasto.objects.filter(caja=c)
+        total_gastos = _sum_montos(gastos)
+
         movimientos = MovimientoCaja.objects.filter(caja=c)
         total_entradas = _sum_montos(movimientos.filter(tipo="entrada"))
         total_salidas = _sum_montos(movimientos.filter(tipo="salida"))
         balance_mov = total_entradas - total_salidas
 
         c.total_pagos_calc = total_pagos
+        c.total_gastos_calc = total_gastos
+        c.resultado_calc = total_pagos - total_gastos
+
         c.balance_mov_calc = balance_mov
         c.total_caja_calc = (c.saldo_inicial or Decimal("0.00")) + total_pagos + balance_mov
 

@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.pyc
+
+# Base de datos
+db.sqlite3
+
+# Archivos temporales
+*.pdf
+
+# Entornos virtuales
+venv/
+env/
+
+# OS
+.DS_Store
+Thumbs.db

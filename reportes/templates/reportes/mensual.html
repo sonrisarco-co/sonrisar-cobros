@@ -3,88 +3,149 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Reporte Mensual</title>
+    <title>Reporte Mensual | Sonrisar</title>
     <link rel="stylesheet" href="{% static 'css/sonrisar-pro.css' %}">
 </head>
+
+<h1 style="color:red;">TEMPLATE NUEVO CARGADO</h1>
 
 <body class="app-body">
     <main class="app-container">
 
         <!-- ENCABEZADO CON BOTONES -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
-            
-            <!-- Botón Exportar PDF -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px; gap:12px; flex-wrap:wrap;">
+
             <a href="{% url 'reportes:reporte_pdf' year month %}"
-               style="
-               padding: 10px 18px;
-               border: 2px solid #26ABA5;
-               border-radius: 8px;
-               background: white;
-               color: #26ABA5;
-               font-weight: 600;
-               text-decoration: none;
-               font-size: 15px;
-               ">
+               style="padding:10px 18px; border:2px solid #26ABA5; border-radius:8px; background:white; color:#26ABA5; font-weight:600; text-decoration:none; font-size:15px;">
                 📄 Exportar PDF
             </a>
 
-            <!-- Botón Volver -->
             <a href="{% url 'caja:tablero' %}"
-               style="
-               padding: 10px 18px;
-               border: 2px solid #999;
-               border-radius: 8px;
-               background: white;
-               color: #444;
-               font-weight: 600;
-               text-decoration: none;
-               font-size: 15px;
-               ">
+               style="padding:10px 18px; border:2px solid #999; border-radius:8px; background:white; color:#444; font-weight:600; text-decoration:none; font-size:15px;">
                 Volver a Caja del día
             </a>
 
         </div>
 
         <!-- TÍTULO -->
-        <h1 style="font-size: 32px; margin-bottom: 5px;">Reporte Mensual</h1>
-        <h2 style="font-size: 22px; color: #26ABA5; margin-bottom: 25px;">
-            {{ mes_nombre }}
+        <h1 style="font-size:32px; margin-bottom:5px;">Reporte Mensual</h1>
+        <h2 style="font-size:22px; color:#26ABA5; margin-bottom:25px;">
+            {{ mes_nombre }} {{ year }}
         </h2>
 
-        <!-- TARJETA RESUMEN GENERAL -->
-        <div class="card" style="padding: 20px; margin-bottom: 30px; border-radius: 12px;">
-            <h3>Resumen General</h3>
+        <!-- RESUMEN FINANCIERO REAL -->
+        <div class="card" style="padding:20px; margin-bottom:30px; border-radius:12px;">
+            <h3>Resumen financiero real</h3>
 
-            <p><strong>Total Pagado del Mes:</strong> ${{ total_pagado|floatformat:2 }}</p>
-            <p><strong>Entradas de Caja:</strong> ${{ entradas|floatformat:2 }}</p>
-            <p><strong>Salidas de Caja:</strong> ${{ salidas|floatformat:2 }}</p>
-            <p><strong>Balance de Movimientos:</strong> ${{ balance_mov|floatformat:2 }}</p>
+            <p>
+                <strong>Ingresos por pagos:</strong>
+                ${{ total_pagado|floatformat:2 }}
+            </p>
+
+            <p>
+                <strong>Gastos del mes:</strong>
+                <span style="color:#b42318;">
+                    -${{ total_gastos|floatformat:2 }}
+                </span>
+            </p>
+
+            <p style="font-size:20px; margin-top:14px;">
+                <strong>Resultado real:</strong>
+                <span style="color:{% if resultado_real < 0 %}#b42318{% else %}#15803d{% endif %}; font-weight:bold;">
+                    ${{ resultado_real|floatformat:2 }}
+                </span>
+            </p>
+        </div>
+
+        <!-- MOVIMIENTOS DE CAJA -->
+        <div class="card" style="padding:20px; margin-bottom:30px; border-radius:12px;">
+            <h3>Movimientos de caja</h3>
+
+            <p><strong>Entradas manuales:</strong> ${{ entradas|floatformat:2 }}</p>
+            <p><strong>Salidas manuales:</strong> ${{ salidas|floatformat:2 }}</p>
+            <p><strong>Balance de movimientos:</strong> ${{ balance_mov|floatformat:2 }}</p>
         </div>
 
         <!-- MÉTODOS DE PAGO -->
-        <div class="card" style="padding: 20px; margin-bottom: 40px; border-radius: 12px;">
-            <h3>Métodos de Pago</h3>
+        <div class="card" style="padding:20px; margin-bottom:30px; border-radius:12px;">
+            <h3>Métodos de pago</h3>
 
             {% if pagos_por_metodo %}
-            <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
-                <thead>
-                    <tr style="background: #26ABA5; color: white; text-align: left;">
-                        <th style="padding: 10px;">Método</th>
-                        <th style="padding: 10px;">Total</th>
-                    </tr>
-                </thead>
+                <table style="width:100%; border-collapse:collapse; margin-top:10px;">
+                    <thead>
+                        <tr style="background:#26ABA5; color:white; text-align:left;">
+                            <th style="padding:10px;">Método</th>
+                            <th style="padding:10px;">Total</th>
+                        </tr>
+                    </thead>
 
-                <tbody>
-                    {% for item in pagos_por_metodo %}
-                    <tr style="border-bottom: 1px solid #ddd;">
-                        <td style="padding: 8px;">{{ item.metodo }}</td>
-                        <td style="padding: 8px;">${{ item.total|floatformat:2 }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                    <tbody>
+                        {% for item in pagos_por_metodo %}
+                            <tr style="border-bottom:1px solid #ddd;">
+                                <td style="padding:8px;">{{ item.metodo }}</td>
+                                <td style="padding:8px;">${{ item.total|floatformat:2 }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             {% else %}
                 <p>No hay pagos registrados.</p>
+            {% endif %}
+        </div>
+
+        <!-- GASTOS POR CATEGORÍA -->
+        <div class="card" style="padding:20px; margin-bottom:30px; border-radius:12px;">
+            <h3>Gastos por categoría</h3>
+
+            {% if gastos_por_categoria %}
+                <table style="width:100%; border-collapse:collapse; margin-top:10px;">
+                    <thead>
+                        <tr style="background:#26ABA5; color:white; text-align:left;">
+                            <th style="padding:10px;">Categoría</th>
+                            <th style="padding:10px;">Total</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for item in gastos_por_categoria %}
+                            <tr style="border-bottom:1px solid #ddd;">
+                                <td style="padding:8px;">{{ item.categoria }}</td>
+                                <td style="padding:8px; color:#b42318;">
+                                    -${{ item.total|floatformat:2 }}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>No hay gastos registrados.</p>
+            {% endif %}
+        </div>
+
+        <!-- TOP PACIENTES -->
+        <div class="card" style="padding:20px; margin-bottom:40px; border-radius:12px;">
+            <h3>Pacientes con mayor aporte</h3>
+
+            {% if ranking_pacientes %}
+                <table style="width:100%; border-collapse:collapse; margin-top:10px;">
+                    <thead>
+                        <tr style="background:#26ABA5; color:white; text-align:left;">
+                            <th style="padding:10px;">Paciente</th>
+                            <th style="padding:10px;">Total</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for item in ranking_pacientes %}
+                            <tr style="border-bottom:1px solid #ddd;">
+                                <td style="padding:8px;">{{ item.paciente }}</td>
+                                <td style="padding:8px;">${{ item.total|floatformat:2 }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>No hay pacientes registrados.</p>
             {% endif %}
         </div>
 

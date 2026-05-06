@@ -1,0 +1,4740 @@
+[
+{
+  "model": "caja.cashsession",
+  "pk": 6,
+  "fields": {
+    "fecha": "2026-01-17",
+    "estado": "cerrada",
+    "saldo_inicial": "1900.00",
+    "efectivo": "0.00",
+    "tarjeta": "0.00",
+    "transferencia": "0.00",
+    "total_pagos": "0.00",
+    "saldo_final_declarado": "20700.00",
+    "abierta_en": "2026-01-17T03:03:33.514Z",
+    "cerrada_en": "2026-01-18T01:12:36Z",
+    "notas": ""
+  }
+},
+{
+  "model": "caja.cashsession",
+  "pk": 10,
+  "fields": {
+    "fecha": "2026-01-19",
+    "estado": "cerrada",
+    "saldo_inicial": "1000.00",
+    "efectivo": "0.00",
+    "tarjeta": "0.00",
+    "transferencia": "0.00",
+    "total_pagos": "0.00",
+    "saldo_final_declarado": "6500.00",
+    "abierta_en": "2026-01-20T01:35:20.124Z",
+    "cerrada_en": "2026-01-20T02:30:52.940Z",
+    "notas": ""
+  }
+},
+{
+  "model": "caja.cashsession",
+  "pk": 19,
+  "fields": {
+    "fecha": "2026-01-26",
+    "estado": "cerrada",
+    "saldo_inicial": "2000.00",
+    "efectivo": "0.00",
+    "tarjeta": "0.00",
+    "transferencia": "0.00",
+    "total_pagos": "0.00",
+    "saldo_final_declarado": "8100.00",
+    "abierta_en": "2026-01-26T14:11:43.757Z",
+    "cerrada_en": "2026-01-27T00:52:05Z",
+    "notas": ""
+  }
+},
+{
+  "model": "caja.cashsession",
+  "pk": 21,
+  "fields": {
+    "fecha": "2026-01-28",
+    "estado": "cerrada",
+    "saldo_inicial": "0.00",
+    "efectivo": "0.00",
+    "tarjeta": "0.00",
+    "transferencia": "0.00",
+    "total_pagos": "0.00",
+    "saldo_final_declarado": "0.00",
+    "abierta_en": "2026-01-28T03:55:50.875Z",
+    "cerrada_en": "2026-01-28T03:55:57Z",
+    "notas": ""
+  }
+},
+{
+  "model": "caja.cashsession",
+  "pk": 22,
+  "fields": {
+    "fecha": "2026-01-29",
+    "estado": "cerrada",
+    "saldo_inicial": "1000.00",
+    "efectivo": "0.00",
+    "tarjeta": "0.00",
+    "transferencia": "0.00",
+    "total_pagos": "0.00",
+    "saldo_final_declarado": null,
+    "abierta_en": "2026-01-29T14:32:07.868Z",
+    "cerrada_en": null,
+    "notas": ""
+  }
+},
+{
+  "model": "caja.cashsession",
+  "pk": 27,
+  "fields": {
+    "fecha": "2026-02-06",
+    "estado": "cerrada",
+    "saldo_inicial": "1200.00",
+    "efectivo": "0.00",
+    "tarjeta": "0.00",
+    "transferencia": "0.00",
+    "total_pagos": "0.00",
+    "saldo_final_declarado": "5600.00",
+    "abierta_en": "2026-02-06T03:56:55.265Z",
+    "cerrada_en": "2026-02-07T02:24:01.815Z",
+    "notas": ""
+  }
+},
+{
+  "model": "caja.cashsession",
+  "pk": 28,
+  "fields": {
+    "fecha": "2026-02-02",
+    "estado": "cerrada",
+    "saldo_inicial": "0.00",
+    "efectivo": "0.00",
+    "tarjeta": "0.00",
+    "transferencia": "0.00",
+    "total_pagos": "0.00",
+    "saldo_final_declarado": "1800.00",
+    "abierta_en": "2026-02-07T02:34:18.822Z",
+    "cerrada_en": "2026-02-03T01:00:00Z",
+    "notas": ""
+  }
+},
+{
+  "model": "caja.cashsession",
+  "pk": 29,
+  "fields": {
+    "fecha": "2026-02-07",
+    "estado": "cerrada",
+    "saldo_inicial": "500.00",
+    "efectivo": "0.00",
+    "tarjeta": "0.00",
+    "transferencia": "0.00",
+    "total_pagos": "0.00",
+    "saldo_final_declarado": "8700.00",
+    "abierta_en": "2026-02-07T03:56:38.234Z",
+    "cerrada_en": "2026-02-08T02:27:24.999Z",
+    "notas": ""
+  }
+},
+{
+  "model": "caja.cashsession",
+  "pk": 30,
+  "fields": {
+    "fecha": "2026-02-08",
+    "estado": "cerrada",
+    "saldo_inicial": "0.00",
+    "efectivo": "0.00",
+    "tarjeta": "0.00",
+    "transferencia": "0.00",
+    "total_pagos": "0.00",
+    "saldo_final_declarado": null,
+    "abierta_en": "2026-02-08T03:51:16.262Z",
+    "cerrada_en": null,
+    "notas": ""
+  }
+},
+{
+  "model": "caja.cashsession",
+  "pk": 32,
+  "fields": {
+    "fecha": "2026-02-09",
+    "estado": "cerrada",
+    "saldo_inicial": "0.00",
+    "efectivo": "0.00",
+    "tarjeta": "0.00",
+    "transferencia": "0.00",
+    "total_pagos": "0.00",
+    "saldo_final_declarado": null,
+    "abierta_en": "2026-02-09T05:39:33.013Z",
+    "cerrada_en": null,
+    "notas": ""
+  }
+},
+{
+  "model": "caja.cashsession",
+  "pk": 34,
+  "fields": {
+    "fecha": "2026-02-10",
+    "estado": "cerrada",
+    "saldo_inicial": "1400.00",
+    "efectivo": "10800.00",
+    "tarjeta": "0.00",
+    "transferencia": "4700.00",
+    "total_pagos": "15500.00",
+    "saldo_final_declarado": "13900.00",
+    "abierta_en": "2026-02-11T03:54:05.919Z",
+    "cerrada_en": "2026-02-10T04:07:33Z",
+    "notas": ""
+  }
+},
+{
+  "model": "caja.cashsession",
+  "pk": 35,
+  "fields": {
+    "fecha": "2026-02-11",
+    "estado": "abierta",
+    "saldo_inicial": "900.00",
+    "efectivo": "0.00",
+    "tarjeta": "0.00",
+    "transferencia": "0.00",
+    "total_pagos": "0.00",
+    "saldo_final_declarado": null,
+    "abierta_en": "2026-02-11T18:30:21.894Z",
+    "cerrada_en": null,
+    "notas": ""
+  }
+},
+{
+  "model": "caja.cashsession",
+  "pk": 36,
+  "fields": {
+    "fecha": "2026-02-12",
+    "estado": "cerrada",
+    "saldo_inicial": "500.00",
+    "efectivo": "0.00",
+    "tarjeta": "0.00",
+    "transferencia": "0.00",
+    "total_pagos": "0.00",
+    "saldo_final_declarado": "9950.00",
+    "abierta_en": "2026-02-12T04:54:39.635Z",
+    "cerrada_en": "2026-02-13T00:00:00Z",
+    "notas": ""
+  }
+},
+{
+  "model": "caja.cashsession",
+  "pk": 37,
+  "fields": {
+    "fecha": "2026-02-13",
+    "estado": "abierta",
+    "saldo_inicial": "1100.00",
+    "efectivo": "0.00",
+    "tarjeta": "0.00",
+    "transferencia": "0.00",
+    "total_pagos": "0.00",
+    "saldo_final_declarado": null,
+    "abierta_en": "2026-02-13T12:35:03.319Z",
+    "cerrada_en": null,
+    "notas": ""
+  }
+},
+{
+  "model": "caja.cashsession",
+  "pk": 38,
+  "fields": {
+    "fecha": "2026-02-14",
+    "estado": "abierta",
+    "saldo_inicial": "700.00",
+    "efectivo": "0.00",
+    "tarjeta": "0.00",
+    "transferencia": "0.00",
+    "total_pagos": "0.00",
+    "saldo_final_declarado": null,
+    "abierta_en": "2026-02-14T14:15:32.447Z",
+    "cerrada_en": null,
+    "notas": ""
+  }
+},
+{
+  "model": "caja.cashsession",
+  "pk": 39,
+  "fields": {
+    "fecha": "2026-02-15",
+    "estado": "abierta",
+    "saldo_inicial": "0.00",
+    "efectivo": "0.00",
+    "tarjeta": "0.00",
+    "transferencia": "0.00",
+    "total_pagos": "0.00",
+    "saldo_final_declarado": null,
+    "abierta_en": "2026-02-16T02:56:12.132Z",
+    "cerrada_en": null,
+    "notas": ""
+  }
+},
+{
+  "model": "caja.cashsession",
+  "pk": 40,
+  "fields": {
+    "fecha": "2026-02-17",
+    "estado": "abierta",
+    "saldo_inicial": "0.00",
+    "efectivo": "0.00",
+    "tarjeta": "0.00",
+    "transferencia": "0.00",
+    "total_pagos": "0.00",
+    "saldo_final_declarado": null,
+    "abierta_en": "2026-02-17T17:32:47.275Z",
+    "cerrada_en": null,
+    "notas": ""
+  }
+},
+{
+  "model": "caja.cashsession",
+  "pk": 41,
+  "fields": {
+    "fecha": "2026-02-18",
+    "estado": "abierta",
+    "saldo_inicial": "0.00",
+    "efectivo": "0.00",
+    "tarjeta": "0.00",
+    "transferencia": "0.00",
+    "total_pagos": "0.00",
+    "saldo_final_declarado": null,
+    "abierta_en": "2026-02-18T13:56:53.527Z",
+    "cerrada_en": null,
+    "notas": ""
+  }
+},
+{
+  "model": "caja.cashsession",
+  "pk": 42,
+  "fields": {
+    "fecha": "2026-02-24",
+    "estado": "abierta",
+    "saldo_inicial": "0.00",
+    "efectivo": "0.00",
+    "tarjeta": "0.00",
+    "transferencia": "0.00",
+    "total_pagos": "0.00",
+    "saldo_final_declarado": null,
+    "abierta_en": "2026-02-24T18:43:36.903Z",
+    "cerrada_en": null,
+    "notas": ""
+  }
+},
+{
+  "model": "caja.cashsession",
+  "pk": 43,
+  "fields": {
+    "fecha": "2026-02-25",
+    "estado": "abierta",
+    "saldo_inicial": "0.00",
+    "efectivo": "0.00",
+    "tarjeta": "0.00",
+    "transferencia": "0.00",
+    "total_pagos": "0.00",
+    "saldo_final_declarado": null,
+    "abierta_en": "2026-02-25T14:35:14.065Z",
+    "cerrada_en": null,
+    "notas": ""
+  }
+},
+{
+  "model": "caja.cashsession",
+  "pk": 44,
+  "fields": {
+    "fecha": "2026-02-26",
+    "estado": "abierta",
+    "saldo_inicial": "0.00",
+    "efectivo": "0.00",
+    "tarjeta": "0.00",
+    "transferencia": "0.00",
+    "total_pagos": "0.00",
+    "saldo_final_declarado": null,
+    "abierta_en": "2026-02-26T12:47:55.721Z",
+    "cerrada_en": null,
+    "notas": ""
+  }
+},
+{
+  "model": "caja.cashsession",
+  "pk": 45,
+  "fields": {
+    "fecha": "2026-03-01",
+    "estado": "abierta",
+    "saldo_inicial": "0.00",
+    "efectivo": "0.00",
+    "tarjeta": "0.00",
+    "transferencia": "0.00",
+    "total_pagos": "0.00",
+    "saldo_final_declarado": null,
+    "abierta_en": "2026-03-02T00:01:43.222Z",
+    "cerrada_en": null,
+    "notas": ""
+  }
+},
+{
+  "model": "caja.cashsession",
+  "pk": 46,
+  "fields": {
+    "fecha": "2026-03-02",
+    "estado": "abierta",
+    "saldo_inicial": "0.00",
+    "efectivo": "0.00",
+    "tarjeta": "0.00",
+    "transferencia": "0.00",
+    "total_pagos": "0.00",
+    "saldo_final_declarado": null,
+    "abierta_en": "2026-03-02T08:44:49.763Z",
+    "cerrada_en": null,
+    "notas": ""
+  }
+},
+{
+  "model": "caja.cashsession",
+  "pk": 47,
+  "fields": {
+    "fecha": "2026-03-03",
+    "estado": "cerrada",
+    "saldo_inicial": "1000.00",
+    "efectivo": "6900.00",
+    "tarjeta": "0.00",
+    "transferencia": "12300.00",
+    "total_pagos": "19200.00",
+    "saldo_final_declarado": "5000.00",
+    "abierta_en": "2026-03-03T06:22:43.713Z",
+    "cerrada_en": "2026-03-04T01:52:21.676Z",
+    "notas": ""
+  }
+},
+{
+  "model": "caja.cashsession",
+  "pk": 48,
+  "fields": {
+    "fecha": "2026-03-04",
+    "estado": "cerrada",
+    "saldo_inicial": "1000.00",
+    "efectivo": "6900.00",
+    "tarjeta": "0.00",
+    "transferencia": "900.00",
+    "total_pagos": "7800.00",
+    "saldo_final_declarado": "5400.00",
+    "abierta_en": "2026-03-04T05:30:17.243Z",
+    "cerrada_en": "2026-03-05T00:44:25.008Z",
+    "notas": ""
+  }
+},
+{
+  "model": "caja.cashsession",
+  "pk": 49,
+  "fields": {
+    "fecha": "2026-03-05",
+    "estado": "cerrada",
+    "saldo_inicial": "1500.00",
+    "efectivo": "13600.00",
+    "tarjeta": "0.00",
+    "transferencia": "2200.00",
+    "total_pagos": "15800.00",
+    "saldo_final_declarado": "11700.00",
+    "abierta_en": "2026-03-05T15:45:19.347Z",
+    "cerrada_en": "2026-03-06T01:48:31.017Z",
+    "notas": ""
+  }
+},
+{
+  "model": "caja.cashsession",
+  "pk": 50,
+  "fields": {
+    "fecha": "2026-03-06",
+    "estado": "cerrada",
+    "saldo_inicial": "1500.00",
+    "efectivo": "0.00",
+    "tarjeta": "0.00",
+    "transferencia": "0.00",
+    "total_pagos": "0.00",
+    "saldo_final_declarado": "13000.00",
+    "abierta_en": "2026-03-06T04:17:23.520Z",
+    "cerrada_en": "2026-03-07T01:00:00Z",
+    "notas": ""
+  }
+},
+{
+  "model": "caja.cashsession",
+  "pk": 51,
+  "fields": {
+    "fecha": "2026-03-07",
+    "estado": "abierta",
+    "saldo_inicial": "1000.00",
+    "efectivo": "0.00",
+    "tarjeta": "0.00",
+    "transferencia": "0.00",
+    "total_pagos": "0.00",
+    "saldo_final_declarado": null,
+    "abierta_en": "2026-03-07T10:31:24.443Z",
+    "cerrada_en": null,
+    "notas": ""
+  }
+},
+{
+  "model": "caja.cashsession",
+  "pk": 52,
+  "fields": {
+    "fecha": "2026-03-09",
+    "estado": "abierta",
+    "saldo_inicial": "0.00",
+    "efectivo": "0.00",
+    "tarjeta": "0.00",
+    "transferencia": "0.00",
+    "total_pagos": "0.00",
+    "saldo_final_declarado": null,
+    "abierta_en": "2026-03-09T21:13:54.761Z",
+    "cerrada_en": null,
+    "notas": ""
+  }
+},
+{
+  "model": "caja.cashsession",
+  "pk": 53,
+  "fields": {
+    "fecha": "2026-03-11",
+    "estado": "abierta",
+    "saldo_inicial": "0.00",
+    "efectivo": "0.00",
+    "tarjeta": "0.00",
+    "transferencia": "0.00",
+    "total_pagos": "0.00",
+    "saldo_final_declarado": null,
+    "abierta_en": "2026-03-11T03:39:11.022Z",
+    "cerrada_en": null,
+    "notas": ""
+  }
+},
+{
+  "model": "caja.cashsession",
+  "pk": 54,
+  "fields": {
+    "fecha": "2026-03-13",
+    "estado": "abierta",
+    "saldo_inicial": "1500.00",
+    "efectivo": "0.00",
+    "tarjeta": "0.00",
+    "transferencia": "0.00",
+    "total_pagos": "0.00",
+    "saldo_final_declarado": null,
+    "abierta_en": "2026-03-13T03:29:32.522Z",
+    "cerrada_en": null,
+    "notas": ""
+  }
+},
+{
+  "model": "caja.cashsession",
+  "pk": 55,
+  "fields": {
+    "fecha": "2026-03-15",
+    "estado": "abierta",
+    "saldo_inicial": "0.00",
+    "efectivo": "0.00",
+    "tarjeta": "0.00",
+    "transferencia": "0.00",
+    "total_pagos": "0.00",
+    "saldo_final_declarado": null,
+    "abierta_en": "2026-03-15T21:38:11.161Z",
+    "cerrada_en": null,
+    "notas": ""
+  }
+},
+{
+  "model": "caja.cashsession",
+  "pk": 56,
+  "fields": {
+    "fecha": "2026-03-16",
+    "estado": "abierta",
+    "saldo_inicial": "0.00",
+    "efectivo": "0.00",
+    "tarjeta": "0.00",
+    "transferencia": "0.00",
+    "total_pagos": "0.00",
+    "saldo_final_declarado": null,
+    "abierta_en": "2026-03-16T03:11:50.000Z",
+    "cerrada_en": null,
+    "notas": ""
+  }
+},
+{
+  "model": "caja.cashsession",
+  "pk": 57,
+  "fields": {
+    "fecha": "2026-03-23",
+    "estado": "cerrada",
+    "saldo_inicial": "2000.00",
+    "efectivo": "15900.00",
+    "tarjeta": "0.00",
+    "transferencia": "2000.00",
+    "total_pagos": "17900.00",
+    "saldo_final_declarado": "14600.00",
+    "abierta_en": "2026-03-23T13:40:15.342Z",
+    "cerrada_en": "2026-03-24T02:03:49.819Z",
+    "notas": ""
+  }
+},
+{
+  "model": "caja.cashsession",
+  "pk": 58,
+  "fields": {
+    "fecha": "2026-03-24",
+    "estado": "cerrada",
+    "saldo_inicial": "2000.00",
+    "efectivo": "14200.00",
+    "tarjeta": "0.00",
+    "transferencia": "1300.00",
+    "total_pagos": "15500.00",
+    "saldo_final_declarado": "15380.00",
+    "abierta_en": "2026-03-24T04:25:28.513Z",
+    "cerrada_en": "2026-03-24T21:59:14.272Z",
+    "notas": ""
+  }
+},
+{
+  "model": "caja.cashsession",
+  "pk": 59,
+  "fields": {
+    "fecha": "2026-03-25",
+    "estado": "cerrada",
+    "saldo_inicial": "1400.00",
+    "efectivo": "17900.00",
+    "tarjeta": "0.00",
+    "transferencia": "3100.00",
+    "total_pagos": "21000.00",
+    "saldo_final_declarado": "15920.00",
+    "abierta_en": "2026-03-25T14:07:27.802Z",
+    "cerrada_en": "2026-03-26T01:33:45.640Z",
+    "notas": ""
+  }
+},
+{
+  "model": "caja.cashsession",
+  "pk": 60,
+  "fields": {
+    "fecha": "2026-03-27",
+    "estado": "cerrada",
+    "saldo_inicial": "1500.00",
+    "efectivo": "7800.00",
+    "tarjeta": "0.00",
+    "transferencia": "0.00",
+    "total_pagos": "7860.00",
+    "saldo_final_declarado": "10040.00",
+    "abierta_en": "2026-03-27T03:27:51.933Z",
+    "cerrada_en": "2026-03-28T00:00:00Z",
+    "notas": ""
+  }
+},
+{
+  "model": "caja.cashsession",
+  "pk": 61,
+  "fields": {
+    "fecha": "2026-03-28",
+    "estado": "abierta",
+    "saldo_inicial": "700.00",
+    "efectivo": "0.00",
+    "tarjeta": "0.00",
+    "transferencia": "0.00",
+    "total_pagos": "0.00",
+    "saldo_final_declarado": null,
+    "abierta_en": "2026-03-28T13:44:10.938Z",
+    "cerrada_en": null,
+    "notas": ""
+  }
+},
+{
+  "model": "caja.cashsession",
+  "pk": 62,
+  "fields": {
+    "fecha": "2026-03-29",
+    "estado": "abierta",
+    "saldo_inicial": "0.00",
+    "efectivo": "0.00",
+    "tarjeta": "0.00",
+    "transferencia": "0.00",
+    "total_pagos": "0.00",
+    "saldo_final_declarado": null,
+    "abierta_en": "2026-03-29T03:45:45.695Z",
+    "cerrada_en": null,
+    "notas": ""
+  }
+},
+{
+  "model": "caja.cashsession",
+  "pk": 63,
+  "fields": {
+    "fecha": "2026-03-30",
+    "estado": "cerrada",
+    "saldo_inicial": "1200.00",
+    "efectivo": "29300.00",
+    "tarjeta": "0.00",
+    "transferencia": "8000.00",
+    "total_pagos": "37300.00",
+    "saldo_final_declarado": "32400.00",
+    "abierta_en": "2026-03-30T10:36:42.561Z",
+    "cerrada_en": "2026-03-31T01:27:16Z",
+    "notas": ""
+  }
+},
+{
+  "model": "caja.cashsession",
+  "pk": 64,
+  "fields": {
+    "fecha": "2026-03-31",
+    "estado": "cerrada",
+    "saldo_inicial": "2000.00",
+    "efectivo": "9900.00",
+    "tarjeta": "0.00",
+    "transferencia": "0.00",
+    "total_pagos": "9900.00",
+    "saldo_final_declarado": "11900.00",
+    "abierta_en": "2026-03-31T07:29:17.861Z",
+    "cerrada_en": "2026-04-01T01:00:00Z",
+    "notas": ""
+  }
+},
+{
+  "model": "caja.cashsession",
+  "pk": 65,
+  "fields": {
+    "fecha": "2026-04-01",
+    "estado": "abierta",
+    "saldo_inicial": "0.00",
+    "efectivo": "0.00",
+    "tarjeta": "0.00",
+    "transferencia": "0.00",
+    "total_pagos": "0.00",
+    "saldo_final_declarado": null,
+    "abierta_en": "2026-04-01T11:22:02.185Z",
+    "cerrada_en": null,
+    "notas": ""
+  }
+},
+{
+  "model": "caja.cashsession",
+  "pk": 66,
+  "fields": {
+    "fecha": "2026-04-02",
+    "estado": "abierta",
+    "saldo_inicial": "0.00",
+    "efectivo": "0.00",
+    "tarjeta": "0.00",
+    "transferencia": "0.00",
+    "total_pagos": "0.00",
+    "saldo_final_declarado": null,
+    "abierta_en": "2026-04-02T18:47:26.495Z",
+    "cerrada_en": null,
+    "notas": ""
+  }
+},
+{
+  "model": "caja.cashsession",
+  "pk": 67,
+  "fields": {
+    "fecha": "2026-04-06",
+    "estado": "cerrada",
+    "saldo_inicial": "1200.00",
+    "efectivo": "10900.00",
+    "tarjeta": "0.00",
+    "transferencia": "5000.00",
+    "total_pagos": "15900.00",
+    "saldo_final_declarado": "8420.00",
+    "abierta_en": "2026-04-06T14:11:39.945Z",
+    "cerrada_en": "2026-04-07T01:29:59.147Z",
+    "notas": ""
+  }
+},
+{
+  "model": "caja.cashsession",
+  "pk": 68,
+  "fields": {
+    "fecha": "2026-04-07",
+    "estado": "cerrada",
+    "saldo_inicial": "1400.00",
+    "efectivo": "8900.00",
+    "tarjeta": "0.00",
+    "transferencia": "3100.00",
+    "total_pagos": "12000.00",
+    "saldo_final_declarado": "9700.00",
+    "abierta_en": "2026-04-07T05:45:33.896Z",
+    "cerrada_en": "2026-04-08T02:10:04.878Z",
+    "notas": ""
+  }
+},
+{
+  "model": "caja.cashsession",
+  "pk": 69,
+  "fields": {
+    "fecha": "2026-04-08",
+    "estado": "cerrada",
+    "saldo_inicial": "1000.00",
+    "efectivo": "9600.00",
+    "tarjeta": "0.00",
+    "transferencia": "4200.00",
+    "total_pagos": "13800.00",
+    "saldo_final_declarado": "7850.00",
+    "abierta_en": "2026-04-08T03:12:20.371Z",
+    "cerrada_en": "2026-04-09T01:23:16.310Z",
+    "notas": ""
+  }
+},
+{
+  "model": "caja.cashsession",
+  "pk": 70,
+  "fields": {
+    "fecha": "2026-04-09",
+    "estado": "cerrada",
+    "saldo_inicial": "1000.00",
+    "efectivo": "4600.00",
+    "tarjeta": "4400.00",
+    "transferencia": "4100.00",
+    "total_pagos": "13100.00",
+    "saldo_final_declarado": "2950.00",
+    "abierta_en": "2026-04-09T03:02:34.061Z",
+    "cerrada_en": "2026-04-10T01:28:28.353Z",
+    "notas": ""
+  }
+},
+{
+  "model": "caja.cashsession",
+  "pk": 71,
+  "fields": {
+    "fecha": "2026-04-10",
+    "estado": "cerrada",
+    "saldo_inicial": "1000.00",
+    "efectivo": "11400.00",
+    "tarjeta": "0.00",
+    "transferencia": "3400.00",
+    "total_pagos": "14800.00",
+    "saldo_final_declarado": "13300.00",
+    "abierta_en": "2026-04-10T03:41:16.122Z",
+    "cerrada_en": "2026-04-10T22:04:06.223Z",
+    "notas": ""
+  }
+},
+{
+  "model": "caja.cashsession",
+  "pk": 72,
+  "fields": {
+    "fecha": "2026-04-11",
+    "estado": "abierta",
+    "saldo_inicial": "0.00",
+    "efectivo": "0.00",
+    "tarjeta": "0.00",
+    "transferencia": "0.00",
+    "total_pagos": "0.00",
+    "saldo_final_declarado": null,
+    "abierta_en": "2026-04-11T03:35:08.959Z",
+    "cerrada_en": null,
+    "notas": ""
+  }
+},
+{
+  "model": "caja.cashsession",
+  "pk": 73,
+  "fields": {
+    "fecha": "2026-05-06",
+    "estado": "abierta",
+    "saldo_inicial": "0.00",
+    "efectivo": "0.00",
+    "tarjeta": "0.00",
+    "transferencia": "0.00",
+    "total_pagos": "0.00",
+    "saldo_final_declarado": null,
+    "abierta_en": "2026-05-06T09:34:40.914Z",
+    "cerrada_en": null,
+    "notas": ""
+  }
+},
+{
+  "model": "caja.movimientocaja",
+  "pk": 13,
+  "fields": {
+    "caja": 19,
+    "tipo": "salida",
+    "concepto": "Insumos",
+    "monto": "2000.00",
+    "fecha": "2026-01-26T16:44:08.792Z"
+  }
+},
+{
+  "model": "caja.movimientocaja",
+  "pk": 14,
+  "fields": {
+    "caja": 19,
+    "tipo": "salida",
+    "concepto": "Cena",
+    "monto": "450.00",
+    "fecha": "2026-01-27T00:48:10.776Z"
+  }
+},
+{
+  "model": "caja.movimientocaja",
+  "pk": 15,
+  "fields": {
+    "caja": 19,
+    "tipo": "salida",
+    "concepto": "Peluquería",
+    "monto": "1200.00",
+    "fecha": "2026-01-27T00:50:46.603Z"
+  }
+},
+{
+  "model": "caja.movimientocaja",
+  "pk": 16,
+  "fields": {
+    "caja": 21,
+    "tipo": "salida",
+    "concepto": "supermercado",
+    "monto": "900.00",
+    "fecha": "2026-01-28T23:52:21.144Z"
+  }
+},
+{
+  "model": "caja.movimientocaja",
+  "pk": 18,
+  "fields": {
+    "caja": 27,
+    "tipo": "salida",
+    "concepto": "Vitamina Felipe",
+    "monto": "380.00",
+    "fecha": "2026-02-07T00:37:25.444Z"
+  }
+},
+{
+  "model": "caja.movimientocaja",
+  "pk": 19,
+  "fields": {
+    "caja": 27,
+    "tipo": "salida",
+    "concepto": "compra insumos",
+    "monto": "2000.00",
+    "fecha": "2026-02-07T02:15:20.919Z"
+  }
+},
+{
+  "model": "caja.movimientocaja",
+  "pk": 20,
+  "fields": {
+    "caja": 29,
+    "tipo": "salida",
+    "concepto": "Compra insumos",
+    "monto": "2000.00",
+    "fecha": "2026-02-08T02:15:47.629Z"
+  }
+},
+{
+  "model": "caja.movimientocaja",
+  "pk": 21,
+  "fields": {
+    "caja": 36,
+    "tipo": "salida",
+    "concepto": "compra insumos",
+    "monto": "2000.00",
+    "fecha": "2026-02-13T13:17:32.164Z"
+  }
+},
+{
+  "model": "caja.movimientocaja",
+  "pk": 22,
+  "fields": {
+    "caja": 47,
+    "tipo": "salida",
+    "concepto": "Supermercado",
+    "monto": "900.00",
+    "fecha": "2026-03-04T01:51:26.351Z"
+  }
+},
+{
+  "model": "caja.movimientocaja",
+  "pk": 23,
+  "fields": {
+    "caja": 48,
+    "tipo": "salida",
+    "concepto": "Compra insumos",
+    "monto": "2500.00",
+    "fecha": "2026-03-05T00:40:57.243Z"
+  }
+},
+{
+  "model": "caja.movimientocaja",
+  "pk": 24,
+  "fields": {
+    "caja": 49,
+    "tipo": "salida",
+    "concepto": "contenciones",
+    "monto": "1000.00",
+    "fecha": "2026-03-05T18:57:57.465Z"
+  }
+},
+{
+  "model": "caja.movimientocaja",
+  "pk": 25,
+  "fields": {
+    "caja": 49,
+    "tipo": "salida",
+    "concepto": "compra insumos",
+    "monto": "2000.00",
+    "fecha": "2026-03-06T01:45:16.130Z"
+  }
+},
+{
+  "model": "caja.movimientocaja",
+  "pk": 26,
+  "fields": {
+    "caja": 57,
+    "tipo": "salida",
+    "concepto": "Fivisa",
+    "monto": "1168.00",
+    "fecha": "2026-03-23T16:23:55.584Z"
+  }
+},
+{
+  "model": "caja.movimientocaja",
+  "pk": 27,
+  "fields": {
+    "caja": 57,
+    "tipo": "salida",
+    "concepto": "compra insumos",
+    "monto": "2500.00",
+    "fecha": "2026-03-23T22:16:39.391Z"
+  }
+},
+{
+  "model": "caja.movimientocaja",
+  "pk": 28,
+  "fields": {
+    "caja": 57,
+    "tipo": "salida",
+    "concepto": "Cena",
+    "monto": "4000.00",
+    "fecha": "2026-03-24T02:00:36.773Z"
+  }
+},
+{
+  "model": "caja.movimientocaja",
+  "pk": 29,
+  "fields": {
+    "caja": 58,
+    "tipo": "salida",
+    "concepto": "El Clon",
+    "monto": "720.00",
+    "fecha": "2026-03-24T14:57:39.354Z"
+  }
+},
+{
+  "model": "caja.movimientocaja",
+  "pk": 30,
+  "fields": {
+    "caja": 58,
+    "tipo": "salida",
+    "concepto": "Estacionamiento",
+    "monto": "100.00",
+    "fecha": "2026-03-24T21:55:44.166Z"
+  }
+},
+{
+  "model": "caja.movimientocaja",
+  "pk": 31,
+  "fields": {
+    "caja": 59,
+    "tipo": "salida",
+    "concepto": "Kiosco Pabla",
+    "monto": "880.00",
+    "fecha": "2026-03-25T20:15:05.814Z"
+  }
+},
+{
+  "model": "caja.movimientocaja",
+  "pk": 32,
+  "fields": {
+    "caja": 59,
+    "tipo": "salida",
+    "concepto": "compra insumos",
+    "monto": "2000.00",
+    "fecha": "2026-03-26T01:30:50.055Z"
+  }
+},
+{
+  "model": "caja.movimientocaja",
+  "pk": 33,
+  "fields": {
+    "caja": 60,
+    "tipo": "salida",
+    "concepto": "Kiosco Pabla",
+    "monto": "360.00",
+    "fecha": "2026-03-27T19:01:55.873Z"
+  }
+},
+{
+  "model": "caja.movimientocaja",
+  "pk": 34,
+  "fields": {
+    "caja": 60,
+    "tipo": "salida",
+    "concepto": "Pago Nico Laboratorio",
+    "monto": "5500.00",
+    "fecha": "2026-03-28T13:49:56.302Z"
+  }
+},
+{
+  "model": "caja.movimientocaja",
+  "pk": 35,
+  "fields": {
+    "caja": 60,
+    "tipo": "salida",
+    "concepto": "compra insumos",
+    "monto": "2000.00",
+    "fecha": "2026-03-28T13:50:42.358Z"
+  }
+},
+{
+  "model": "caja.movimientocaja",
+  "pk": 36,
+  "fields": {
+    "caja": 63,
+    "tipo": "salida",
+    "concepto": "Rodrigo",
+    "monto": "600.00",
+    "fecha": "2026-03-31T00:11:12.664Z"
+  }
+},
+{
+  "model": "caja.movimientocaja",
+  "pk": 37,
+  "fields": {
+    "caja": 63,
+    "tipo": "salida",
+    "concepto": "Valeria",
+    "monto": "2000.00",
+    "fecha": "2026-03-31T00:11:37.379Z"
+  }
+},
+{
+  "model": "caja.movimientocaja",
+  "pk": 38,
+  "fields": {
+    "caja": 67,
+    "tipo": "salida",
+    "concepto": "compra insumos",
+    "monto": "2000.00",
+    "fecha": "2026-04-06T15:15:52.610Z"
+  }
+},
+{
+  "model": "caja.movimientocaja",
+  "pk": 39,
+  "fields": {
+    "caja": 67,
+    "tipo": "salida",
+    "concepto": "OSE",
+    "monto": "440.00",
+    "fecha": "2026-04-06T16:53:10.813Z"
+  }
+},
+{
+  "model": "caja.movimientocaja",
+  "pk": 40,
+  "fields": {
+    "caja": 67,
+    "tipo": "salida",
+    "concepto": "Kiosco Pabla",
+    "monto": "650.00",
+    "fecha": "2026-04-06T17:13:52.191Z"
+  }
+},
+{
+  "model": "caja.movimientocaja",
+  "pk": 41,
+  "fields": {
+    "caja": 67,
+    "tipo": "salida",
+    "concepto": "Cena",
+    "monto": "750.00",
+    "fecha": "2026-04-07T00:54:50.956Z"
+  }
+},
+{
+  "model": "caja.movimientocaja",
+  "pk": 42,
+  "fields": {
+    "caja": 67,
+    "tipo": "salida",
+    "concepto": "Almuerzo",
+    "monto": "930.00",
+    "fecha": "2026-04-07T01:12:12.816Z"
+  }
+},
+{
+  "model": "caja.movimientocaja",
+  "pk": 43,
+  "fields": {
+    "caja": 68,
+    "tipo": "salida",
+    "concepto": "Kiosco",
+    "monto": "600.00",
+    "fecha": "2026-04-08T02:06:38.261Z"
+  }
+},
+{
+  "model": "caja.movimientocaja",
+  "pk": 44,
+  "fields": {
+    "caja": 69,
+    "tipo": "salida",
+    "concepto": "Aromatizador",
+    "monto": "750.00",
+    "fecha": "2026-04-09T00:58:13.161Z"
+  }
+},
+{
+  "model": "caja.movimientocaja",
+  "pk": 45,
+  "fields": {
+    "caja": 69,
+    "tipo": "salida",
+    "concepto": "Compresor, Pro limpio, Cable y Kiosco",
+    "monto": "2000.00",
+    "fecha": "2026-04-09T01:28:32.669Z"
+  }
+},
+{
+  "model": "caja.movimientocaja",
+  "pk": 46,
+  "fields": {
+    "caja": 70,
+    "tipo": "salida",
+    "concepto": "Almuerzo",
+    "monto": "750.00",
+    "fecha": "2026-04-09T17:47:48.750Z"
+  }
+},
+{
+  "model": "caja.movimientocaja",
+  "pk": 47,
+  "fields": {
+    "caja": 70,
+    "tipo": "salida",
+    "concepto": "compra insumos",
+    "monto": "2000.00",
+    "fecha": "2026-04-09T23:51:48.431Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 10,
+  "fields": {
+    "caja": null,
+    "paciente": "Emanuel Gallegos",
+    "monto": "1200.00",
+    "metodo": "efectivo",
+    "concepto": "bk",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-01-18T00:52:30.847Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 11,
+  "fields": {
+    "caja": null,
+    "paciente": "Sofia Sosa",
+    "monto": "800.00",
+    "metodo": "transferencia",
+    "concepto": "800",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-01-18T00:59:26.895Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 12,
+  "fields": {
+    "caja": null,
+    "paciente": "Sofia Colman",
+    "monto": "800.00",
+    "metodo": "transferencia",
+    "concepto": "bk",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-01-18T01:00:13.274Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 13,
+  "fields": {
+    "caja": null,
+    "paciente": "Kevin Gómez",
+    "monto": "2000.00",
+    "metodo": "efectivo",
+    "concepto": "bk",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-01-18T01:00:45.436Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 14,
+  "fields": {
+    "caja": null,
+    "paciente": "Agustina Camino",
+    "monto": "800.00",
+    "metodo": "efectivo",
+    "concepto": "bk",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-01-18T01:01:24.088Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 15,
+  "fields": {
+    "caja": null,
+    "paciente": "Luis Romero",
+    "monto": "800.00",
+    "metodo": "efectivo",
+    "concepto": "bk",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-01-18T01:01:57.687Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 16,
+  "fields": {
+    "caja": null,
+    "paciente": "Daniela Romero",
+    "monto": "800.00",
+    "metodo": "efectivo",
+    "concepto": "bk",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-01-18T01:02:16.952Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 17,
+  "fields": {
+    "caja": null,
+    "paciente": "Paulina Acosta",
+    "monto": "900.00",
+    "metodo": "transferencia",
+    "concepto": "bk",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-01-18T01:03:04.540Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 18,
+  "fields": {
+    "caja": null,
+    "paciente": "Maria Spinillo",
+    "monto": "800.00",
+    "metodo": "efectivo",
+    "concepto": "bk",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-01-18T01:03:40.670Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 19,
+  "fields": {
+    "caja": null,
+    "paciente": "Nathali Rivero",
+    "monto": "800.00",
+    "metodo": "efectivo",
+    "concepto": "bk",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-01-18T01:04:09.536Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 20,
+  "fields": {
+    "caja": null,
+    "paciente": "Taira Diaz",
+    "monto": "800.00",
+    "metodo": "efectivo",
+    "concepto": "bk",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-01-18T01:04:46.631Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 21,
+  "fields": {
+    "caja": null,
+    "paciente": "Benjamin Delgado",
+    "monto": "1000.00",
+    "metodo": "efectivo",
+    "concepto": "bk",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-01-18T01:05:17.993Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 22,
+  "fields": {
+    "caja": null,
+    "paciente": "Antonella Cossio",
+    "monto": "800.00",
+    "metodo": "transferencia",
+    "concepto": "bk",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-01-18T01:06:04.279Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 23,
+  "fields": {
+    "caja": null,
+    "paciente": "Sofia Dávila",
+    "monto": "800.00",
+    "metodo": "transferencia",
+    "concepto": "bk",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-01-18T01:06:37.594Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 24,
+  "fields": {
+    "caja": null,
+    "paciente": "Santiago da Rocha",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "bk",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-01-18T01:07:06.481Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 25,
+  "fields": {
+    "caja": null,
+    "paciente": "Zhamara Monzón",
+    "monto": "1300.00",
+    "metodo": "transferencia",
+    "concepto": "bk",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-01-18T01:07:56.302Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 26,
+  "fields": {
+    "caja": null,
+    "paciente": "Graciela Díaz",
+    "monto": "800.00",
+    "metodo": "transferencia",
+    "concepto": "bk",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-01-18T01:08:33.092Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 27,
+  "fields": {
+    "caja": null,
+    "paciente": "Noelia Umpierrez",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "bk",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-01-18T01:09:17.772Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 34,
+  "fields": {
+    "caja": null,
+    "paciente": "Zhamara Monzón",
+    "monto": "2300.00",
+    "metodo": "efectivo",
+    "concepto": "Resina",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-01-20T02:18:18.639Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 35,
+  "fields": {
+    "caja": null,
+    "paciente": "Bautista Fontora",
+    "monto": "800.00",
+    "metodo": "efectivo",
+    "concepto": "bk",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-01-20T02:19:03.264Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 36,
+  "fields": {
+    "caja": null,
+    "paciente": "Luciana Marfetan",
+    "monto": "800.00",
+    "metodo": "efectivo",
+    "concepto": "bk",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-01-20T02:19:34.388Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 37,
+  "fields": {
+    "caja": null,
+    "paciente": "Luis Fernández",
+    "monto": "800.00",
+    "metodo": "efectivo",
+    "concepto": "bk",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-01-20T02:20:08.111Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 38,
+  "fields": {
+    "caja": null,
+    "paciente": "Florencia Damestoy",
+    "monto": "800.00",
+    "metodo": "efectivo",
+    "concepto": "bk",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-01-20T02:20:40.757Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 39,
+  "fields": {
+    "caja": null,
+    "paciente": "Luis Hernández",
+    "monto": "1500.00",
+    "metodo": "transferencia",
+    "concepto": "Retiro brackets",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-01-20T02:21:22.143Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 44,
+  "fields": {
+    "caja": 19,
+    "paciente": "Ezequiel Dominguez",
+    "monto": "800.00",
+    "metodo": "efectivo",
+    "concepto": "Control BK",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-01-26T14:16:03.602Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 45,
+  "fields": {
+    "caja": 19,
+    "paciente": "Melani Valles",
+    "monto": "800.00",
+    "metodo": "efectivo",
+    "concepto": "Control BK",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-01-26T14:22:45.885Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 46,
+  "fields": {
+    "caja": 19,
+    "paciente": "Benjamin Collazo",
+    "monto": "2000.00",
+    "metodo": "efectivo",
+    "concepto": "Nueva Colocación",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-01-26T15:36:49.146Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 47,
+  "fields": {
+    "caja": 19,
+    "paciente": "Victoria Velazques",
+    "monto": "800.00",
+    "metodo": "efectivo",
+    "concepto": "BK",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-01-26T15:37:28.544Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 48,
+  "fields": {
+    "caja": 19,
+    "paciente": "Jennifer Abalo",
+    "monto": "800.00",
+    "metodo": "efectivo",
+    "concepto": "BK",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-01-26T15:59:51.023Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 49,
+  "fields": {
+    "caja": 19,
+    "paciente": "Mauro Barreto",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "BK",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-01-26T16:47:19.748Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 50,
+  "fields": {
+    "caja": 19,
+    "paciente": "Valeria Alvarez",
+    "monto": "800.00",
+    "metodo": "efectivo",
+    "concepto": "BK",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-01-27T00:45:34.695Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 51,
+  "fields": {
+    "caja": 19,
+    "paciente": "Betina Puñales",
+    "monto": "2000.00",
+    "metodo": "efectivo",
+    "concepto": "Nueva Colocación",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-01-27T00:46:17.764Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 52,
+  "fields": {
+    "caja": 19,
+    "paciente": "Lucia Albarez",
+    "monto": "800.00",
+    "metodo": "efectivo",
+    "concepto": "BK",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-01-27T00:46:44.372Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 53,
+  "fields": {
+    "caja": 21,
+    "paciente": "Camila Diaz",
+    "monto": "800.00",
+    "metodo": "efectivo",
+    "concepto": "ajuste",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-01-28T23:49:31.274Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 54,
+  "fields": {
+    "caja": 21,
+    "paciente": "Trishia ",
+    "monto": "2000.00",
+    "metodo": "efectivo",
+    "concepto": "Colocacion",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-01-28T23:50:03.579Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 55,
+  "fields": {
+    "caja": 21,
+    "paciente": "Lucia",
+    "monto": "800.00",
+    "metodo": "transferencia",
+    "concepto": "Zimerman",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-01-28T23:50:31.126Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 56,
+  "fields": {
+    "caja": 21,
+    "paciente": "Jessica Ramos",
+    "monto": "800.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-01-28T23:51:10.520Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 57,
+  "fields": {
+    "caja": 21,
+    "paciente": "Karen Silva",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "ajuste",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-01-28T23:51:38.529Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 58,
+  "fields": {
+    "caja": 21,
+    "paciente": "Andres",
+    "monto": "1300.00",
+    "metodo": "efectivo",
+    "concepto": "extraccion",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-01-28T23:51:58.104Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 59,
+  "fields": {
+    "caja": null,
+    "paciente": "Mariana y Triana Guerrero",
+    "monto": "1800.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-02-02T14:29:30.117Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 61,
+  "fields": {
+    "caja": 27,
+    "paciente": "Shayan Rodriguez",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste ortodoncia",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-02-07T00:15:55.543Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 62,
+  "fields": {
+    "caja": 27,
+    "paciente": "Candela Ruiz",
+    "monto": "1200.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste ortodoncia ",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-02-07T00:17:06.464Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 63,
+  "fields": {
+    "caja": 27,
+    "paciente": "Clara Moreira",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste ortodoncia ",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-02-07T00:18:57.112Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 64,
+  "fields": {
+    "caja": 27,
+    "paciente": "Kevin   Gonzales",
+    "monto": "1000.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste ortodoncia ",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-02-07T00:21:35.022Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 65,
+  "fields": {
+    "caja": 27,
+    "paciente": "Sebastián Perez",
+    "monto": "1000.00",
+    "metodo": "transferencia",
+    "concepto": "Ajuste ortodoncia",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-02-07T00:22:46.599Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 66,
+  "fields": {
+    "caja": 27,
+    "paciente": "Melissa Rodriguez",
+    "monto": "900.00",
+    "metodo": "transferencia",
+    "concepto": "Ajuste ortodoncia ",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-02-07T00:29:22.997Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 67,
+  "fields": {
+    "caja": 27,
+    "paciente": "Sofía Sosa",
+    "monto": "900.00",
+    "metodo": "transferencia",
+    "concepto": "Ajuste ortodoncia ",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-02-07T00:30:29.445Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 68,
+  "fields": {
+    "caja": 27,
+    "paciente": "Keila, Simón y Tomás ",
+    "monto": "2800.00",
+    "metodo": "transferencia",
+    "concepto": "Ajuste ortodoncia",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-02-07T00:32:26.588Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 69,
+  "fields": {
+    "caja": 27,
+    "paciente": "Silvina Bustos y Santino",
+    "monto": "3000.00",
+    "metodo": "transferencia",
+    "concepto": "Ajuste ortodoncia",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-02-07T00:34:16.096Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 70,
+  "fields": {
+    "caja": 27,
+    "paciente": "Braian Gonzales",
+    "monto": "2000.00",
+    "metodo": "efectivo",
+    "concepto": "Colocación nueva",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-02-07T00:34:57.296Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 71,
+  "fields": {
+    "caja": 27,
+    "paciente": "Noelia Umoierrez",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste ortodoncia",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-02-07T00:35:45.472Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 72,
+  "fields": {
+    "caja": 27,
+    "paciente": "Nicolás Piriz",
+    "monto": "2000.00",
+    "metodo": "efectivo",
+    "concepto": "Colocación nueva",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-02-07T00:36:33.213Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 73,
+  "fields": {
+    "caja": 27,
+    "paciente": "Carlos Caceres",
+    "monto": "2000.00",
+    "metodo": "transferencia",
+    "concepto": "Colocación nueva ",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-02-07T00:37:03.819Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 74,
+  "fields": {
+    "caja": 29,
+    "paciente": "Maxi y Claudia",
+    "monto": "1800.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste ortodoncia",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-02-07T14:28:18.369Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 75,
+  "fields": {
+    "caja": 29,
+    "paciente": "Lorena Torres",
+    "monto": "900.00",
+    "metodo": "transferencia",
+    "concepto": "Ajuste ortodoncia",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-02-08T02:04:48.633Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 76,
+  "fields": {
+    "caja": 29,
+    "paciente": "Oriana Silvera",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste ortodoncia",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-02-08T02:05:27.872Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 77,
+  "fields": {
+    "caja": 29,
+    "paciente": "Brandon Galvan",
+    "monto": "2900.00",
+    "metodo": "transferencia",
+    "concepto": "Ajuste ortodoncia y nueva colocacion",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-02-08T02:06:17.508Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 78,
+  "fields": {
+    "caja": 29,
+    "paciente": "Maximiliano Pintos",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste ortodoncia",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-02-08T02:07:33.513Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 79,
+  "fields": {
+    "caja": 29,
+    "paciente": "Valeria Miguez e hijos",
+    "monto": "2700.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste ortodoncia",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-02-08T02:08:08.810Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 80,
+  "fields": {
+    "caja": 29,
+    "paciente": "Alex",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste ortodoncia",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-02-08T02:09:38.022Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 81,
+  "fields": {
+    "caja": 29,
+    "paciente": "Ana Rut",
+    "monto": "3500.00",
+    "metodo": "transferencia",
+    "concepto": "Extraccion y provisorio ",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-02-08T02:10:30.910Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 82,
+  "fields": {
+    "caja": 29,
+    "paciente": "Kevin Gomez y primo",
+    "monto": "2900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste ortodoncia y nueva colocacion",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-02-08T02:15:00.046Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 83,
+  "fields": {
+    "caja": 29,
+    "paciente": "Milagros",
+    "monto": "1500.00",
+    "metodo": "transferencia",
+    "concepto": "Extraccion ",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-02-08T02:19:50.258Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 84,
+  "fields": {
+    "caja": 29,
+    "paciente": "Dayan Sisnandez",
+    "monto": "1300.00",
+    "metodo": "transferencia",
+    "concepto": "Exraccion",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-02-08T02:24:34.561Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 87,
+  "fields": {
+    "caja": 34,
+    "paciente": "Camila da Costa",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste ortodoncia",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-02-10T20:00:00Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 88,
+  "fields": {
+    "caja": 34,
+    "paciente": "Alexandra Martinez",
+    "monto": "1300.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste ortodoncia y dos despegados",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-02-10T19:30:00Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 89,
+  "fields": {
+    "caja": 34,
+    "paciente": "Lucia Camejo",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste ortodoncia",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-02-10T19:00:00Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 90,
+  "fields": {
+    "caja": 34,
+    "paciente": "Agustina Scrollini",
+    "monto": "900.00",
+    "metodo": "transferencia",
+    "concepto": "Ajuste ortodoncia",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-02-10T18:30:00Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 91,
+  "fields": {
+    "caja": 34,
+    "paciente": "Mía Fernandez",
+    "monto": "1100.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste ortodoncia y un despegado",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-02-10T18:00:00Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 92,
+  "fields": {
+    "caja": 34,
+    "paciente": "Yoana Torres",
+    "monto": "2000.00",
+    "metodo": "efectivo",
+    "concepto": "Colocación nueva",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-02-10T17:30:00Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 93,
+  "fields": {
+    "caja": 34,
+    "paciente": "Belén Rodríguez",
+    "monto": "900.00",
+    "metodo": "transferencia",
+    "concepto": "Ajuste ortodoncia",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-02-10T17:00:00Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 94,
+  "fields": {
+    "caja": 34,
+    "paciente": "Emanuel",
+    "monto": "2000.00",
+    "metodo": "transferencia",
+    "concepto": "Ajuste ortodoncia",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-02-10T16:30:00Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 95,
+  "fields": {
+    "caja": 34,
+    "paciente": "Jhon Rodríguez",
+    "monto": "2000.00",
+    "metodo": "efectivo",
+    "concepto": "Colocación nueva",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-02-10T16:00:00Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 96,
+  "fields": {
+    "caja": 34,
+    "paciente": "Lucas Bonilla",
+    "monto": "2600.00",
+    "metodo": "efectivo",
+    "concepto": "Colocación 1 maxilar, ajuste y un despegado",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-02-10T15:30:00Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 97,
+  "fields": {
+    "caja": 34,
+    "paciente": "Romina Olivera",
+    "monto": "900.00",
+    "metodo": "transferencia",
+    "concepto": "Ajuste ortodoncia",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-02-10T15:00:00Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 98,
+  "fields": {
+    "caja": 36,
+    "paciente": "Carina Corbo",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste ortodoncia ",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-02-12T13:58:51.787Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 99,
+  "fields": {
+    "caja": 36,
+    "paciente": "Guillermina Rosa ",
+    "monto": "2400.00",
+    "metodo": "transferencia",
+    "concepto": "Extracción y ajuste ortodoncia ",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-02-12T13:59:26.255Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 100,
+  "fields": {
+    "caja": 36,
+    "paciente": "Pamela Silva",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste ortodoncia ",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-02-12T14:00:07.473Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 102,
+  "fields": {
+    "caja": 36,
+    "paciente": "Nicole",
+    "monto": "900.00",
+    "metodo": "transferencia",
+    "concepto": "Macorani",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-02-13T00:31:27.431Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 103,
+  "fields": {
+    "caja": 36,
+    "paciente": "Eloisa Sosa",
+    "monto": "1300.00",
+    "metodo": "efectivo",
+    "concepto": "resina",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-02-13T00:32:18.547Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 104,
+  "fields": {
+    "caja": 36,
+    "paciente": "Melanie Diaz",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste ortodoncia",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-02-13T00:32:56.703Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 105,
+  "fields": {
+    "caja": 36,
+    "paciente": "Agustin ",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Abreu",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-02-13T00:33:16.480Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 106,
+  "fields": {
+    "caja": 36,
+    "paciente": "Geronimo. Alina ",
+    "monto": "2700.00",
+    "metodo": "transferencia",
+    "concepto": "ajuste",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-02-13T00:33:56.261Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 107,
+  "fields": {
+    "caja": 36,
+    "paciente": "Andrius Almada",
+    "monto": "1000.00",
+    "metodo": "efectivo",
+    "concepto": "ajuste",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-02-13T00:34:34.259Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 108,
+  "fields": {
+    "caja": 36,
+    "paciente": "Wanda Rodriguez",
+    "monto": "1000.00",
+    "metodo": "transferencia",
+    "concepto": "ajuste",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-02-13T00:35:02.958Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 109,
+  "fields": {
+    "caja": 36,
+    "paciente": "Emily Alvira",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "ajuste",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-02-13T00:35:31.321Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 110,
+  "fields": {
+    "caja": 36,
+    "paciente": "Daniel y Juliet ",
+    "monto": "1800.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste ortodoncia",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-02-13T00:35:51.776Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 111,
+  "fields": {
+    "caja": 47,
+    "paciente": "Florencia policía ",
+    "monto": "900.00",
+    "metodo": "transferencia",
+    "concepto": "Ajuste ",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-04T01:26:14.639Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 112,
+  "fields": {
+    "caja": 47,
+    "paciente": "Luna Gonzales ",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-04T01:26:44.649Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 113,
+  "fields": {
+    "caja": 47,
+    "paciente": "Victoria Calvo",
+    "monto": "900.00",
+    "metodo": "transferencia",
+    "concepto": "Ajuste ",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-04T01:28:54.561Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 114,
+  "fields": {
+    "caja": 47,
+    "paciente": "Kevin Arrivillaga",
+    "monto": "7800.00",
+    "metodo": "transferencia",
+    "concepto": "Retiro brackets y contenciones ",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-04T01:29:59.123Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 115,
+  "fields": {
+    "caja": 47,
+    "paciente": "Bruno Rocha ",
+    "monto": "900.00",
+    "metodo": "transferencia",
+    "concepto": "Ajuste",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-04T01:30:28.330Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 116,
+  "fields": {
+    "caja": 47,
+    "paciente": "Natalia Fonseca ",
+    "monto": "900.00",
+    "metodo": "transferencia",
+    "concepto": "Ajuste ",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-04T01:31:14.977Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 117,
+  "fields": {
+    "caja": 47,
+    "paciente": "Guadalupe Ambrosio",
+    "monto": "900.00",
+    "metodo": "transferencia",
+    "concepto": "Ajuste ",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-04T01:33:17.428Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 118,
+  "fields": {
+    "caja": 47,
+    "paciente": "Luciano Pelais",
+    "monto": "2000.00",
+    "metodo": "efectivo",
+    "concepto": "Nueva colocación ",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-04T01:37:47.137Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 119,
+  "fields": {
+    "caja": 47,
+    "paciente": "Sandra Perez",
+    "monto": "0.00",
+    "metodo": "efectivo",
+    "concepto": "Toma molde protesis, No pagó",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-04T01:42:25.417Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 120,
+  "fields": {
+    "caja": 47,
+    "paciente": "Victor Faguaga",
+    "monto": "4000.00",
+    "metodo": "efectivo",
+    "concepto": "Prótesis",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-04T01:50:50.721Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 121,
+  "fields": {
+    "caja": 48,
+    "paciente": "Nataly Hundewadt",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste ortodoncia",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-05T00:30:48.518Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 122,
+  "fields": {
+    "caja": 48,
+    "paciente": "Bonilla, Angelina",
+    "monto": "1700.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste ortodoncia y 4 despegados",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-05T00:31:58.433Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 123,
+  "fields": {
+    "caja": 48,
+    "paciente": "Clara Moreira",
+    "monto": "900.00",
+    "metodo": "transferencia",
+    "concepto": "Ajuste ortodoncia",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-05T00:36:13.535Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 124,
+  "fields": {
+    "caja": 48,
+    "paciente": "Altez, Brisa",
+    "monto": "1000.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste ortodoncia y 1 despegado",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-05T00:37:46.584Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 125,
+  "fields": {
+    "caja": 48,
+    "paciente": "Salinas, Camila",
+    "monto": "700.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste ortodoncia ",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-05T00:38:37.932Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 126,
+  "fields": {
+    "caja": 48,
+    "paciente": "Lautaro de Los Santos",
+    "monto": "2600.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste ortodoncia, 1 despegado y 1 resina",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-05T00:40:02.644Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 127,
+  "fields": {
+    "caja": 49,
+    "paciente": "Bryan A",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "ajuste",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-06T00:25:32.980Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 128,
+  "fields": {
+    "caja": 49,
+    "paciente": "Katerine Lozano",
+    "monto": "1300.00",
+    "metodo": "efectivo",
+    "concepto": "ajuste",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-06T00:26:11.444Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 129,
+  "fields": {
+    "caja": 49,
+    "paciente": "Ludmila Pereira",
+    "monto": "1100.00",
+    "metodo": "efectivo",
+    "concepto": "ajuste",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-06T00:26:51.655Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 130,
+  "fields": {
+    "caja": 49,
+    "paciente": "Jessica Silvera",
+    "monto": "1100.00",
+    "metodo": "efectivo",
+    "concepto": "ajuste",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-06T00:27:52.325Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 131,
+  "fields": {
+    "caja": 49,
+    "paciente": "Sofia Etchar",
+    "monto": "1000.00",
+    "metodo": "efectivo",
+    "concepto": "ajuste",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-06T00:28:20.857Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 132,
+  "fields": {
+    "caja": 49,
+    "paciente": "Andrea Gimenez",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "ajuste",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-06T00:28:48.570Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 133,
+  "fields": {
+    "caja": 49,
+    "paciente": "Kris",
+    "monto": "1100.00",
+    "metodo": "efectivo",
+    "concepto": "",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-06T00:29:48.238Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 134,
+  "fields": {
+    "caja": 49,
+    "paciente": "Valeria Reyes",
+    "monto": "2400.00",
+    "metodo": "efectivo",
+    "concepto": "ajuste y resina",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-06T00:30:51.551Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 135,
+  "fields": {
+    "caja": 49,
+    "paciente": "Ana Andrade",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "ajuste",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-06T00:31:34.174Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 136,
+  "fields": {
+    "caja": 49,
+    "paciente": "Yoselin Baptista",
+    "monto": "1100.00",
+    "metodo": "transferencia",
+    "concepto": "",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-06T00:32:05.992Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 137,
+  "fields": {
+    "caja": 49,
+    "paciente": "Aylen",
+    "monto": "2000.00",
+    "metodo": "efectivo",
+    "concepto": "",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-06T00:32:47.905Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 138,
+  "fields": {
+    "caja": 49,
+    "paciente": "mathias monthiel",
+    "monto": "1100.00",
+    "metodo": "transferencia",
+    "concepto": "",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-06T00:33:13.749Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 139,
+  "fields": {
+    "caja": 49,
+    "paciente": "Mercedes",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-06T00:33:41.508Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 140,
+  "fields": {
+    "caja": 50,
+    "paciente": "G GABRIELA",
+    "monto": "1000.00",
+    "metodo": "efectivo",
+    "concepto": "",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-07T00:16:52.843Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 141,
+  "fields": {
+    "caja": 50,
+    "paciente": "HERMANAS LEDESMA",
+    "monto": "1800.00",
+    "metodo": "efectivo",
+    "concepto": "ajuste",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-07T00:17:37.164Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 142,
+  "fields": {
+    "caja": 50,
+    "paciente": "SEBASTIAN",
+    "monto": "1000.00",
+    "metodo": "transferencia",
+    "concepto": "ajuste",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-07T00:18:51.501Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 143,
+  "fields": {
+    "caja": 50,
+    "paciente": "G KEVIN",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "ajuste",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-07T00:19:17.259Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 144,
+  "fields": {
+    "caja": 50,
+    "paciente": "THIAGO B",
+    "monto": "1100.00",
+    "metodo": "efectivo",
+    "concepto": "ajuste",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-07T00:20:04.593Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 145,
+  "fields": {
+    "caja": 50,
+    "paciente": "LUCAS REYES",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-07T00:21:16.155Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 146,
+  "fields": {
+    "caja": 50,
+    "paciente": "JHON RODRIGUEZ",
+    "monto": "1500.00",
+    "metodo": "efectivo",
+    "concepto": "",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-07T00:21:34.639Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 147,
+  "fields": {
+    "caja": 50,
+    "paciente": "MILAGROS Y NOVIOO",
+    "monto": "2400.00",
+    "metodo": "efectivo",
+    "concepto": "ajuste",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-07T00:22:47.018Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 148,
+  "fields": {
+    "caja": 51,
+    "paciente": "recalde",
+    "monto": "1800.00",
+    "metodo": "transferencia",
+    "concepto": "",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-07T16:59:49.351Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 149,
+  "fields": {
+    "caja": 51,
+    "paciente": "junior",
+    "monto": "1200.00",
+    "metodo": "efectivo",
+    "concepto": "",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-07T17:00:54.603Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 150,
+  "fields": {
+    "caja": 51,
+    "paciente": "gallo",
+    "monto": "4000.00",
+    "metodo": "efectivo",
+    "concepto": "",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-07T17:01:11.599Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 151,
+  "fields": {
+    "caja": 57,
+    "paciente": "Luis Fernández",
+    "monto": "900.00",
+    "metodo": "transferencia",
+    "concepto": "Ajuste ortodoncia",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-23T15:53:20.326Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 152,
+  "fields": {
+    "caja": 57,
+    "paciente": "Florencia Amestoy",
+    "monto": "1100.00",
+    "metodo": "transferencia",
+    "concepto": "Ajuste ortodoncia y 1 despegado",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-23T15:54:25.873Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 153,
+  "fields": {
+    "caja": 57,
+    "paciente": "Jhonatan Cano",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste ortodoncia",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-23T16:22:12.093Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 154,
+  "fields": {
+    "caja": 57,
+    "paciente": "Marianela Bon",
+    "monto": "1000.00",
+    "metodo": "efectivo",
+    "concepto": "Propina",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-23T16:23:14.305Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 155,
+  "fields": {
+    "caja": 57,
+    "paciente": "María José Rocha",
+    "monto": "3300.00",
+    "metodo": "efectivo",
+    "concepto": "Nueva Colocación y Limpieza",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-23T16:38:22.035Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 156,
+  "fields": {
+    "caja": 57,
+    "paciente": "Angela Calmaris",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste ortodoncia",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-23T16:43:19.527Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 157,
+  "fields": {
+    "caja": 57,
+    "paciente": "Romina Fernandez",
+    "monto": "1500.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste ortodoncia y limpieza",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-23T16:44:29.771Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 158,
+  "fields": {
+    "caja": 57,
+    "paciente": "Romina Pazzioli",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste ortodoncia",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-23T19:52:39.018Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 159,
+  "fields": {
+    "caja": 57,
+    "paciente": "Santiago Acuña",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste ortodoncia",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-23T20:07:23.746Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 160,
+  "fields": {
+    "caja": 57,
+    "paciente": "Mauro Texeira",
+    "monto": "2000.00",
+    "metodo": "efectivo",
+    "concepto": "Colocacion nueva",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-23T20:11:04.773Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 161,
+  "fields": {
+    "caja": 57,
+    "paciente": "Jeferson Muniz",
+    "monto": "2600.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste, limpieza y 3 despeados",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-23T21:10:06.325Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 162,
+  "fields": {
+    "caja": 57,
+    "paciente": "Braian del Puerto",
+    "monto": "1000.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste ortodoncia y despegado",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-23T21:47:11.876Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 163,
+  "fields": {
+    "caja": 57,
+    "paciente": "Agustina Camino",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste ortodoncia",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-23T22:16:19.383Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 169,
+  "fields": {
+    "caja": 58,
+    "paciente": "Quintero, Noelia",
+    "monto": "3600.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-24T13:41:01.752Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 170,
+  "fields": {
+    "caja": 58,
+    "paciente": "Perdomo, Erik",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-24T14:04:13.054Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 171,
+  "fields": {
+    "caja": 58,
+    "paciente": "Pereira, Camila",
+    "monto": "2200.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia) y Limpieza",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-24T14:20:04.566Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 172,
+  "fields": {
+    "caja": 58,
+    "paciente": "Malo, Camila",
+    "monto": "1500.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia) y Limpieza",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-24T15:11:37.165Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 173,
+  "fields": {
+    "caja": 58,
+    "paciente": "Apolinario, Lucia",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-24T15:12:26.520Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 174,
+  "fields": {
+    "caja": 58,
+    "paciente": "Luna, Paola",
+    "monto": "1500.00",
+    "metodo": "efectivo",
+    "concepto": "Recina",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-24T16:29:53.047Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 175,
+  "fields": {
+    "caja": 58,
+    "paciente": "Sosa, Facundo",
+    "monto": "1000.00",
+    "metodo": "efectivo",
+    "concepto": "Segunda colocación + ajuste y 1 despegado",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-24T19:16:19.579Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 176,
+  "fields": {
+    "caja": 58,
+    "paciente": "Benitez, Ailyn",
+    "monto": "1300.00",
+    "metodo": "transferencia",
+    "concepto": "Limpieza",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-24T19:29:57.534Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 177,
+  "fields": {
+    "caja": 58,
+    "paciente": "Rodríguez, Jhon",
+    "monto": "1500.00",
+    "metodo": "efectivo",
+    "concepto": "Segunda colocación + ajuste y limpieza",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-24T20:21:02.179Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 178,
+  "fields": {
+    "caja": 58,
+    "paciente": "Castro, Abril",
+    "monto": "1100.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste ortodoncia y 1 despegado",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-24T21:00:37.176Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 179,
+  "fields": {
+    "caja": 59,
+    "paciente": "Silva, Karen",
+    "monto": "2900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia) y limpieza + ajuste amiga",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-25T15:11:53Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 180,
+  "fields": {
+    "caja": 59,
+    "paciente": "Velazquez, Victoria",
+    "monto": "10000.00",
+    "metodo": "efectivo",
+    "concepto": "Limpieza. Retiro + cont fija + 3 resinas",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-25T15:40:30.797Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 181,
+  "fields": {
+    "caja": 59,
+    "paciente": "Arellano, Victor",
+    "monto": "400.00",
+    "metodo": "transferencia",
+    "concepto": "Segunda colocación + 2 despegados",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-25T15:41:05.975Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 182,
+  "fields": {
+    "caja": 59,
+    "paciente": "Gómez, Kevin",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-25T15:42:37.059Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 183,
+  "fields": {
+    "caja": 59,
+    "paciente": "Merino, Matias",
+    "monto": "800.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-25T16:06:50.252Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 184,
+  "fields": {
+    "caja": 59,
+    "paciente": "Amaral, Angela",
+    "monto": "1100.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-25T19:00:40.409Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 185,
+  "fields": {
+    "caja": 59,
+    "paciente": "Cruz Aparicio, Juan",
+    "monto": "1100.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia) + 1 despegado",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-25T20:10:36.975Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 187,
+  "fields": {
+    "caja": 59,
+    "paciente": "Guerrero, Mariana",
+    "monto": "900.00",
+    "metodo": "transferencia",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-25T21:48:09.753Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 188,
+  "fields": {
+    "caja": 59,
+    "paciente": "Dominguez, Ezequiel",
+    "monto": "900.00",
+    "metodo": "transferencia",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-25T21:50:28.382Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 189,
+  "fields": {
+    "caja": 59,
+    "paciente": "Fuentes, Barbara",
+    "monto": "900.00",
+    "metodo": "transferencia",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-25T21:50:40.764Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 190,
+  "fields": {
+    "caja": 59,
+    "paciente": "Salinas, Camila",
+    "monto": "1100.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia) + 1 despegado",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-25T22:04:44.521Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 191,
+  "fields": {
+    "caja": 60,
+    "paciente": "Martinez, Natalia",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-27T13:20:37.527Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 192,
+  "fields": {
+    "caja": 60,
+    "paciente": "Berrias, Lautaro",
+    "monto": "2000.00",
+    "metodo": "efectivo",
+    "concepto": "Colocación nueva y limpieza",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-27T15:27:36.710Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 193,
+  "fields": {
+    "caja": 60,
+    "paciente": "Recalde, Maite",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Segunda colocación + ajuste",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-27T18:50:14Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 194,
+  "fields": {
+    "caja": 60,
+    "paciente": "Soria, Kiara",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-27T19:07:22.448Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 196,
+  "fields": {
+    "caja": 60,
+    "paciente": "Castillo, Mileidys",
+    "monto": "1300.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia) y 2 despegados",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-27T22:07:07.870Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 197,
+  "fields": {
+    "caja": 60,
+    "paciente": "Collazo, Victoria y Novio",
+    "monto": "1800.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-27T22:07:59.135Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 198,
+  "fields": {
+    "caja": 61,
+    "paciente": "Rocha, Maria",
+    "monto": "1700.00",
+    "metodo": "transferencia",
+    "concepto": "Ajuste (ortodoncia) y Limpieza + 1 despegado",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-28T13:47:05.810Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 199,
+  "fields": {
+    "caja": 61,
+    "paciente": "Serron, Leonardo",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-28T15:00:13.683Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 200,
+  "fields": {
+    "caja": 61,
+    "paciente": "Urquiola, Dilan",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-28T15:52:16.062Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 201,
+  "fields": {
+    "caja": 61,
+    "paciente": "Cappiz, Florencia",
+    "monto": "1100.00",
+    "metodo": "transferencia",
+    "concepto": "Ajuste (ortodoncia) + 1 despegado",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-28T15:57:35.306Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 202,
+  "fields": {
+    "caja": 61,
+    "paciente": "Acosta, Emily",
+    "monto": "900.00",
+    "metodo": "transferencia",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-28T18:58:45.358Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 203,
+  "fields": {
+    "caja": 61,
+    "paciente": "Puñales, Bettina",
+    "monto": "2800.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia) y Limpieza + 2 despegado",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-28T19:01:07.270Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 204,
+  "fields": {
+    "caja": 63,
+    "paciente": "Macorani, Nicole",
+    "monto": "1100.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-30T13:38:01.713Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 206,
+  "fields": {
+    "caja": 63,
+    "paciente": "Carrasco, Omar",
+    "monto": "10000.00",
+    "metodo": "efectivo",
+    "concepto": "Prótesis",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-31T00:03:14.565Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 207,
+  "fields": {
+    "caja": 63,
+    "paciente": "de León, Asdrubal",
+    "monto": "6000.00",
+    "metodo": "efectivo",
+    "concepto": "Prótesis",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-31T00:04:44.110Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 208,
+  "fields": {
+    "caja": 63,
+    "paciente": "Lapidó, Alejandro",
+    "monto": "1100.00",
+    "metodo": "transferencia",
+    "concepto": "Ajuste ortodoncia y 1 despegado",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-31T00:05:40.074Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 209,
+  "fields": {
+    "caja": 63,
+    "paciente": "Acuña, Victoria",
+    "monto": "1400.00",
+    "metodo": "efectivo",
+    "concepto": "Segunda colocación + ajuste",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-31T00:06:59.523Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 210,
+  "fields": {
+    "caja": 63,
+    "paciente": "Guimaraes, Yulisa",
+    "monto": "1700.00",
+    "metodo": "efectivo",
+    "concepto": "Segunda colocación + ajuste",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-31T00:08:05.554Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 211,
+  "fields": {
+    "caja": 63,
+    "paciente": "Martínez, Valentina",
+    "monto": "900.00",
+    "metodo": "transferencia",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-31T00:08:54.769Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 212,
+  "fields": {
+    "caja": 63,
+    "paciente": "Piriz, Fernanda",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-31T00:09:44.567Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 213,
+  "fields": {
+    "caja": 63,
+    "paciente": "Duque, Luciana",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-31T00:10:22.174Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 214,
+  "fields": {
+    "caja": 63,
+    "paciente": "Roldán, Nicole",
+    "monto": "1100.00",
+    "metodo": "transferencia",
+    "concepto": "Ajuste (ortodoncia) + 1 despegado",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-31T00:23:56.185Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 215,
+  "fields": {
+    "caja": 63,
+    "paciente": "Iriarte, María Belén",
+    "monto": "1000.00",
+    "metodo": "efectivo",
+    "concepto": "Consulta / diagnóstico",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-31T00:26:33.464Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 216,
+  "fields": {
+    "caja": 63,
+    "paciente": "Lenzi, Morena",
+    "monto": "1000.00",
+    "metodo": "efectivo",
+    "concepto": "Consulta / diagnóstico",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-31T00:26:47.896Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 217,
+  "fields": {
+    "caja": 63,
+    "paciente": "Rodríguez, Josefina",
+    "monto": "2000.00",
+    "metodo": "efectivo",
+    "concepto": "Retiro",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-31T00:27:17.111Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 218,
+  "fields": {
+    "caja": 63,
+    "paciente": "Miqueiro, Carolina",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-31T00:27:54.278Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 219,
+  "fields": {
+    "caja": 63,
+    "paciente": "Ruidia, Silvana",
+    "monto": "1500.00",
+    "metodo": "efectivo",
+    "concepto": "Limpieza",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-31T00:28:23.060Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 220,
+  "fields": {
+    "caja": 63,
+    "paciente": "Cano, Antuan",
+    "monto": "900.00",
+    "metodo": "transferencia",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-31T00:33:02.036Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 221,
+  "fields": {
+    "caja": 63,
+    "paciente": "Rodríguez, Natasha",
+    "monto": "2000.00",
+    "metodo": "transferencia",
+    "concepto": "Colocación nueva",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-31T00:34:57.441Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 222,
+  "fields": {
+    "caja": 63,
+    "paciente": "Florencia ceballos",
+    "monto": "2000.00",
+    "metodo": "transferencia",
+    "concepto": "Colocación nueva",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-31T00:41:01.064Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 223,
+  "fields": {
+    "caja": 63,
+    "paciente": "Díaz, Melanie",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-31T00:46:44.606Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 225,
+  "fields": {
+    "caja": 64,
+    "paciente": "De cuadro, Elena",
+    "monto": "1300.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste ortodoncia y 2 despegados",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-31T18:55:29.829Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 227,
+  "fields": {
+    "caja": 64,
+    "paciente": "Ismas, Matías",
+    "monto": "1300.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-31T21:07:57.635Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 228,
+  "fields": {
+    "caja": 64,
+    "paciente": "Arrola, Estela",
+    "monto": "4000.00",
+    "metodo": "efectivo",
+    "concepto": "Colocación nueva",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-31T21:55:47.805Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 229,
+  "fields": {
+    "caja": 64,
+    "paciente": "Díaz, Belen",
+    "monto": "3300.00",
+    "metodo": "efectivo",
+    "concepto": "Limpieza y Blanqueamiento ",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-03-31T22:21:37.392Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 230,
+  "fields": {
+    "caja": 67,
+    "paciente": "Gonzales, Luna",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-04-06T14:13:03.622Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 231,
+  "fields": {
+    "caja": 67,
+    "paciente": "Fernandez, Romina",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-04-06T15:07:57Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 232,
+  "fields": {
+    "caja": 67,
+    "paciente": "de Leon, Nijash",
+    "monto": "1100.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia) + 1 despegado",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-04-06T15:08:21.182Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 233,
+  "fields": {
+    "caja": 67,
+    "paciente": "Portillo, Luana",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-04-06T17:22:13.399Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 234,
+  "fields": {
+    "caja": 67,
+    "paciente": "Marcos, Agustina",
+    "monto": "1100.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia) + 1 despegado",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-04-06T17:22:41.181Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 235,
+  "fields": {
+    "caja": 67,
+    "paciente": "Ruiz, Candela",
+    "monto": "3500.00",
+    "metodo": "transferencia",
+    "concepto": "Retiro, Blanqueamiento ",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-04-06T20:17:54.122Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 237,
+  "fields": {
+    "caja": 67,
+    "paciente": "Barreto, Lucia",
+    "monto": "2000.00",
+    "metodo": "efectivo",
+    "concepto": "Colocación nueva",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-04-06T20:20:06.402Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 238,
+  "fields": {
+    "caja": 67,
+    "paciente": "Blanco, Sheico",
+    "monto": "1100.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia) + 1 despegado",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-04-06T21:08:26.128Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 239,
+  "fields": {
+    "caja": 67,
+    "paciente": "De los santos, Lautaro",
+    "monto": "2000.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia) + 1 despegado",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-04-07T00:23:14Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 240,
+  "fields": {
+    "caja": 67,
+    "paciente": "Cuña, Mercedes",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-04-07T00:23:51.765Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 241,
+  "fields": {
+    "caja": 67,
+    "paciente": "Cabrera, Trishia",
+    "monto": "1500.00",
+    "metodo": "transferencia",
+    "concepto": "Ajuste (ortodoncia) y 3 despegados",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-04-07T01:26:57.036Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 242,
+  "fields": {
+    "caja": 68,
+    "paciente": "Emiliano Ferreira",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia) + 1 despegado",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-04-07T18:45:07Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 243,
+  "fields": {
+    "caja": 68,
+    "paciente": "Justin Perez",
+    "monto": "1100.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia) + 1 despegado",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-04-07T18:53:51.117Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 244,
+  "fields": {
+    "caja": 68,
+    "paciente": "Nataly Hundewadt",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-04-07T18:57:18.951Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 245,
+  "fields": {
+    "caja": 68,
+    "paciente": "Kiara Moreira",
+    "monto": "900.00",
+    "metodo": "transferencia",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-04-07T19:01:00.168Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 246,
+  "fields": {
+    "caja": 68,
+    "paciente": "Milagros Chalar",
+    "monto": "2000.00",
+    "metodo": "efectivo",
+    "concepto": "Colocación nueva",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-04-07T19:27:28.287Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 247,
+  "fields": {
+    "caja": 68,
+    "paciente": "Agustina Cossio",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-04-07T20:50:52.788Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 248,
+  "fields": {
+    "caja": 68,
+    "paciente": "Martin Hernandorena",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-04-07T21:01:03.010Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 249,
+  "fields": {
+    "caja": 68,
+    "paciente": "Lucas Bonilla",
+    "monto": "1300.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia) y 2 despegados",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-04-07T21:39:04.663Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 250,
+  "fields": {
+    "caja": 68,
+    "paciente": "Brian Martinez y Sra",
+    "monto": "2200.00",
+    "metodo": "transferencia",
+    "concepto": "Ajuste (ortodoncia) y 2 despegados",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-04-07T22:07:08.950Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 252,
+  "fields": {
+    "caja": 68,
+    "paciente": "Baptista, Yoselin",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": null,
+    "patient_id": null,
+    "fecha": "2026-04-08T00:24:44.545Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 267,
+  "fields": {
+    "caja": 69,
+    "paciente": "Cantera, Ezequiel",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": 1445,
+    "patient_id": 89,
+    "fecha": "2026-04-08T16:31:41.504Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 268,
+  "fields": {
+    "caja": 69,
+    "paciente": "Gonzales, Julieta",
+    "monto": "1100.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia) + 1 despegado",
+    "appointment_id": 1308,
+    "patient_id": 371,
+    "fecha": "2026-04-08T16:32:51.245Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 269,
+  "fields": {
+    "caja": 69,
+    "paciente": "Gonzales, Ana",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": 1446,
+    "patient_id": 466,
+    "fecha": "2026-04-08T17:08:50.759Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 270,
+  "fields": {
+    "caja": 69,
+    "paciente": "Fonseca, Natalia",
+    "monto": "500.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia) seña",
+    "appointment_id": 1448,
+    "patient_id": 288,
+    "fecha": "2026-04-08T17:32:05.377Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 271,
+  "fields": {
+    "caja": 69,
+    "paciente": "Curuchet, Julieta",
+    "monto": "2400.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia) y Limpieza + 2 despegado",
+    "appointment_id": 1425,
+    "patient_id": 521,
+    "fecha": "2026-04-08T19:05:49.214Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 272,
+  "fields": {
+    "caja": 69,
+    "paciente": "falta, Wanda",
+    "monto": "1300.00",
+    "metodo": "transferencia",
+    "concepto": "Ajuste (ortodoncia) y 2 despegados",
+    "appointment_id": 1393,
+    "patient_id": 351,
+    "fecha": "2026-04-08T20:23:38.950Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 273,
+  "fields": {
+    "caja": 69,
+    "paciente": "Lobato, Rodrigo",
+    "monto": "400.00",
+    "metodo": "transferencia",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": 1392,
+    "patient_id": 350,
+    "fecha": "2026-04-08T20:25:28.253Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 274,
+  "fields": {
+    "caja": 69,
+    "paciente": "Melian, Lucas",
+    "monto": "2500.00",
+    "metodo": "transferencia",
+    "concepto": "Limpieza. Retiro + 3 Resinas Seña",
+    "appointment_id": 1435,
+    "patient_id": 523,
+    "fecha": "2026-04-08T20:28:01Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 275,
+  "fields": {
+    "caja": 69,
+    "paciente": "Rocha, Bruno",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": 906,
+    "patient_id": 241,
+    "fecha": "2026-04-08T20:33:48.495Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 276,
+  "fields": {
+    "caja": 69,
+    "paciente": "De León, Nicole",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": 1078,
+    "patient_id": 100,
+    "fecha": "2026-04-08T22:03:43.373Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 277,
+  "fields": {
+    "caja": 69,
+    "paciente": "Perez, Xavier",
+    "monto": "2000.00",
+    "metodo": "efectivo",
+    "concepto": "Colocación nueva",
+    "appointment_id": 1442,
+    "patient_id": 527,
+    "fecha": "2026-04-08T22:30:03.916Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 278,
+  "fields": {
+    "caja": 70,
+    "paciente": "Albarez, Lucia",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": 1465,
+    "patient_id": 234,
+    "fecha": "2026-04-09T15:01:29.288Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 279,
+  "fields": {
+    "caja": 70,
+    "paciente": "Velazquez, Belen",
+    "monto": "1100.00",
+    "metodo": "transferencia",
+    "concepto": "Ajuste (ortodoncia) + 1 despegado",
+    "appointment_id": 1467,
+    "patient_id": 355,
+    "fecha": "2026-04-09T15:15:15.744Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 280,
+  "fields": {
+    "caja": 70,
+    "paciente": "Rodríguez, Melissa",
+    "monto": "900.00",
+    "metodo": "transferencia",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": 1408,
+    "patient_id": 92,
+    "fecha": "2026-04-09T15:58:30.907Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 281,
+  "fields": {
+    "caja": 70,
+    "paciente": "García, Noelia",
+    "monto": "900.00",
+    "metodo": "transferencia",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": 1423,
+    "patient_id": 191,
+    "fecha": "2026-04-09T16:59:08.932Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 282,
+  "fields": {
+    "caja": 70,
+    "paciente": "Gonzales, Lautaro",
+    "monto": "1200.00",
+    "metodo": "transferencia",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": 1162,
+    "patient_id": 194,
+    "fecha": "2026-04-09T17:57:56.315Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 283,
+  "fields": {
+    "caja": 70,
+    "paciente": "Cal, Analia",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": 1476,
+    "patient_id": 333,
+    "fecha": "2026-04-09T18:00:53.610Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 284,
+  "fields": {
+    "caja": 70,
+    "paciente": "hijo Caro Bejerez, Santino",
+    "monto": "1000.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia) y 3 despegados Seña",
+    "appointment_id": 1489,
+    "patient_id": 324,
+    "fecha": "2026-04-09T21:13:17.887Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 285,
+  "fields": {
+    "caja": 70,
+    "paciente": "Pintos, Nicolas",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": 1377,
+    "patient_id": 248,
+    "fecha": "2026-04-09T23:47:42.737Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 286,
+  "fields": {
+    "caja": 70,
+    "paciente": "García, Florencia",
+    "monto": "900.00",
+    "metodo": "tarjeta",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": 1460,
+    "patient_id": 114,
+    "fecha": "2026-04-09T23:48:46.493Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 287,
+  "fields": {
+    "caja": 70,
+    "paciente": "Navarrete, Mìa",
+    "monto": "3500.00",
+    "metodo": "tarjeta",
+    "concepto": "Limpieza",
+    "appointment_id": 1490,
+    "patient_id": 115,
+    "fecha": "2026-04-09T23:49:50.810Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 288,
+  "fields": {
+    "caja": 70,
+    "paciente": "Pereira, Ludmila",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": 944,
+    "patient_id": 445,
+    "fecha": "2026-04-09T23:50:41.650Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 289,
+  "fields": {
+    "caja": 71,
+    "paciente": "Gonzalez, Gabriela",
+    "monto": "1000.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia) + 2 despegados Seña",
+    "appointment_id": 1412,
+    "patient_id": 112,
+    "fecha": "2026-04-10T17:34:45.022Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 290,
+  "fields": {
+    "caja": 71,
+    "paciente": "Ridguay, Alina",
+    "monto": "1100.00",
+    "metodo": "transferencia",
+    "concepto": "Ajuste (ortodoncia) + 1 despegado",
+    "appointment_id": 1483,
+    "patient_id": 338,
+    "fecha": "2026-04-10T18:11:05.552Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 291,
+  "fields": {
+    "caja": 71,
+    "paciente": "Martinez, Maicol",
+    "monto": "1100.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia) + 1 despegado",
+    "appointment_id": 1109,
+    "patient_id": 298,
+    "fecha": "2026-04-10T18:14:35.889Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 292,
+  "fields": {
+    "caja": 71,
+    "paciente": "Altez, Brisa",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": 927,
+    "patient_id": 435,
+    "fecha": "2026-04-10T18:58:18.355Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 293,
+  "fields": {
+    "caja": 71,
+    "paciente": "Gómez, Franco",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": 928,
+    "patient_id": 153,
+    "fecha": "2026-04-10T18:58:33.855Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 294,
+  "fields": {
+    "caja": 71,
+    "paciente": "Almada, Andrius",
+    "monto": "1000.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia) + 1 despegado Seña",
+    "appointment_id": 1505,
+    "patient_id": 300,
+    "fecha": "2026-04-10T19:13:30.293Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 295,
+  "fields": {
+    "caja": 71,
+    "paciente": "Valiente, Noelia",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": 1156,
+    "patient_id": 254,
+    "fecha": "2026-04-10T19:48:12.074Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 296,
+  "fields": {
+    "caja": 71,
+    "paciente": "Rodíguez, Guadalupe",
+    "monto": "2700.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia) + resina",
+    "appointment_id": 1411,
+    "patient_id": 126,
+    "fecha": "2026-04-10T20:04:50Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 297,
+  "fields": {
+    "caja": 71,
+    "paciente": "Bach, Jenifer",
+    "monto": "900.00",
+    "metodo": "efectivo",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": 637,
+    "patient_id": 30,
+    "fecha": "2026-04-10T20:23:52.301Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 298,
+  "fields": {
+    "caja": 71,
+    "paciente": "Guadalupe, Maximiliano",
+    "monto": "2000.00",
+    "metodo": "efectivo",
+    "concepto": "Colocación nueva",
+    "appointment_id": 1516,
+    "patient_id": 532,
+    "fecha": "2026-04-10T21:09:00.926Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 299,
+  "fields": {
+    "caja": 71,
+    "paciente": "Pérez, Sebastián",
+    "monto": "800.00",
+    "metodo": "transferencia",
+    "concepto": "Ajuste (ortodoncia)",
+    "appointment_id": 964,
+    "patient_id": 93,
+    "fecha": "2026-04-10T21:37:00.351Z"
+  }
+},
+{
+  "model": "pagos.pago",
+  "pk": 300,
+  "fields": {
+    "caja": 71,
+    "paciente": "Arrivillaga, Kevin",
+    "monto": "1500.00",
+    "metodo": "transferencia",
+    "concepto": "Resina",
+    "appointment_id": 1533,
+    "patient_id": 424,
+    "fecha": "2026-04-10T21:48:07.318Z"
+  }
+}
+]

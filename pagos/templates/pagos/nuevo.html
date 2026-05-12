@@ -429,6 +429,10 @@
 
                 {% csrf_token %}
 
+                <input type="hidden" name="next" value="{{ initial.next }}">
+                <input type="hidden" name="appointment_id" value="{{ initial.appointment_id }}">
+                <input type="hidden" name="patient_id" value="{{ initial.patient_id }}">
+
                 <div class="group">
 
                     <label>
@@ -441,6 +445,7 @@
                         step="0.01"
                         placeholder="0.00"
                         class="control"
+                        value="{{ initial.monto }}"
                         required
                     >
 
@@ -457,6 +462,7 @@
                         name="paciente"
                         placeholder="Ej: Luis Hernández"
                         class="control"
+                        value="{{ initial.paciente }}"
                         required
                     >
 
@@ -473,6 +479,7 @@
                         name="concepto"
                         placeholder="Ej: Control / Ortodoncia / Limpieza"
                         class="control"
+                        value="{{ initial.concepto }}"
                         required
                     >
 
@@ -494,15 +501,24 @@
                             Seleccionar método
                         </option>
 
-                        <option value="efectivo">
+                        <option
+                            value="efectivo"
+                            {% if initial.metodo == "efectivo" %}selected{% endif %}
+                        >
                             Efectivo
                         </option>
 
-                        <option value="tarjeta">
+                        <option
+                            value="tarjeta"
+                            {% if initial.metodo == "tarjeta" %}selected{% endif %}
+                        >
                             Tarjeta
                         </option>
 
-                        <option value="transferencia">
+                        <option
+                            value="transferencia"
+                            {% if initial.metodo == "transferencia" %}selected{% endif %}
+                        >
                             Transferencia
                         </option>
 

@@ -2,75 +2,528 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+
     <meta charset="UTF-8">
-    <title>Seleccionar Mes</title>
-    <link rel="stylesheet" href="{% static 'css/sonrisar-pro.css' %}">
-    
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Reporte mensual | Sonrisar
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{% static 'css/sonrisar-pro.css' %}"
+    >
+
     <style>
-        header img { display: none !important; }
 
-        .selector-wrapper {
-            max-width: 400px;
-            margin: 60px auto;
-            background: white;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 4px 14px rgba(0,0,0,0.08);
-            text-align: center;
+        *{
+            box-sizing:border-box;
         }
 
-        h1 {
-            color: #26ABA5;
-            margin-bottom: 20px;
+        body{
+
+            margin:0;
+
+            background:#ffffff;
+
+            font-family:
+                Inter,
+                sans-serif;
+
+            color:#0f172a;
+
+            overflow-x:hidden;
         }
 
-        select {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 15px;
-            border-radius: 8px;
-            border: 1px solid #ccc;
+        /* =========================
+           MARCA DE AGUA GLOBAL
+        ========================== */
+
+        body::before{
+
+            content:"";
+
+            position:fixed;
+
+            inset:0;
+
+            background:
+                url("{% static 'img/logo.png' %}")
+                center center / 900px
+                no-repeat;
+
+            opacity:.08;
+
+            pointer-events:none;
+
+            z-index:0;
         }
 
-        .btn-sonrisar {
-            display: block;
-            width: 100%;
-            padding: 12px;
-            background: #26ABA5;
-            color: white;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: bold;
-            margin-top: 10px;
+        /* =========================
+           LAYOUT
+        ========================== */
+
+        .layout{
+
+            position:relative;
+
+            z-index:1;
+
+            display:flex;
+
+            gap:24px;
+
+            padding:20px;
+
+            min-height:100vh;
         }
+
+        /* =========================
+           SIDEBAR
+        ========================== */
+
+        .sidebar{
+
+            width:230px;
+
+            background:#ffffff;
+
+            border:1px solid #edf1f4;
+
+            border-radius:28px;
+
+            padding:18px 16px;
+
+            box-shadow:
+                0 4px 18px rgba(15,23,42,.04);
+
+            height:fit-content;
+
+            position:sticky;
+
+            top:20px;
+        }
+
+        .sidebar-logo{
+
+            width:120px;
+
+            display:block;
+
+            margin:0 auto 18px auto;
+        }
+
+        .menu{
+
+            display:flex;
+
+            flex-direction:column;
+
+            gap:8px;
+        }
+
+        .menu a{
+
+            height:44px;
+
+            border-radius:16px;
+
+            display:flex;
+
+            align-items:center;
+
+            padding:0 18px;
+
+            text-decoration:none;
+
+            color:#334155;
+
+            font-size:15px;
+
+            font-weight:600;
+
+            transition:.18s ease;
+        }
+
+        .menu a:hover{
+
+            background:#f6fafb;
+        }
+
+        .menu a.active{
+
+            background:#e9fbfa;
+
+            color:#26ABA5;
+        }
+
+        /* =========================
+           CONTENT
+        ========================== */
+
+        .content{
+
+            flex:1;
+
+            max-width:900px;
+        }
+
+        /* =========================
+           CARD
+        ========================== */
+
+        .card{
+
+            width:100%;
+
+            max-width:950px;
+
+            background:
+                rgba(255,255,255,.24);
+
+            backdrop-filter:blur(8px);
+
+            -webkit-backdrop-filter:blur(8px);
+
+            border:
+                1px solid rgba(255,255,255,.5);
+
+            border-radius:36px;
+
+            padding:42px;
+
+            box-shadow:
+                0 10px 28px rgba(15,23,42,.03);
+        }
+
+        /* =========================
+           HEADER
+        ========================== */
+
+        
+        .title{
+
+            font-size:30px;
+
+            margin:6px 0 24px;
+
+            font-weight:600;
+
+            color:#0f172a;
+        }
+
+        .subtitle{
+
+            text-align:center;
+
+            color:#64748b;
+
+            font-size:16px;
+
+            margin-bottom:40px;
+        }
+
+        /* =========================
+           FORM
+        ========================== */
+
+        .form-grid{
+
+            display:grid;
+
+            grid-template-columns:
+                1fr 1fr auto;
+
+            gap:18px;
+
+            align-items:end;
+        }
+
+        .group label{
+
+            display:block;
+
+            margin-bottom:10px;
+
+            font-size:15px;
+
+            font-weight:700;
+
+            color:#0f172a;
+        }
+
+        .control{
+
+            width:100%;
+
+            height:56px;
+
+            border-radius:18px;
+
+            border:
+                1px solid rgba(203,213,225,.7);
+
+            background:
+                rgba(255,255,255,.52);
+
+            backdrop-filter:blur(4px);
+
+            padding:0 18px;
+
+            font-size:16px;
+
+            color:#334155;
+
+            transition:.18s ease;
+
+            outline:none;
+        }
+
+        .control:focus{
+
+            border-color:#26ABA5;
+
+            background:
+                rgba(255,255,255,.72);
+
+            box-shadow:
+                0 0 0 4px rgba(38,171,165,.08);
+        }
+
+        /* =========================
+           BUTTON
+        ========================== */
+
+        .btn{
+
+            height:56px;
+
+            border:none;
+
+            border-radius:18px;
+
+            padding:0 34px;
+
+            cursor:pointer;
+
+            font-size:16px;
+
+            font-weight:700;
+
+            transition:.18s ease;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #17c6c3,
+                    #14b8d4
+                );
+
+            color:white;
+
+            box-shadow:
+                0 10px 22px rgba(20,184,212,.18);
+
+            white-space:nowrap;
+        }
+
+        .btn:hover{
+
+            transform:translateY(-1px);
+
+            opacity:.50;
+        }
+
+        /* =========================
+           MOBILE
+        ========================== */
+
+        @media(max-width:500px){
+
+            .layout{
+
+                flex-direction:column;
+            }
+
+            .sidebar{
+
+                width:100%;
+
+                min-width:100%;
+
+                position:relative;
+
+                top:0;
+            }
+
+            .card{
+
+                padding:28px;
+            }
+
+            .title{
+
+                font-size:34px;
+            }
+
+            .form-grid{
+
+                grid-template-columns:1fr;
+            }
+
+            .btn{
+
+                width:100%;
+            }
+        }
+
     </style>
+
 </head>
 
-<body class="app-body">
+<body>
 
-<div class="selector-wrapper">
+<div class="layout">
 
-    <img src="{% static 'img/logo.png' %}" style="width:120px; opacity:0.8; margin-bottom:15px;">
+    <!-- SIDEBAR -->
 
-    <h1>Reporte Mensual</h1>
+    <aside class="sidebar">
 
-    <form method="GET" action="{% url 'reportes:reporte_mensual' 2026 1 %}"
-          onsubmit="this.action = `/reportes/${document.getElementById('year').value}/${document.getElementById('month').value}/`">
+        <img
+            src="{% static 'img/logo.png' %}"
+            class="sidebar-logo"
+        >
 
-        <select id="year" required>
-            {% for y in years %}
-                <option value="{{ y }}">{{ y }}</option>
-            {% endfor %}
-        </select>
+        <nav class="menu">
 
-        <select id="month" required>
-            {% for n, nombre in meses %}
-                <option value="{{ n }}">{{ nombre }}</option>
-            {% endfor %}
-        </select>
+            <a href="/caja/">
+                Caja
+            </a>
 
-        <button class="btn-sonrisar">Generar Reporte</button>
-    </form>
+            <a href="/pagos/historial/">
+                Historial
+            </a>
+
+            <a href="/caja/cerradas/">
+                Cajas cerradas
+            </a>
+
+            <a
+                href="/reportes/selector/"
+                class="active"
+            >
+                Reportes
+            </a>
+
+            <a href="/pagos/gastos/nuevo/">
+                Nuevo gasto
+            </a>
+
+        </nav>
+
+    </aside>
+
+    <!-- CONTENT -->
+
+    <main class="content">
+
+        <section class="card">
+
+            
+            <h1 class="title">
+                Reporte mensual
+            </h1>
+
+            <div class="subtitle">
+                Selecciona el período que deseas visualizar
+            </div>
+
+            <form
+                method="GET"
+                action="{% url 'reportes:reporte_mensual' 2026 1 %}"
+
+                onsubmit="
+                    this.action =
+                    `/reportes/${
+                        document.getElementById('year').value
+                    }/${
+                        document.getElementById('month').value
+                    }/`
+                "
+            >
+
+                <div class="form-grid">
+
+                    <!-- YEAR -->
+
+                    <div class="group">
+
+                        <label>
+                            Año
+                        </label>
+
+                        <select
+                            id="year"
+                            class="control"
+                            required
+                        >
+
+                            {% for y in years %}
+
+                                <option value="{{ y }}">
+                                    {{ y }}
+                                </option>
+
+                            {% endfor %}
+
+                        </select>
+
+                    </div>
+
+                    <!-- MONTH -->
+
+                    <div class="group">
+
+                        <label>
+                            Mes
+                        </label>
+
+                        <select
+                            id="month"
+                            class="control"
+                            required
+                        >
+
+                            {% for n, nombre in meses %}
+
+                                <option value="{{ n }}">
+                                    {{ nombre }}
+                                </option>
+
+                            {% endfor %}
+
+                        </select>
+
+                    </div>
+
+                    <!-- BUTTON -->
+
+                    <button class="btn">
+                        📊 Generar reporte
+                    </button>
+
+                </div>
+
+            </form>
+
+        </section>
+
+    </main>
 
 </div>
 

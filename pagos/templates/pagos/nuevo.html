@@ -1,148 +1,529 @@
-{% extends "base.html" %}
-{% block title %}Nuevo pago | Sonrisar{% endblock %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuevo pago | Sonrisar</title>
 
-{% block content %}
+    <link rel="stylesheet" href="{% static 'css/sonrisar-pro.css' %}">
 
-<div class="nuevo-pago-page">
+    <style>
 
-    <div class="np-card glass">
+        *{
+            box-sizing:border-box;
+        }
 
-        <h1 class="h1-soft">Nuevo pago</h1>
+        body{
 
-        {% if initial.paciente or initial.ci or initial.fecha_cita %}
-            <div class="np-info-box">
-                <div><strong>Paciente:</strong> {{ initial.paciente|default:"-" }}</div>
-                {% if initial.ci %}
-                    <div><strong>CI:</strong> {{ initial.ci }}</div>
-                {% endif %}
-                {% if initial.fecha_cita %}
-                    <div><strong>Fecha de cita:</strong> {{ initial.fecha_cita }}</div>
-                {% endif %}
-                <div class="np-info-small">Datos recibidos desde Sonrisar Pro</div>
+            margin:0;
+
+            background:#ffffff;
+
+            font-family:
+                Inter,
+                sans-serif;
+
+            color:#0f172a;
+        }
+
+        .layout{
+
+            display:flex;
+
+            gap:22px;
+
+            padding:18px;
+
+            min-height:100vh;
+        }
+
+        /* =========================
+        SIDEBAR
+        ========================== */
+
+        .sidebar{
+
+            width:230px;
+
+            background:#ffffff;
+
+            border:1px solid #edf1f4;
+
+            border-radius:28px;
+
+            padding:18px 16px;
+
+            box-shadow:
+                0 4px 18px rgba(15,23,42,.04);
+
+            height:fit-content;
+
+            position:sticky;
+
+            top:20px;
+        }
+
+        .sidebar-logo{
+
+            width:120px;
+
+            display:block;
+
+            margin:0 auto 18px auto;
+        }
+
+        .menu{
+
+            display:flex;
+
+            flex-direction:column;
+
+            gap:8px;
+        }
+
+        .menu a{
+
+            height:44px;
+
+            border-radius:16px;
+
+            display:flex;
+
+            align-items:center;
+
+            padding:0 16px;
+
+            text-decoration:none;
+
+            color:#334155;
+
+            font-size:15px;
+
+            font-weight:600;
+
+            transition:.18s ease;
+        }
+
+        .menu a:hover{
+
+            background:#f6fafb;
+        }
+
+        .menu a.active{
+
+            background:#e9fbfa;
+
+            color:#26ABA5;
+        }
+
+        /* =========================
+        CONTENIDO
+        ========================== */
+
+        .content{
+
+            flex:1;
+
+            max-width:960px;
+        }
+
+        .title{
+
+            font-size:30px;
+
+            line-height:1;
+
+            margin:6px 0 24px;
+
+            font-weight:700;
+
+            color:#0f172a;
+        }
+
+        /* =========================
+        CARD
+        ========================== */
+
+        .card{
+
+            position:relative;
+
+            overflow:hidden;
+
+            background:#ffffff;
+
+            border:
+                1px solid #edf1f4;
+
+            border-radius:30px;
+
+            padding:32px;
+
+            box-shadow:
+                0 4px 18px rgba(15,23,42,.04);
+        }
+
+        /* =========================
+        MARCA AGUA
+        ========================== */
+
+        .watermark{
+
+            position:absolute;
+
+            inset:0;
+
+            display:flex;
+
+            align-items:center;
+
+            justify-content:center;
+
+            pointer-events:none;
+
+            z-index:0;
+        }
+
+        .watermark img{
+
+            width:720px;
+
+            opacity:.1;
+
+            position:fixed;
+        }
+
+        /* =========================
+        FORM
+        ========================== */
+
+        .form{
+
+            position:relative;
+
+            z-index:2;
+        }
+
+        .group{
+
+            margin-bottom:22px;
+        }
+
+        .group label{
+
+            display:block;
+
+            font-size:16px;
+
+            font-weight:600;
+
+            margin-bottom:10px;
+
+            color:#0f172a;
+        }
+
+        .control{
+
+            width:100%;
+
+            height:45px;
+
+            border-radius:14px;
+
+            border:
+                1px solid #dbe3ea;
+
+            background:
+                rgba(255,255,255,.72);
+
+            padding:0 18px;
+
+            font-size:16px;
+
+            color:#334155;
+
+            transition:.18s ease;
+        }
+
+        .control::placeholder{
+
+            color:#94a3b8;
+        }
+
+        .control:focus{
+
+            outline:none;
+
+            border-color:#26ABA5;
+
+            background:#ffffff;
+
+            box-shadow:
+                0 0 0 4px rgba(38,171,165,.08);
+        }
+
+        select.control{
+
+            cursor:pointer;
+        }
+
+        /* =========================
+        BOTON
+        ========================== */
+
+        .btn{
+
+            width:40%;
+
+            height:45px;
+
+            border:none;
+
+            border-radius:14px;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #25c7c4,
+                    #1fb7d6
+                );
+
+            color:white;
+
+            font-size:18px;
+
+            font-weight:700;
+
+            cursor:pointer;
+
+            transition:.18s ease;
+
+            box-shadow:
+                0 6px 18px rgba(37,199,196,.16);
+        }
+
+        .btn:hover{
+
+            transform:translateY(-1px);
+
+            opacity:.87;
+        }
+
+        /* =========================
+        MOBILE
+        ========================== */
+
+        @media(max-width:1100px){
+
+            .layout{
+
+                flex-direction:column;
+            }
+
+            .sidebar{
+
+                width:100%;
+
+                position:relative;
+
+                top:0;
+            }
+
+            .title{
+
+                font-size:34px;
+            }
+
+            .card{
+
+                padding:24px;
+            }
+
+            .control{
+
+                height:54px;
+
+                font-size:15px;
+            }
+
+            .btn{
+
+                height:50px;
+
+                font-size:14px;
+            }
+        }
+
+    </style>
+
+</head>
+<body>
+
+<div class="layout">
+
+    <!-- SIDEBAR -->
+
+    <aside class="sidebar">
+
+        <img
+            src="{% static 'img/logo.png' %}"
+            class="sidebar-logo"
+        >
+
+        <nav class="menu">
+
+            <a href="/caja/">
+                Caja
+            </a>
+
+            <a href="/pagos/historial/">
+                Historial
+            </a>
+
+            <a href="/caja/cerradas/">
+                Cajas cerradas
+            </a>
+
+            <a href="/reportes/selector/">
+                Reportes
+            </a>
+
+            <a
+                href="/pagos/nuevo/"
+                class="active"
+            >
+                Nuevo pago
+            </a>
+
+        </nav>
+
+    </aside>
+
+    <!-- CONTENIDO -->
+
+    <main class="content">
+
+        <h1 class="title">
+            Nuevo pago
+        </h1>
+
+        <section class="card">
+
+            <!-- MARCA DE AGUA -->
+
+            <div class="watermark">
+
+                <img
+                    src="{% static 'img/logo.png' %}"
+                >
+
             </div>
-                <div><strong>appointment_id:</strong> {{ initial.appointment_id|default:"VACÍO" }}</div>
-                <div><strong>patient_id:</strong> {{ initial.patient_id|default:"VACÍO" }}</div>
-                <div><strong>next:</strong> {{ initial.next|default:"VACÍO" }}</div>
-        {% endif %}
 
-        <form method="POST" class="np-form">
-            {% csrf_token %}
+            <!-- FORM -->
 
-            <input type="hidden" name="next" value="{{ initial.next }}">
-            <input type="hidden" name="appointment_id" value="{{ initial.appointment_id }}">
-            <input type="hidden" name="patient_id" value="{{ initial.patient_id }}">
+            <form
+                method="POST"
+                class="form"
+            >
 
-            <div class="np-field">
-                <label>Monto</label>
-                <input type="number" name="monto" step="0.01" required placeholder="0.00" value="{{ initial.monto }}">
-            </div>
+                {% csrf_token %}
 
-            <div class="np-field">
-                <label>Paciente</label>
-                <input type="text" name="paciente" placeholder="Ej: Luis Hernández" value="{{ initial.paciente }}">
-            </div>
+                <div class="group">
 
-            <div class="np-field">
-                <label>Concepto</label>
-                <input type="text" name="concepto" placeholder="Ej: Control / Ortodoncia / Limpieza" value="{{ initial.concepto }}">
-            </div>
+                    <label>
+                        Monto
+                    </label>
 
-            <div class="np-field">
-                <label>Método de pago</label>
-                <select name="metodo" required>
-                    <option value="">Seleccione…</option>
-                    {% for value, label in metodos %}
-                        <option value="{{ value }}" {% if initial.metodo == value %}selected{% endif %}>
-                            {{ label }}
+                    <input
+                        type="number"
+                        name="monto"
+                        step="0.01"
+                        placeholder="0.00"
+                        class="control"
+                        required
+                    >
+
+                </div>
+
+                <div class="group">
+
+                    <label>
+                        Paciente
+                    </label>
+
+                    <input
+                        type="text"
+                        name="paciente"
+                        placeholder="Ej: Luis Hernández"
+                        class="control"
+                        required
+                    >
+
+                </div>
+
+                <div class="group">
+
+                    <label>
+                        Concepto
+                    </label>
+
+                    <input
+                        type="text"
+                        name="concepto"
+                        placeholder="Ej: Control / Ortodoncia / Limpieza"
+                        class="control"
+                        required
+                    >
+
+                </div>
+
+                <div class="group">
+
+                    <label>
+                        Método de pago
+                    </label>
+
+                    <select
+                        name="metodo"
+                        class="control"
+                        required
+                    >
+
+                        <option value="">
+                            Seleccionar método
                         </option>
-                    {% endfor %}
-                </select>
-            </div>
 
-            <div class="np-actions">
-                <button type="submit" class="btn-sonrisar primary">
-                    Cobrar
+                        <option value="efectivo">
+                            Efectivo
+                        </option>
+
+                        <option value="tarjeta">
+                            Tarjeta
+                        </option>
+
+                        <option value="transferencia">
+                            Transferencia
+                        </option>
+
+                    </select>
+
+                </div>
+
+                <button
+                    type="submit"
+                    class="btn"
+                >
+                    Registrar pago
                 </button>
 
-                {% if initial.next %}
-                    <a href="{{ initial.next }}" class="btn-sonrisar secondary">
-                        Volver
-                    </a>
-                {% endif %}
-            </div>
+            </form>
 
-        </form>
-    </div>
+        </section>
+
+    </main>
 
 </div>
 
-<style>
-.nuevo-pago-page {
-    max-width: 560px;
-    margin: 0 auto;
-    padding: 40px 20px;
-}
-
-.np-card {
-    padding: 28px 30px;
-    border-radius: 18px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.07);
-    backdrop-filter: blur(12px);
-}
-
-.np-form {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-}
-
-.np-field label {
-    font-weight: 600;
-    margin-bottom: 4px;
-    display: block;
-    opacity: .82;
-}
-
-.np-field input,
-.np-field select {
-    width: 100%;
-    padding: 10px 12px;
-    border-radius: 10px;
-    border: 1px solid rgba(0,0,0,0.18);
-    background: rgba(255,255,255,0.55);
-    font-size: 15px;
-}
-
-.np-field input:focus,
-.np-field select:focus {
-    outline: 2px solid #26ABA5;
-    border-color: #26ABA5;
-}
-
-.np-info-box {
-    margin-bottom: 18px;
-    padding: 14px 16px;
-    border-radius: 14px;
-    background: rgba(38, 171, 165, 0.08);
-    border: 1px solid rgba(38, 171, 165, 0.22);
-    color: #184b4b;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.np-info-small {
-    margin-top: 4px;
-    font-size: 13px;
-    opacity: .75;
-}
-
-.np-actions {
-    display: flex;
-    gap: 10px;
-    margin-top: 14px;
-    flex-wrap: wrap;
-}
-</style>
-
-{% endblock %}
+</body>
+</html>

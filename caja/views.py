@@ -1,67 +1,116 @@
 from decimal import Decimal
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
+
 from .models import CashSession, MovimientoCaja
-from pagos.models import Pago, Gasto   # 🔥 IMPORTANTE
+from pagos.models import Pago, Gasto
+
+from django.http import HttpResponse
+
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
+
+from reportlab.lib import colors
+from reportlab.lib.units import mm
+
+import os
+from django.conf import settings
+
+from .utils_pdf import generar_pdf_cierre
 
 
 def _sum_montos(queryset):
     total = Decimal("0.00")
+
     for obj in queryset:
         total += obj.monto
+
     return total
 
 
-# ============================
-# TABLERO (CAJA DEL DÍA)
-# ============================
+# =====================================================
+# TABLERO
+# =====================================================
+
 def tablero(request):
+
     caja_actual = CashSession.obtener_caja_del_dia()
 
-    # ============================
-    # PAGOS (INGRESOS)
-    # ============================
+    caja_bloqueada = (
+        caja_actual.estado == CashSession.Status.CERRADA
+    )
+
+    # =====================================================
+    # PAGOS
+    # =====================================================
+
     pagos = Pago.objects.filter(
         fecha__date=caja_actual.fecha
     ).order_by("-fecha")
 
-    total_pagos = sum(p.monto for p in pagos)
-    cantidad_pagos = pagos.count()
-    promedio = total_pagos / cantidad_pagos if cantidad_pagos > 0 else 0
-    ultimo_pago = pagos.first() if cantidad_pagos > 0 else None
+    total_pagos = _sum_montos(pagos)
 
-    # ============================
-    # GASTOS (EGRESOS) 🔥 NUEVO
-    # ============================
+    cantidad_pagos = pagos.count()
+
+    promedio = (
+        total_pagos / cantidad_pagos
+        if cantidad_pagos > 0 else Decimal("0.00")
+    )
+
+    ultimo_pago = pagos.first()
+
+    # =====================================================
+    # GASTOS
+    # =====================================================
+
     gastos = Gasto.objects.filter(
         fecha__date=caja_actual.fecha
     )
 
-    total_gastos = sum(g.monto for g in gastos)
+    total_gastos = _sum_montos(gastos)
 
-    # ============================
+    # =====================================================
     # MOVIMIENTOS MANUALES
-    # ============================
-    movimientos = MovimientoCaja.objects.filter(caja=caja_actual).order_by("-fecha")
+    # =====================================================
+
+    movimientos = MovimientoCaja.objects.filter(
+        caja=caja_actual
+    ).order_by("-fecha")
+
     entradas = movimientos.filter(tipo="entrada")
+
     salidas = movimientos.filter(tipo="salida")
 
     total_entradas = _sum_montos(entradas)
+
     total_salidas = _sum_montos(salidas)
-    balance_mov = total_entradas - total_salidas
 
-    # ============================
-    # 💰 RESULTADO REAL 🔥
-    # ============================
-    resultado_real = total_pagos - total_gastos
+    balance_movimientos = total_entradas - total_salidas
 
-    # ============================
-    # CÁLCULOS EXISTENTES
-    # ============================
-    total_del_dia = total_pagos + balance_mov
-    total_caja = (caja_actual.saldo_inicial or Decimal("0.00")) + total_del_dia
+    # =====================================================
+    # TOTALES REALES
+    # =====================================================
+
+    ingresos_totales = total_pagos + total_entradas
+
+    egresos_totales = total_gastos + total_salidas
+
+    saldo_esperado = (
+        (caja_actual.saldo_inicial or Decimal("0.00"))
+        + ingresos_totales
+        - egresos_totales
+    )
+
+    # =====================================================
+    # TOTALES FINALES
+    # =====================================================
+
+    resultado_real = ingresos_totales - total_gastos
+
+    total_calculado = saldo_esperado
 
     return render(request, "caja/tablero.html", {
+
         "caja": caja_actual,
 
         # PAGOS
@@ -71,151 +120,369 @@ def tablero(request):
         "promedio": promedio,
         "ultimo_pago": ultimo_pago,
 
-        # GASTOS 🔥
+        # GASTOS
         "gastos": gastos,
         "total_gastos": total_gastos,
-
-        # RESULTADO REAL 🔥
-        "resultado_real": resultado_real,
 
         # MOVIMIENTOS
         "movimientos": movimientos,
         "ultimos_mov": movimientos[:5],
+
         "total_entradas": total_entradas,
         "total_salidas": total_salidas,
-        "balance": balance_mov,
 
-        # TOTALES
-        "total_del_dia": total_del_dia,
-        "total_caja": total_caja,
+        "balance": saldo_esperado,
+
+        # CAJA
+        "ingresos_totales": ingresos_totales,
+        "egresos_totales": egresos_totales,
+        "saldo_esperado": saldo_esperado,
+
+        "resultado_real": resultado_real,
+        "total_calculado": total_calculado,
+
+        "diferencia": (
+            (caja_actual.saldo_final_declarado or saldo_esperado)
+            - saldo_esperado
+        ),
+
+        "caja_bloqueada": caja_bloqueada,
     })
 
 
-# ============================
-# EDITAR SALDO INICIAL
-# ============================
+
+# =====================================================
+# SALDO INICIAL
+# =====================================================
+
 def saldo_inicial(request):
+
     caja = CashSession.obtener_caja_del_dia()
 
+    
+    if (
+        caja.estado == CashSession.Status.CERRADA
+        or caja.saldo_inicial > 0
+    ):
+        return redirect("caja:tablero")
+
+
+
     if request.method == "POST":
-        nuevo_saldo = request.POST.get("saldo_inicial", "").strip()
+
+        saldo = request.POST.get(
+            "saldo_inicial",
+            "0"
+        )
+
+        print("VALOR RECIBIDO:", repr(saldo))
+
         try:
-            nuevo_saldo = Decimal(nuevo_saldo)
-            caja.saldo_inicial = nuevo_saldo
+
+            saldo = (
+                saldo
+                .replace(",", ".")
+                .strip()
+            )
+
+            caja.saldo_inicial = Decimal(saldo)
+
             caja.save()
-        except:
-            pass
+
+            # =====================================
+            # VERIFICAR GUARDADO REAL
+            # =====================================
+
+            caja.refresh_from_db()
+
+            print(
+                "SALDO GUARDADO REAL:",
+                caja.saldo_inicial
+            )
+
+            print("CAJA ID:", caja.id)
+
+        except Exception as e:
+
+            print("ERROR SALDO INICIAL:", e)
 
     return redirect("caja:tablero")
 
 
-# ============================
+
+# =====================================================
 # NUEVO MOVIMIENTO
-# ============================
+# =====================================================
+
 def movimiento_nuevo(request):
+
     if request.method == "POST":
+
         caja = CashSession.obtener_caja_del_dia()
 
-        tipo = request.POST.get("tipo", "").strip()
-        concepto = request.POST.get("concepto", "").strip()
-        monto = request.POST.get("monto", "").strip()
+        if caja.estado == CashSession.Status.CERRADA:
+            return redirect("caja:tablero")
 
-        if tipo in ("entrada", "salida") and concepto and monto:
+        categoria = request.POST.get(
+            "categoria",
+            ""
+        ).strip()
+
+        concepto = request.POST.get(
+            "descripcion",
+            ""
+        ).strip()
+
+        monto = request.POST.get(
+            "monto",
+            ""
+        ).strip()
+
+        # =====================================
+        # DEFINIR TIPO AUTOMÁTICAMENTE
+        # =====================================
+
+        if categoria == "Ingreso manual":
+
+            tipo = "entrada"
+
+        else:
+
+            tipo = "salida"
+
+        # =====================================
+        # GUARDAR
+        # =====================================
+
+        if concepto and monto:
+
             MovimientoCaja.objects.create(
                 caja=caja,
                 tipo=tipo,
+                categoria=categoria,
                 concepto=concepto,
-                monto=monto
+                monto=Decimal(monto)
             )
 
     return redirect("caja:tablero")
 
 
-# ============================
+# =====================================================
 # CERRAR CAJA
-# ============================
+# =====================================================
+
 def cerrar_caja(request):
+
     caja = CashSession.obtener_caja_del_dia()
 
-    pagos = Pago.objects.filter(caja=caja)
+    if caja.estado == CashSession.Status.CERRADA:
+        return redirect("caja:cerradas")
+
+    pagos = Pago.objects.filter(
+        fecha__date=caja.fecha
+    )
+
+    gastos = Gasto.objects.filter(
+        fecha__date=caja.fecha
+    )
+
+    movimientos = MovimientoCaja.objects.filter(
+        caja=caja
+    )
+
     total_pagos = _sum_montos(pagos)
 
-    gastos = Gasto.objects.filter(caja=caja)
     total_gastos = _sum_montos(gastos)
 
-    # 🔥 CORREGIDO
-    resultado = total_pagos - total_gastos
+    total_entradas = _sum_montos(
+        movimientos.filter(tipo="entrada")
+    )
 
-    movimientos = MovimientoCaja.objects.filter(caja=caja)
-    total_entradas = _sum_montos(movimientos.filter(tipo="entrada"))
-    total_salidas = _sum_montos(movimientos.filter(tipo="salida"))
-    balance_mov = total_entradas - total_salidas
+    total_salidas = _sum_montos(
+        movimientos.filter(tipo="salida")
+    )
 
-    total_caja = (caja.saldo_inicial or Decimal("0.00")) + total_pagos + balance_mov
+    balance_movimientos = total_entradas - total_salidas
 
-    # POR MEDIO DE PAGO
-    efectivo = _sum_montos(pagos.filter(metodo="efectivo"))
-    tarjeta = _sum_montos(pagos.filter(metodo="tarjeta"))
-    transferencia = _sum_montos(pagos.filter(metodo="transferencia"))
+    efectivo = _sum_montos(
+        pagos.filter(metodo="efectivo")
+    )
 
-    total_pagos = efectivo + tarjeta + transferencia
+    tarjeta = _sum_montos(
+        pagos.filter(metodo="tarjeta")
+    )
+
+    transferencia = _sum_montos(
+        pagos.filter(metodo="transferencia")
+    )
+
+    total_calculado = (
+        (caja.saldo_inicial or Decimal("0.00"))
+        + total_pagos
+        + total_entradas
+        - total_gastos
+        - total_salidas
+    )
+
+    resultado_real = (
+        total_pagos
+        + total_entradas
+        - total_gastos
+        - total_salidas
+    )
 
     if request.method == "POST":
-        saldo_final = request.POST.get("saldo_final", "").strip()
+
+        saldo_final = request.POST.get(
+            "saldo_final",
+            "0"
+        ).strip()
+
+        try:
+
+            caja.saldo_final_declarado = Decimal(saldo_final)
+
+        except:
+
+            caja.saldo_final_declarado = Decimal("0.00")
 
         caja.efectivo = efectivo
         caja.tarjeta = tarjeta
         caja.transferencia = transferencia
+
         caja.total_pagos = total_pagos
 
-        caja.saldo_final_declarado = saldo_final
         caja.estado = CashSession.Status.CERRADA
+
         caja.cerrada_en = timezone.now()
+
         caja.save()
 
         return redirect("caja:cerradas")
 
     return render(request, "caja/cerrar_caja.html", {
-        "caja": caja,
-        "total_caja": total_caja,
-        "total_pagos": total_pagos,
-        "balance": balance_mov,
 
-        # 🔥 NUEVO
-        "total_gastos": total_gastos,
-        "resultado": resultado,
+        "caja": caja,
 
         "efectivo": efectivo,
         "tarjeta": tarjeta,
         "transferencia": transferencia,
+
+        "total_pagos": total_pagos,
+        "total_gastos": total_gastos,
+
+        "total_entradas": total_entradas,
+        "total_salidas": total_salidas,
+
+        "balance": balance_movimientos,
+
+        "resultado_real": resultado_real,
+
+        "total_calculado": total_calculado,
     })
 
 
-# ============================
-# LISTADO DE CAJAS CERRADAS
-# ============================
+# =====================================================
+# CAJAS CERRADAS
+# =====================================================
+
 def cajas_cerradas(request):
-    cajas = CashSession.objects.filter(
-        estado=CashSession.Status.CERRADA
-    ).order_by("-fecha")
+
+    cajas = (
+        CashSession.objects
+        .filter(
+            estado=CashSession.Status.CERRADA
+        )
+        .order_by("-fecha")
+    )
+
+    # =====================================================
+    # CALCULOS POR CAJA
+    # =====================================================
 
     for c in cajas:
-        pagos = Pago.objects.filter(caja=c)
+
+        pagos = Pago.objects.filter(
+            fecha__date=c.fecha
+        )
+
+        gastos = Gasto.objects.filter(
+            fecha__date=c.fecha
+        )
+
+        movimientos = MovimientoCaja.objects.filter(
+            caja=c
+        )
+
+        entradas = movimientos.filter(
+            tipo="entrada"
+        )
+
+        salidas = movimientos.filter(
+            tipo="salida"
+        )
+
         total_pagos = _sum_montos(pagos)
 
-        gastos = Gasto.objects.filter(caja=c)
         total_gastos = _sum_montos(gastos)
 
-        movimientos = MovimientoCaja.objects.filter(caja=c)
-        total_entradas = _sum_montos(movimientos.filter(tipo="entrada"))
-        total_salidas = _sum_montos(movimientos.filter(tipo="salida"))
-        balance_mov = total_entradas - total_salidas
+        total_entradas = _sum_montos(entradas)
 
-        c.total_pagos_calc = total_pagos
-        c.total_gastos_calc = total_gastos
-        c.resultado_calc = total_pagos - total_gastos
+        total_salidas = _sum_montos(salidas)
 
-        c.balance_mov_calc = balance_mov
-        c.total_caja_calc = (c.saldo_inicial or Decimal("0.00")) + total_pagos + balance_mov
+        # =============================================
+        # RESULTADO REAL
+        # =============================================
 
-    return render(request, "caja/cajas_cerradas.html", {"cajas": cajas})
+        c.total_pagos_calc = (
+            total_pagos + total_entradas
+        )
+
+        c.total_gastos_calc = (
+            total_gastos + total_salidas
+        )
+
+        c.resultado_calc = (
+            c.total_pagos_calc
+            - c.total_gastos_calc
+        )
+
+        # =============================================
+        # BALANCE MOVIMIENTOS
+        # =============================================
+
+        c.balance_mov_calc = (
+            total_entradas - total_salidas
+        )
+
+        # =============================================
+        # TOTAL CAJA
+        # =============================================
+
+        c.total_caja_calc = (
+            (c.saldo_inicial or Decimal("0.00"))
+            + c.resultado_calc
+        )
+
+    return render(
+        request,
+        "caja/cajas_cerradas.html",
+        {
+            "cajas": cajas
+        }
+    )
+
+
+# =====================================================
+# PDF CIERRE DE CAJA
+# =====================================================
+
+def pdf_cierre(request, caja_id):
+
+    caja = get_object_or_404(
+        CashSession,
+        id=caja_id
+    )
+
+    return generar_pdf_cierre(caja)
+

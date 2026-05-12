@@ -1,133 +1,791 @@
-{% extends "base.html" %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
 
-{% block title %}Cajas cerradas | Sonrisar{% endblock %}
+    <meta charset="UTF-8">
 
-{% block content %}
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-<div class="page-wrap">
-  <div class="page-head">
-    <h1 class="h1-soft">Cajas cerradas</h1>
-    <a href="{% url 'caja:tablero' %}" class="btn-sonrisar">Volver a Caja del día</a>
-  </div>
+    <title>
+        Cajas cerradas | Sonrisar
+    </title>
 
-  {% if cajas %}
-    <div class="grid-cerradas">
+    <link
+        rel="stylesheet"
+        href="{% static 'css/sonrisar-pro.css' %}"
+    >
 
-      {% for c in cajas %}
-        <article class="cerrada-card glass">
+    <style>
 
-          <!-- FECHA Y ESTADO -->
-          <div class="cerrada-fecha">
-            <span class="pill">{{ c.fecha|date:"d/m/Y" }}</span>
-            <span class="estado-tag cerrada">CERRADA</span>
-          </div>
+        *{
+            box-sizing:border-box;
+        }
 
-          <!-- CONTENIDO -->
-          <div class="cerrada-body">
+        body{
 
-            <!-- SALDO INICIAL -->
-            <div class="cerrada-row">
-              <span>Saldo inicial</span>
-              <strong>${{ c.saldo_inicial|floatformat:2 }}</strong>
+            margin:0;
+
+            background:#ffffff;
+
+            font-family:
+                Inter,
+                sans-serif;
+
+            color:#0f172a;
+
+            overflow-x:hidden;
+        }
+
+        /* =========================
+           MARCA DE AGUA GLOBAL
+        ========================== */
+
+        body::before{
+
+            content:"";
+
+            position:fixed;
+
+            inset:0;
+
+            background:
+                url("{% static 'img/logo.png' %}")
+                center center / 820px
+                no-repeat;
+
+            opacity:.13;
+
+            pointer-events:none;
+
+            z-index:1;
+        }
+
+        /* =========================
+           LAYOUT
+        ========================== */
+
+        .layout{
+
+            position:relative;
+
+            z-index:2;
+
+            display:flex;
+
+            gap:20px;
+
+            padding:18px;
+
+            min-height:100vh;
+        }
+
+        /* =========================
+           SIDEBAR
+        ========================== */
+
+        .sidebar{
+
+            width:220px;
+
+            min-width:220px;
+
+            background:
+                rgba(255,255,255,.22);
+
+            backdrop-filter:blur(10px);
+
+            -webkit-backdrop-filter:blur(10px);
+
+            border:
+                1px solid rgba(255,255,255,.35);
+
+            border-radius:30px;
+
+            padding:20px 16px;
+
+            box-shadow:
+                0 8px 28px rgba(15,23,42,.03);
+
+            height:fit-content;
+
+            position:sticky;
+
+            top:18px;
+        }
+
+        .sidebar-logo{
+
+            width:130px;
+
+            display:block;
+
+            margin:4px auto 22px auto;
+        }
+
+        .menu{
+
+            display:flex;
+
+            flex-direction:column;
+
+            gap:8px;
+        }
+
+        .menu a{
+
+            height:46px;
+
+            border-radius:15px;
+
+            display:flex;
+
+            align-items:center;
+
+            padding:0 18px;
+
+            text-decoration:none;
+
+            color:#334155;
+
+            font-size:15px;
+
+            font-weight:600;
+
+            transition:.18s ease;
+        }
+
+        .menu a:hover{
+
+            background:
+                rgba(223,248,247,.26);
+        }
+
+        .menu a.active{
+
+            background:
+                rgba(223,248,247,.46);
+
+            color:#119e99;
+        }
+
+        /* =========================
+           CONTENT
+        ========================== */
+
+        .content{
+
+            flex:1;
+        }
+
+        .topbar{
+
+            display:flex;
+
+            justify-content:space-between;
+
+            align-items:center;
+
+            gap:20px;
+
+            margin-bottom:20px;
+
+            flex-wrap:wrap;
+        }
+
+        .title{
+
+            font-size:27px;
+
+            font-weight:500;
+
+            margin:0;
+
+            letter-spacing:-1px;
+
+            color:#0f172a;
+        }
+
+        /* =========================
+           BUTTON
+        ========================== */
+
+        .btn{
+
+            height:44px;
+
+            border-radius:14px;
+
+            padding:0 22px;
+
+            text-decoration:none;
+
+            display:flex;
+
+            align-items:center;
+
+            justify-content:center;
+
+            font-weight:700;
+
+            font-size:14px;
+
+            transition:.18s ease;
+        }
+
+        .btn-secondary{
+
+            background:
+                rgba(255,255,255,.22);
+
+            backdrop-filter:blur(10px);
+
+            -webkit-backdrop-filter:blur(10px);
+
+            border:
+                1px solid rgba(255,255,255,.35);
+
+            color:#334155;
+        }
+
+        .btn-secondary:hover{
+
+            background:
+                rgba(255,255,255,.38);
+        }
+
+        /* =========================
+           GRID
+        ========================== */
+
+        .grid{
+
+            display:grid;
+
+            grid-template-columns:
+                repeat(auto-fill,minmax(255px,1fr));
+
+            gap:18px;
+        }
+
+        /* =========================
+           CARD
+        ========================== */
+
+        .card{
+
+            background:
+                rgba(255,255,255,.18);
+
+            backdrop-filter:blur(12px);
+
+            -webkit-backdrop-filter:blur(12px);
+
+            border-radius:24px;
+
+            padding:16px;
+
+            border:
+                1px solid rgba(255,255,255,.32);
+
+            box-shadow:
+                0 8px 22px rgba(0,0,0,0.04);
+
+            transition:
+                transform .18s ease,
+                box-shadow .18s ease;
+
+            position:relative;
+
+            overflow:hidden;
+        }
+
+        .card:hover{
+
+            transform:translateY(-4px);
+
+            box-shadow:
+                0 14px 28px rgba(38,171,165,0.12);
+        }
+
+        /* =========================
+           CARD TOP
+        ========================== */
+
+        .card-top{
+
+            display:flex;
+
+            justify-content:space-between;
+
+            align-items:center;
+
+            margin-bottom:14px;
+        }
+
+        .date-pill{
+
+            background:
+                rgba(223,248,247,.58);
+
+            color:#119e99;
+
+            padding:8px 15px;
+
+            border-radius:999px;
+
+            font-size:12px;
+
+            font-weight:700;
+        }
+
+        .date-pill.status{
+
+            background:
+                rgba(220,252,231,.58);
+
+            color:#15803d;
+        }
+
+        /* =========================
+           SECTION
+        ========================== */
+
+        .section{
+
+            background:
+                rgba(255,255,255,.20);
+
+            border:
+                1px solid rgba(255,255,255,.24);
+
+            border-radius:18px;
+
+            padding:14px 16px;
+
+            margin-bottom:10px;
+        }
+
+        .section-title{
+
+            color:#119e99;
+
+            font-size:11px;
+
+            font-weight:600;
+
+            margin-bottom:10px;
+        }
+
+        /* =========================
+           ROWS
+        ========================== */
+
+        .row{
+
+            display:flex;
+
+            justify-content:space-between;
+
+            align-items:center;
+
+            padding:7px 0;
+
+            border-bottom:
+                1px solid rgba(226,232,240,.24);
+        }
+
+        .row:last-child{
+
+            border-bottom:none;
+        }
+
+        .row span{
+
+            color:#64748b;
+
+            font-size:13px;
+        }
+
+        .row strong{
+
+            color:#0f172a;
+
+            font-size:14px;
+
+            font-weight:700;
+        }
+
+        .negative{
+
+            color:#b42318 !important;
+        }
+
+        .positive{
+
+            color:#15803d !important;
+        }
+
+        .total{
+
+            margin-top:6px;
+
+            padding-top:8px;
+
+            border-top:
+                1px solid rgba(203,213,225,.24);
+        }
+
+        /* =========================
+           DECLARADO
+        ========================== */
+
+        .declared{
+
+            margin-top:10px;
+
+            padding:13px 15px;
+
+            border-radius:16px;
+
+            background:
+                rgba(255,255,255,.16);
+
+            border:
+                1px solid rgba(255,255,255,.22);
+        }
+
+        /* =========================
+           PDF BUTTON
+        ========================== */
+
+        .btn-pdf-sonrisar{
+
+            display:flex;
+
+            justify-content:center;
+
+            align-items:center;
+
+            gap:7px;
+
+            margin-top:12px;
+
+            width:90%;
+
+            height:42px;
+
+            border-radius:600px;
+
+            background:#26ABA5;
+
+            color:#ffffff !important;
+
+            text-decoration:none;
+
+            font-size:13px;
+
+            font-weight:600;
+
+            box-shadow:
+                0 8px 18px rgba(38,171,165,0.16);
+
+            transition:.18s ease;
+        }
+
+        .btn-pdf-sonrisar:hover{
+
+            background:#229892;
+
+            transform:translateY(-1px);
+        }
+
+        /* =========================
+           EMPTY
+        ========================== */
+
+        .empty{
+
+            background:
+                rgba(255,255,255,.18);
+
+            backdrop-filter:blur(6px);
+
+            border-radius:24px;
+
+            padding:32px;
+
+            text-align:center;
+
+            border:
+                1px solid rgba(255,255,255,.22);
+
+            color:#64748b;
+        }
+
+        /* =========================
+           MOBILE
+        ========================== */
+
+        @media(max-width:1100px){
+
+            .layout{
+
+                flex-direction:column;
+            }
+
+            .sidebar{
+
+                width:100%;
+
+                min-width:100%;
+
+                position:relative;
+
+                top:0;
+            }
+
+            .grid{
+
+                grid-template-columns:1fr;
+            }
+
+            .title{
+
+                font-size:28px;
+            }
+        }
+
+    </style>
+
+</head>
+<body>
+
+<div class="layout">
+
+    <!-- SIDEBAR -->
+
+    <aside class="sidebar">
+
+        <img
+            src="{% static 'img/logo.png' %}"
+            class="sidebar-logo"
+        >
+
+        <nav class="menu">
+
+            <a href="/caja/">
+                Caja
+            </a>
+
+            <a href="/pagos/historial/">
+                Historial
+            </a>
+
+            <a
+                href="/caja/cerradas/"
+                class="active"
+            >
+                Cajas cerradas
+            </a>
+
+            <a href="/reportes/selector/">
+                Reportes
+            </a>
+
+            <a href="/pagos/gastos/nuevo/">
+                Nuevo gasto
+            </a>
+
+        </nav>
+
+    </aside>
+
+    <!-- CONTENT -->
+
+    <main class="content">
+
+        <div class="topbar">
+
+            <h1 class="title">
+                Cajas cerradas
+            </h1>
+
+            <a
+                href="{% url 'caja:tablero' %}"
+                class="btn btn-secondary"
+            >
+                ← Volver a Caja del día
+            </a>
+
+        </div>
+
+        {% if cajas %}
+
+            <div class="grid">
+
+                {% for c in cajas %}
+
+                <article class="card">
+
+                    <div class="card-top">
+
+                        <span class="date-pill">
+                            {{ c.fecha|date:"d/m/Y" }}
+                        </span>
+
+                        <span class="date-pill status">
+                            CERRADA
+                        </span>
+
+                    </div>
+
+                    <!-- RESUMEN -->
+
+                    <div class="section">
+
+                        <div class="section-title">
+                            Resumen financiero
+                        </div>
+
+                        <div class="row">
+                            <span>Saldo inicial</span>
+                            <strong>${{ c.saldo_inicial|floatformat:2 }}</strong>
+                        </div>
+
+                        <div class="row">
+                            <span>Ingresos</span>
+
+                            <strong class="positive">
+                                ${{ c.total_pagos_calc|floatformat:2 }}
+                            </strong>
+                        </div>
+
+                        <div class="row">
+                            <span>Gastos</span>
+
+                            <strong class="negative">
+                                -${{ c.total_gastos_calc|floatformat:2 }}
+                            </strong>
+                        </div>
+
+                        <div class="row total">
+
+                            <span>Resultado real</span>
+
+                            <strong class="{% if c.resultado_calc < 0 %}negative{% else %}positive{% endif %}">
+                                ${{ c.resultado_calc|floatformat:2 }}
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+                    <!-- MEDIOS -->
+
+                    <div class="section">
+
+                        <div class="section-title">
+                            Medios de pago
+                        </div>
+
+                        <div class="row">
+                            <span>Efectivo</span>
+                            <strong>${{ c.efectivo|floatformat:2 }}</strong>
+                        </div>
+
+                        <div class="row">
+                            <span>Tarjeta</span>
+                            <strong>${{ c.tarjeta|floatformat:2 }}</strong>
+                        </div>
+
+                        <div class="row">
+                            <span>Transferencias</span>
+                            <strong>${{ c.transferencia|floatformat:2 }}</strong>
+                        </div>
+
+                        <div class="row total">
+                            <span>Total pagos</span>
+
+                            <strong class="positive">
+                                ${{ c.total_pagos|floatformat:2 }}
+                            </strong>
+                        </div>
+
+                    </div>
+
+                    <!-- TOTALES -->
+
+                    <div class="section">
+
+                        <div class="row">
+                            <span>Balance mov.</span>
+                            <strong>
+                                ${{ c.balance_mov_calc|floatformat:2 }}
+                            </strong>
+                        </div>
+
+                        <div class="row total">
+                            <span>Total calculado</span>
+
+                            <strong class="positive">
+                                ${{ c.total_caja_calc|floatformat:2 }}
+                            </strong>
+                        </div>
+
+                    </div>
+
+                    <!-- DECLARADO -->
+
+                    <div class="declared row">
+
+                        <span>
+                            Saldo final declarado
+                        </span>
+
+                        <strong>
+
+                            {% if c.saldo_final_declarado %}
+
+                                ${{ c.saldo_final_declarado|floatformat:2 }}
+
+                            {% else %}
+
+                                —
+
+                            {% endif %}
+
+                        </strong>
+
+                    </div>
+
+                    <a
+                        href="{% url 'caja:pdf_cierre' c.id %}"
+                        class="btn-pdf-sonrisar"
+                    >
+                        📄 Descargar PDF
+                    </a>
+
+                </article>
+
+                {% endfor %}
+
             </div>
 
-            <!-- ======================= -->
-            <!-- 💰 RESUMEN FINANCIERO -->
-            <!-- ======================= -->
+        {% else %}
 
-            <div class="cerrada-mp" style="margin: 10px 0 10px 0; padding-left: 8px; border-left: 3px solid #26ABA5;">
-
-              <div class="cerrada-row">
-                <span>Ingresos</span>
-                <strong>${{ c.total_pagos_calc|floatformat:2 }}</strong>
-              </div>
-
-              <div class="cerrada-row">
-                <span>Gastos</span>
-                <strong style="color:#b42318;">
-                  -${{ c.total_gastos_calc|floatformat:2 }}
-                </strong>
-              </div>
-
-              <div class="cerrada-row total">
-                <span>Resultado real</span>
-                <strong style="
-                  color:{% if c.resultado_calc < 0 %}#b42318{% else %}#15803d{% endif %};
-                ">
-                  ${{ c.resultado_calc|floatformat:2 }}
-                </strong>
-              </div>
-
+            <div class="empty">
+                Todavía no hay cajas cerradas.
             </div>
 
-            <!-- ======================= -->
-            <!-- 💳 MEDIOS DE PAGO -->
-            <!-- ======================= -->
+        {% endif %}
 
-            <div class="cerrada-mp" style="margin: 10px 0 8px 0; padding-left: 8px; border-left: 3px solid #ccc;">
-
-              <div class="cerrada-row">
-                <span>Efectivo</span>
-                <strong>${{ c.efectivo|floatformat:2 }}</strong>
-              </div>
-
-              <div class="cerrada-row">
-                <span>Tarjeta</span>
-                <strong>${{ c.tarjeta|floatformat:2 }}</strong>
-              </div>
-
-              <div class="cerrada-row">
-                <span>Transferencias</span>
-                <strong>${{ c.transferencia|floatformat:2 }}</strong>
-              </div>
-
-              <div class="cerrada-row total">
-                <span>Total pagos</span>
-                <strong>${{ c.total_pagos|floatformat:2 }}</strong>
-              </div>
-
-            </div>
-
-            <!-- ======================= -->
-            <!-- ⚙️ MOVIMIENTOS -->
-            <!-- ======================= -->
-
-            <div class="cerrada-row">
-              <span>Balance mov.</span>
-              <strong>${{ c.balance_mov_calc|floatformat:2 }}</strong>
-            </div>
-
-            <!-- ======================= -->
-            <!-- 📊 TOTAL FINAL -->
-            <!-- ======================= -->
-
-            <div class="cerrada-row total">
-              <span>Total calculado</span>
-              <strong>${{ c.total_caja_calc|floatformat:2 }}</strong>
-            </div>
-
-            <div class="cerrada-row declared">
-              <span>Saldo final declarado</span>
-              <strong>
-                {% if c.saldo_final_declarado %}
-                  ${{ c.saldo_final_declarado|floatformat:2 }}
-                {% else %}
-                  —
-                {% endif %}
-              </strong>
-            </div>
-
-          </div>
-
-        </article>
-      {% endfor %}
-
-    </div>
-
-  {% else %}
-    <p class="muted">Todavía no hay cajas cerradas.</p>
-  {% endif %}
+    </main>
 
 </div>
 
-{% endblock %}
+</body>
+</html>

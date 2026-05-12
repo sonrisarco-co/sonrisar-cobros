@@ -1,35 +1,278 @@
 {% extends "base.html" %}
-{% block title %}Caja | Sonrisar{% endblock %}
+{% load static %}
+{% block title %}Caja del día | Sonrisar{% endblock %}
 
 {% block content %}
 
-<div class="card">
-    <div>Caja del día</div>
-    <div class="total-caja">
-        ${{ total_caja }}
-    </div>
-</div>
+<div class="tablero-grid">
 
-<a href="{% url 'pagos:nuevo' %}" class="btn-principal" style="margin-bottom:16px;">
-    + Nuevo pago
-</a>
+    <!-- ================================= -->
+    <!-- PANEL IZQUIERDO -->
+    <!-- ================================= -->
 
-<div class="card">
-    <h3>Últimos pagos</h3>
+    <section class="glass movimientos-card">
 
-    {% for p in ultimos_pagos %}
-        <div class="pago-item">
-            <div class="pago-info">
-                <strong>{{ p.paciente_nombre }}</strong><br>
-                <small>{{ p.metodo.nombre }}</small>
+        <div class="section-head">
+            <div>
+                <h2 class="h2-soft">Movimientos de caja</h2>
+                <p class="muted">Registro manual de ingresos y egresos</p>
             </div>
-            <div class="pago-monto">
-                ${{ p.monto }}
-            </div>
+
+            <span class="pill">Profesional</span>
         </div>
-    {% empty %}
-        <p>No hay pagos todavía</p>
-    {% endfor %}
+
+        <form method="POST" action="" class="form-mov">
+            {% csrf_token %}
+
+            <div class="field">
+                <label>Categoría</label>
+
+                <select name="tipo">
+                    <option>💰 Ingreso manual</option>
+                    <option>🧾 Proveedor / Insumos</option>
+                    <option>🧹 Limpieza</option>
+                    <option>🍔 Almuerzo</option>
+                    <option>📄 Papelería</option>
+                    <option>🦷 Laboratorio</option>
+                    <option>🔧 Mantenimiento</option>
+                    <option>👤 Retiro personal</option>
+                    <option>📦 Otro egreso</option>
+                </select>
+            </div>
+
+            <div class="field">
+                <label>Detalle</label>
+
+                <input
+                    type="text"
+                    placeholder="Ej: Compra de insumos odontológicos"
+                >
+            </div>
+
+            <div class="field">
+                <label>Monto</label>
+
+                <input
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                >
+            </div>
+
+            <button class="btn-sonrisar primary" type="submit">
+                + Agregar movimiento
+            </button>
+
+        </form>
+
+        <!-- MINI KPIS -->
+
+        <div class="mini-kpis">
+
+            <div class="mini-kpi glass">
+                <span>Entradas</span>
+                <strong style="color:#1f9d61;">$2500,00</strong>
+            </div>
+
+            <div class="mini-kpi glass">
+                <span>Salidas</span>
+                <strong style="color:#d9534f;">$10500,00</strong>
+            </div>
+
+            <div class="mini-kpi glass">
+                <span>Balance</span>
+                <strong style="color:#d9534f;">$-8000,00</strong>
+            </div>
+
+        </div>
+
+        <!-- MOVIMIENTOS -->
+
+        <ul class="lista-mov">
+
+            <li class="mov-row">
+                <div>
+                    <span class="mov-tipo">EGRESO · salida</span>
+                    <span class="mov-concepto">Producto baño</span>
+                </div>
+
+                <div class="mov-monto" style="color:#d9534f;">
+                    - $500,00
+                </div>
+            </li>
+
+            <li class="mov-row">
+                <div>
+                    <span class="mov-tipo">INGRESO · Entrada</span>
+                    <span class="mov-concepto">Otros</span>
+                </div>
+
+                <div class="mov-monto" style="color:#1f9d61;">
+                    + $2500,00
+                </div>
+            </li>
+
+            <li class="mov-row">
+                <div>
+                    <span class="mov-tipo">EGRESO · salida</span>
+                    <span class="mov-concepto">Brackets</span>
+                </div>
+
+                <div class="mov-monto" style="color:#d9534f;">
+                    - $10000,00
+                </div>
+            </li>
+
+        </ul>
+
+    </section>
+
+    <!-- ================================= -->
+    <!-- PANEL DERECHO -->
+    <!-- ================================= -->
+
+    <section class="kpi-derecha">
+
+        <!-- HEADER -->
+
+        <div class="glass card">
+
+            <div class="caja-head">
+
+                <div>
+                    <h1 class="h1-soft">Caja del día</h1>
+
+                    <div class="meta">
+                        <span class="date">07/05/2026</span>
+                        <span class="estado-tag abierta">ABIERTA</span>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- KPIS -->
+
+        <div class="kpi-grid">
+
+            <div class="glass card kpi kpi-compact">
+                <span>Ingresos</span>
+                <strong style="color:#1f9d61;">$0,00</strong>
+            </div>
+
+            <div class="glass card kpi kpi-compact">
+                <span>Egresos totales</span>
+                <strong style="color:#d9534f;">-$10500,00</strong>
+            </div>
+
+            <div class="glass card kpi kpi-compact">
+                <span>Saldo esperado</span>
+                <strong style="color:#d9534f;">$-8000,00</strong>
+            </div>
+
+            <div class="glass card kpi kpi-compact">
+                <span>Saldo inicial</span>
+
+                <div style="display:flex; gap:8px; margin-top:8px;">
+                    <input
+                        type="text"
+                        placeholder="0.00"
+                        style="
+                            flex:1;
+                            padding:10px;
+                            border-radius:10px;
+                            border:1px solid rgba(0,0,0,.1);
+                            background:rgba(255,255,255,.18);
+                        "
+                    >
+
+                    <button class="btn-sonrisar">
+                        Guardar
+                    </button>
+                </div>
+            </div>
+
+            <div class="glass card kpi kpi-compact">
+                <span>Entradas manuales</span>
+                <strong style="color:#1f9d61;">$2500,00</strong>
+            </div>
+
+            <div class="glass card kpi kpi-compact">
+                <span>Salidas manuales</span>
+                <strong style="color:#d9534f;">-$10500,00</strong>
+            </div>
+
+            <div class="glass card kpi kpi-compact">
+                <span>Pagos</span>
+                <strong>0</strong>
+            </div>
+
+            <div class="glass card kpi kpi-compact">
+                <span>Promedio</span>
+                <strong>$0,00</strong>
+            </div>
+
+            <div class="glass card kpi kpi-compact">
+                <span>Último pago</span>
+                <strong>—</strong>
+            </div>
+
+        </div>
+
+        <!-- DIFERENCIA -->
+
+        <div class="glass card">
+
+            <span class="muted">Diferencia</span>
+
+            <h2
+                style="
+                    margin-top:8px;
+                    font-size:30px;
+                    color:#d9534f;
+                "
+            >
+                $8000,00
+            </h2>
+
+        </div>
+
+        <!-- ACCIONES -->
+
+        <div class="glass card">
+
+            <div class="section-head">
+                <div>
+                    <h3 class="h2-soft">Acciones rápidas</h3>
+                    <p class="muted">Gestión diaria de caja</p>
+                </div>
+            </div>
+
+            <div class="caja-acciones">
+
+                <a href="{% url 'pagos:nuevo' %}" class="btn-sonrisar primary">
+                    + Nuevo pago
+                </a>
+
+                <a href="#" class="btn-sonrisar">
+                    + Gasto
+                </a>
+
+                <a href="#" class="btn-sonrisar">
+                    Ver gastos
+                </a>
+
+                <a href="#" class="btn-sonrisar danger">
+                    Cerrar caja
+                </a>
+
+            </div>
+
+        </div>
+
+    </section>
+
 </div>
 
 {% endblock %}

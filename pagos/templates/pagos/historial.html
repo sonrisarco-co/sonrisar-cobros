@@ -1,122 +1,595 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Historial de pagos | Sonrisar{% endblock %}
 
 {% block content %}
 
-<div class="historial-pagos-page contenedor-page">
+<div class="hp-layout hp-historial-only">
+  
+    <!-- SIDEBAR -->
+    <aside class="hp-sidebar">
 
-  <!-- Encabezado -->
-  <div class="header-flex hp-header">
-    <h1 class="h1-soft">Historial de pagos</h1>
-
-    <a href="{% url 'caja:tablero' %}" class="btn-sonrisar secondary">
-      Volver a Caja del día
-    </a>
-  </div>
-
-  {% for mes, pagos_del_mes in pagos_por_mes.items %}
-
-    <h2 class="h2-soft hp-mes">{{ mes }}</h2>
-
-    <!-- CONTENEDOR DEL MES -->
-    <div class="hp-mes-container glass">
-
-        <!-- GRID DE TARJETAS DENTRO DEL MES -->
-        <div class="hp-grid-inside">
-            {% for pago in pagos_del_mes %}
-            <div class="hp-card glass">
-
-                <div class="hp-top">
-                    <span class="hp-fecha">{{ pago.fecha|date:"d/m/Y" }}</span>
-                    <span class="hp-tag">PAGO</span>
-                </div>
-
-                <div class="hp-row">
-                    <span>Monto</span>
-                    <strong>${{ pago.monto|floatformat:2 }}</strong>
-                </div>
-
-                <div class="hp-row">
-                    <span>Método</span>
-                    <strong>{{ pago.get_metodo_display }}</strong>
-                </div>
-
-                {% if pago.paciente %}
-                <div class="hp-row">
-                    <span>Paciente</span>
-                    <strong>{{ pago.paciente }}</strong>
-                </div>
-                {% endif %}
-
-                {% if pago.concepto %}
-                <div class="hp-row">
-                    <span>Concepto</span>
-                    <strong>{{ pago.concepto }}</strong>
-                </div>
-                {% endif %}
-
-            </div>
-            {% endfor %}
+        <div class="hp-logo">
+            <img src="{% static 'img/logo.png' %}" alt="Sonrisar">
         </div>
 
-    </div>
+        <nav class="hp-nav">
 
-{% endfor %}
+            <a href="{% url 'caja:tablero' %}">
+                Caja
+            </a>
 
+            <a href="{% url 'pagos:historial' %}" class="active">
+                Historial
+            </a>
+
+            <a href="{% url 'caja:cerradas' %}">
+                Cajas cerradas
+            </a>
+
+            <a href="{% url 'reportes:selector' %}">
+                Reportes
+            </a>
+
+        </nav>
+
+    </aside>
+
+    <!-- CONTENIDO -->
+    <main class="hp-main">
+
+        <!-- MARCA DE AGUA -->
+        <div class="hp-watermark">
+            <img src="{% static 'img/logo.png' %}" alt="">
+        </div>
+
+        <!-- HEADER -->
+        <div class="hp-header">
+
+            <h1>Historial de pagos</h1>
+
+            <a href="{% url 'caja:tablero' %}" class="hp-btn-back">
+                ← Volver a Caja del día
+            </a>
+
+        </div>
+
+        <!-- MESES -->
+        {% for mes, pagos_del_mes in pagos_por_mes.items %}
+
+        <section class="hp-month-card">
+
+            <div class="hp-month-title">
+
+                <div class="hp-month-left">
+                    <span class="hp-calendar">📅</span>
+                    <h2>{{ mes }}</h2>
+                </div>
+
+                <div class="hp-month-count">
+                    {{ pagos_del_mes|length }} pagos
+                </div>
+
+            </div>
+
+            <!-- SCROLL INTERNO -->
+            <div class="hp-month-scroll">
+
+                <div class="hp-grid">
+
+                    {% for pago in pagos_del_mes %}
+
+                    <div class="hp-payment-card">
+
+                        <div class="hp-card-top">
+
+                            <span>
+                                {{ pago.fecha|date:"d/m/Y" }}
+                            </span>
+
+                            <span class="hp-badge">
+                                PAGO
+                            </span>
+
+                        </div>
+
+                        <div class="hp-row">
+                            <span>Monto</span>
+
+                            <strong class="green">
+                                ${{ pago.monto|floatformat:2 }}
+                            </strong>
+                        </div>
+
+                        <div class="hp-row">
+                            <span>Método</span>
+
+                            <strong class="
+                                {% if pago.metodo == 'efectivo' %}
+                                    metodo-efectivo
+                                {% elif pago.metodo == 'tarjeta' %}
+                                    metodo-tarjeta
+                                {% elif pago.metodo == 'transferencia' %}
+                                    metodo-transferencia
+                                {% endif %}
+                            ">
+                                {{ pago.get_metodo_display }}
+                            </strong>
+                        </div>
+
+                        <div class="hp-row">
+                            <span>Paciente</span>
+
+                            <strong>
+                                {{ pago.paciente }}
+                            </strong>
+                        </div>
+
+                        <div class="hp-row">
+                            <span>Concepto</span>
+
+                            <strong>
+                                {{ pago.concepto }}
+                            </strong>
+                        </div>
+
+                    </div>
+
+                    {% endfor %}
+
+                </div>
+
+            </div>
+
+        </section>
+
+        {% endfor %}
+
+    </main>
 
 </div>
 
-<!-- CSS SOLO para Historial de pagos (no rompe nada global) -->
 <style>
-  .historial-pagos-page .hp-header{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    gap:16px;
-  }
-  .historial-pagos-page .hp-mes{
-    margin-top:22px;
-    margin-bottom:12px;
-  }
-  .historial-pagos-page .hp-grid{
+
+body{
+    background:#ffffff !important;
+    font-family:"Inter",sans-serif;
+    overflow-x:hidden;
+}
+
+/* =========================
+   LAYOUT
+========================= */
+
+.hp-layout{
+    width:100%;
+    min-height:100vh;
+
     display:grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap:14px;
-  }
-  .historial-pagos-page .hp-card{
-    padding:14px 14px;
+
+    grid-template-columns:220px minmax(0,1fr);
+
+    gap:28px;
+
+    padding:28px;
+
+    box-sizing:border-box;
+
+    align-items:start;
+}
+
+/* =========================
+   SIDEBAR
+========================= */
+
+.hp-sidebar{
+    background:rgba(255,255,255,.38);
+
+    border:1px solid rgba(255,255,255,.22);
+
+    border-radius:28px;
+
+    padding:24px 18px;
+
+    height:fit-content;
+
+    position:sticky;
+    top:24px;
+
+    backdrop-filter:blur(12px);
+    -webkit-backdrop-filter:blur(12px);
+
+    box-shadow:0 4px 18px rgba(0,0,0,.04);
+}
+
+.hp-logo{
+    display:flex;
+    justify-content:flex-start;
+    align-items:center;
+
+    margin-bottom:28px;
+}
+
+.hp-logo img{
+    width:92px;
+    object-fit:contain;
+}
+
+/* =========================
+   NAV
+========================= */
+
+.hp-nav{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+}
+
+.hp-nav a{
+    text-decoration:none;
+    color:#334155;
+
+    padding:14px 16px;
+
     border-radius:16px;
-    border: 1px solid rgba(38,171,165,.22);
-    box-shadow: 0 8px 20px rgba(0,0,0,.06);
-  }
-  .historial-pagos-page .hp-top{
+
+    font-size:15px;
+    font-weight:600;
+
+    transition:.18s ease;
+}
+
+.hp-nav a:hover{
+    background:rgba(255,255,255,.22);
+}
+
+.hp-nav a.active{
+    background:#dff7f4;
+    color:#14938d;
+}
+
+/* =========================
+   MAIN
+========================= */
+
+.hp-main{
+    position:relative;
+
+    width:100%;
+    min-width:0;
+
+    z-index:2;
+}
+
+
+/* =========================
+   WATERMARK
+========================= */
+
+.hp-watermark{
+    position:fixed;
+
+    inset:0;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    pointer-events:none;
+
+    opacity:.20;
+
+    z-index:2;
+}
+
+.hp-watermark img{
+    width:800px;
+}
+
+/* =========================
+   HEADER
+========================= */
+
+.hp-header{
     display:flex;
     justify-content:space-between;
     align-items:center;
-    margin-bottom:10px;
-  }
-  .historial-pagos-page .hp-fecha{
-    opacity:.85;
+
+    margin-bottom:24px;
+
+    position:relative;
+    z-index:2;
+}
+
+.hp-header h1{
+    margin:0;
+
+    font-size:30px;
+    font-weight:700;
+
+    letter-spacing:-1px;
+
+    color:#0f172a;
+}
+
+/* =========================
+   BOTON
+========================= */
+
+.hp-btn-back{
+    border:1.5px solid #26ABA5;
+
+    color:#26ABA5;
+
+    text-decoration:none;
+
+    padding:12px 22px;
+
+    border-radius:16px;
+
     font-weight:600;
-  }
-  .historial-pagos-page .hp-tag{
-    padding:4px 10px;
-    border-radius:999px;
+    font-size:15px;
+
+    transition:.18s ease;
+
+    background:rgba(255,255,255,.22);
+
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
+
+    box-shadow:
+        0 4px 14px rgba(38,171,165,.10);
+}
+
+.hp-btn-back:hover{
+    background:#26ABA5;
+    color:white;
+
+    transform:translateY(-2px);
+}
+
+/* =========================
+   MONTH CARD
+========================= */
+
+.hp-month-card{
+    background:rgba(255,255,255,.10);
+
+    border:1px solid rgba(255,255,255,.18);
+
+    border-radius:24px;
+
+    padding:20px;
+
+    margin-bottom:24px;
+
+    position:relative;
+    z-index:2;
+
+    backdrop-filter:blur(12px);
+    -webkit-backdrop-filter:blur(12px);
+
+    box-shadow:0 4px 16px rgba(15,23,42,.04);
+}
+
+/* =========================
+   TITULO MES
+========================= */
+
+.hp-month-title{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+
+    gap:10px;
+
+    margin-bottom:18px;
+
+    padding-bottom:12px;
+
+    border-bottom:
+        1px solid rgba(226,232,240,.35);
+}
+
+.hp-month-left{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+.hp-calendar{
+    font-size:18px;
+}
+
+.hp-month-title h2{
+    margin:0;
+
+    font-size:20px;
+    font-weight:700;
+
+    color:#1e293b;
+
+    letter-spacing:-0.7px;
+}
+
+.hp-month-count{
     font-size:12px;
     font-weight:700;
-    opacity:.9;
-    border:1px solid rgba(0,0,0,.08);
-  }
-  .historial-pagos-page .hp-row{
+
+    color:#14938d;
+
+    background:rgba(38,171,165,.10);
+
+    padding:6px 12px;
+
+    border-radius:999px;
+}
+
+/* =========================
+   SCROLL INTERNO
+========================= */
+
+.hp-month-scroll{
+    max-height:480px;
+
+    overflow-y:auto;
+
+    padding-right:10px;
+}
+
+.hp-month-scroll::-webkit-scrollbar{
+    width:6px;
+}
+
+.hp-month-scroll::-webkit-scrollbar-track{
+    background:#eef2f7;
+    border-radius:999px;
+}
+
+.hp-month-scroll::-webkit-scrollbar-thumb{
+    background:
+        linear-gradient(
+            180deg,
+            #26ABA5,
+            #1f8f8a
+        );
+
+    border-radius:999px;
+}
+
+/* =========================
+   GRID
+========================= */
+
+.hp-grid{
+    display:grid;
+
+    grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
+
+    gap:14px;
+}
+
+/* =========================
+   CARD
+========================= */
+
+.hp-payment-card{
+    background:rgba(255,255,255,.10);
+
+    border:1px solid rgba(255,255,255,.18);
+
+    border-radius:18px;
+
+    padding:12px 14px;
+
+    box-shadow:0 3px 10px rgba(0,0,0,.025);
+
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
+
+    min-height:auto;
+
+    transition:
+        transform .18s ease,
+        box-shadow .18s ease,
+        border-color .18s ease;
+}
+
+.hp-payment-card:hover{
+    transform:translateY(-3px);
+
+    border-color:rgba(38,171,165,.22);
+
+    box-shadow:
+        0 10px 24px rgba(15,23,42,.08);
+}
+
+.hp-card-top{
     display:flex;
     justify-content:space-between;
     align-items:center;
-    padding:8px 0;
-    border-top:1px solid rgba(0,0,0,.06);
-  }
-  .historial-pagos-page .hp-row span{
-    opacity:.8;
-  }
+
+    margin-bottom:8px;
+}
+
+.hp-card-top span:first-child{
+    font-size:14px;
+    font-weight:700;
+
+    color:#0f172a;
+}
+
+.hp-badge{
+    background:#e8f9ee;
+
+    color:#2f9f58;
+
+    font-size:10px;
+    font-weight:700;
+
+    padding:4px 9px;
+
+    border-radius:999px;
+}
+
+.hp-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+
+    padding:9px 0;
+
+    border-top:1px solid rgba(226,232,240,.45);
+}
+
+.hp-row span{
+    color:#6b7280;
+    font-size:12px;
+}
+
+.hp-row strong{
+    color:#0f172a;
+    font-size:13px;
+}
+
+.hp-row .green{
+    color:#14938d;
+}
+
+/* =========================
+   METODOS
+========================= */
+
+.metodo-efectivo{
+    color:#26ABA5 !important;
+}
+
+.metodo-tarjeta{
+    color:#4b8fcf !important;
+}
+
+.metodo-transferencia{
+    color:#317b8d !important;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media(max-width:1100px){
+
+    .hp-layout{
+        grid-template-columns:1fr;
+    }
+
+    .hp-sidebar{
+        width:100%;
+        position:relative;
+        top:0;
+    }
+}
+
 </style>
 
 {% endblock %}
+

@@ -1,105 +1,627 @@
-{% extends "base.html" %}
 {% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
 
-{% block title %}Nuevo gasto | Sonrisar{% endblock %}
+    <meta charset="UTF-8">
 
-{% block content %}
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-<div class="page-wrap">
+    <title>
+        Nuevo gasto | Sonrisar
+    </title>
 
-    <div class="page-head">
-        <h1 class="h1-soft">Registrar gasto</h1>
-        <a href="{% url 'pagos:lista_gastos' %}" class="btn-sonrisar secondary">Ver gastos</a>
-    </div>
+    <link
+        rel="stylesheet"
+        href="{% static 'css/sonrisar-pro.css' %}"
+    >
 
-    <!-- CONTENEDOR -->
-    <div class="glass" style="
-        max-width: 750px;
-        margin: 0 auto;
-        padding: 25px;
-        border-radius: 14px;
-        position: relative;
-        overflow: hidden;
-    ">
+    <style>
 
-        <!-- LOGO MARCA DE AGUA -->
-        <div style="
+        *{
+            box-sizing:border-box;
+        }
+
+        body{
+
+            margin:0;
+
+            background:#ffffff;
+
+            font-family:
+                Inter,
+                sans-serif;
+
+            color:#0f172a;
+        }
+
+        .layout{
+
+            display:flex;
+
+            gap:22px;
+
+            padding:18px;
+
+            min-height:100vh;
+        }
+
+        /* =========================
+           SIDEBAR
+        ========================== */
+
+        .sidebar{
+
+            width:230px;
+
+            background:#ffffff;
+
+            border:1px solid #edf1f4;
+
+            border-radius:28px;
+
+            padding:18px 16px;
+
+            box-shadow:
+                0 4px 18px rgba(15,23,42,.04);
+
+            height:fit-content;
+
+            position:sticky;
+
+            top:20px;
+        }
+
+        .sidebar-logo{
+
+            width:120px;
+
+            display:block;
+
+            margin:0 auto 18px auto;
+        }
+
+        .menu{
+
+            display:flex;
+
+            flex-direction:column;
+
+            gap:8px;
+        }
+
+        .menu a{
+
+            height:44px;
+
+            border-radius:16px;
+
+            display:flex;
+
+            align-items:center;
+
+            padding:0 16px;
+
+            text-decoration:none;
+
+            color:#334155;
+
+            font-size:15px;
+
+            font-weight:600;
+
+            transition:.18s ease;
+        }
+
+        .menu a:hover{
+
+            background:#f6fafb;
+        }
+
+        .menu a.active{
+
+            background:#e9fbfa;
+
+            color:#26ABA5;
+        }
+
+        /* =========================
+           CONTENIDO
+        ========================== */
+
+        .content{
+
+            flex:1;
+
+            max-width:960px;
+        }
+
+        .title{
+
+            font-size:30px;
+
+            line-height:1;
+
+            margin:6px 0 24px;
+
+            font-weight:700;
+
+            color:#0f172a;
+        }
+
+        /* =========================
+           CARD
+        ========================== */
+
+        .card{
+
+            position:relative;
+
+            overflow:hidden;
+
+            background:#ffffff;
+
+            border:
+                1px solid #edf1f4;
+
+            border-radius:30px;
+
+            padding:32px;
+
+            box-shadow:
+                0 4px 18px rgba(15,23,42,.04);
+        }
+
+        /* =========================
+           MARCA AGUA
+        ========================== */
+
+        .watermark{
+
             position:absolute;
+
             inset:0;
-            background:url('{% static "img/logo.png" %}') center/300px no-repeat;
-            opacity:0.05;
+
+            display:flex;
+
+            align-items:center;
+
+            justify-content:center;
+
             pointer-events:none;
-        "></div>
 
-        <form method="post" style="position:relative;">
-            {% csrf_token %}
+            z-index:0;
+        }
 
-            <div class="field">
-                <label>Proveedor</label>
-                <input type="text" name="proveedor" placeholder="Ej: Dental Med, UTE, laboratorio...">
+        .watermark img{
+
+            width:720px;
+
+            opacity:.1;
+
+            position:fixed;
+        }
+
+        /* =========================
+           FORM
+        ========================== */
+
+        .form{
+
+            position:relative;
+
+            z-index:2;
+        }
+
+        .group{
+
+            margin-bottom:22px;
+        }
+
+        .group label{
+
+            display:block;
+
+            font-size:16px;
+
+            font-weight:600;
+
+            margin-bottom:10px;
+
+            color:#0f172a;
+        }
+
+        .control{
+
+            width:100%;
+
+            height:45px;
+
+            border-radius:14px;
+
+            border:
+                1px solid #dbe3ea;
+
+            background:
+                rgba(255,255,255,.72);
+
+            padding:0 18px;
+
+            font-size:16px;
+
+            color:#334155;
+
+            transition:.18s ease;
+        }
+
+        textarea.control{
+
+            min-height:100px;
+
+            padding:16px 18px;
+
+            resize:vertical;
+        }
+
+        .control::placeholder{
+
+            color:#94a3b8;
+        }
+
+        .control:focus{
+
+            outline:none;
+
+            border-color:#26ABA5;
+
+            background:#ffffff;
+
+            box-shadow:
+                0 0 0 4px rgba(38,171,165,.08);
+        }
+
+        select.control{
+
+            cursor:pointer;
+        }
+
+        small{
+
+            display:block;
+
+            margin-top:8px;
+
+            color:#64748b;
+
+            font-size:13px;
+        }
+
+        /* =========================
+           BOTONES
+        ========================== */
+
+        .actions{
+
+            display:flex;
+
+            gap:14px;
+
+            margin-top:26px;
+        }
+
+        .btn{
+
+            height:45px;
+
+            border:none;
+
+            border-radius:14px;
+
+            padding:0 28px;
+
+            cursor:pointer;
+
+            font-size:15px;
+
+            font-weight:700;
+
+            transition:.18s ease;
+
+            text-decoration:none;
+
+            display:flex;
+
+            align-items:center;
+
+            justify-content:center;
+        }
+
+        .btn-primary{
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #25c7c4,
+                    #1fb7d6
+                );
+
+            color:white;
+
+            box-shadow:
+                0 6px 18px rgba(37,199,196,.16);
+        }
+
+        .btn-primary:hover{
+
+            transform:translateY(-1px);
+
+            opacity:.88;
+        }
+
+        .btn-secondary{
+
+            background:#f8fafc;
+
+            border:1px solid #e2e8f0;
+
+            color:#475569;
+        }
+
+        .btn-secondary:hover{
+
+            background:#f1f5f9;
+        }
+
+        /* =========================
+           MOBILE
+        ========================== */
+
+        @media(max-width:1100px){
+
+            .layout{
+
+                flex-direction:column;
+            }
+
+            .sidebar{
+
+                width:100%;
+
+                position:relative;
+
+                top:0;
+            }
+
+            .card{
+
+                padding:24px;
+            }
+        }
+
+    </style>
+
+</head>
+<body>
+
+<div class="layout">
+
+    <!-- SIDEBAR -->
+
+    <aside class="sidebar">
+
+        <img
+            src="{% static 'img/logo.png' %}"
+            class="sidebar-logo"
+        >
+
+        <nav class="menu">
+
+            <a href="/caja/">
+                Caja
+            </a>
+
+            <a href="/pagos/historial/">
+                Historial
+            </a>
+
+            <a href="/caja/cerradas/">
+                Cajas cerradas
+            </a>
+
+            <a href="/reportes/selector/">
+                Reportes
+            </a>
+
+            <a
+                href="/pagos/gastos/nuevo/"
+                class="active"
+            >
+                Nuevo gasto
+            </a>
+
+        </nav>
+
+    </aside>
+
+    <!-- CONTENIDO -->
+
+    <main class="content">
+
+        <h1 class="title">
+            Registrar gasto
+        </h1>
+
+        <section class="card">
+
+            <!-- MARCA AGUA -->
+
+            <div class="watermark">
+
+                <img
+                    src="{% static 'img/logo.png' %}"
+                >
+
             </div>
 
-            <div class="field">
-                <label>Categoría</label>
-                <select name="categoria" required>
-                    <option value="">Seleccionar</option>
-                    {% for value, label in categorias %}
-                        <option value="{{ value }}">{{ label }}</option>
-                    {% endfor %}
-                </select>
-            </div>
+            <!-- FORM -->
 
-            <div class="field">
-                <label>Concepto</label>
-                <input type="text" name="concepto" required placeholder="Ej: Compra de insumos, laboratorio...">
-            </div>
+            <form
+                method="POST"
+                class="form"
+            >
 
-            <div class="field">
-                <label>Monto</label>
-                <input type="number" step="0.01" name="monto" required placeholder="0.00">
-                <small style="color:#777;">Ingresar solo el número, sin símbolo $</small>
-            </div>
+                {% csrf_token %}
 
-            <div class="field">
-                <label>Método de pago</label>
-                <select name="metodo" required>
-                    <option value="">Seleccionar</option>
-                    {% for value, label in metodos %}
-                        <option value="{{ value }}">{{ label }}</option>
-                    {% endfor %}
-                </select>
-            </div>
+                <div class="group">
 
-            <div class="field">
-                <label>Observaciones</label>
-                <textarea 
-                    name="observaciones" 
-                    rows="3"
-                    placeholder="Detalle opcional..."
-                    style="
-                        width:100%;
-                        box-sizing:border-box;
-                        padding:10px 12px;
-                        border:1px solid #d8dddd;
-                        border-radius:10px;
-                        font-size:14px;
-                        font-family:inherit;
-                        background:white;
-                        resize:vertical;
-                        min-height:72px;
-                    "
-                ></textarea>
-            </div>
+                    <label>
+                        Proveedor
+                    </label>
 
-            <div style="margin-top:20px;">
-                <button class="btn-sonrisar primary">Guardar gasto</button>
-                <a href="{% url 'caja:tablero' %}" class="btn-sonrisar secondary">Cancelar</a>
-            </div>
+                    <input
+                        type="text"
+                        name="proveedor"
+                        placeholder="Ej: Dental Med, UTE, laboratorio..."
+                        class="control"
+                    >
 
-        </form>
+                </div>
 
-    </div>
+                <div class="group">
+
+                    <label>
+                        Categoría
+                    </label>
+
+                    <select
+                        name="categoria"
+                        class="control"
+                        required
+                    >
+
+                        <option value="">
+                            Seleccionar
+                        </option>
+
+                        {% for value, label in categorias %}
+
+                            <option value="{{ value }}">
+                                {{ label }}
+                            </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+                <div class="group">
+
+                    <label>
+                        Concepto
+                    </label>
+
+                    <input
+                        type="text"
+                        name="concepto"
+                        placeholder="Ej: Compra de insumos, laboratorio..."
+                        class="control"
+                        required
+                    >
+
+                </div>
+
+                <div class="group">
+
+                    <label>
+                        Monto
+                    </label>
+
+                    <input
+                        type="number"
+                        step="0.01"
+                        name="monto"
+                        placeholder="0.00"
+                        class="control"
+                        required
+                    >
+
+                    <small>
+                        Ingresar solo el número, sin símbolo $
+                    </small>
+
+                </div>
+
+                <div class="group">
+
+                    <label>
+                        Método de pago
+                    </label>
+
+                    <select
+                        name="metodo"
+                        class="control"
+                        required
+                    >
+
+                        <option value="">
+                            Seleccionar método
+                        </option>
+
+                        {% for value, label in metodos %}
+
+                            <option value="{{ value }}">
+                                {{ label }}
+                            </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+                <div class="group">
+
+                    <label>
+                        Observaciones
+                    </label>
+
+                    <textarea
+                        name="observaciones"
+                        placeholder="Detalle opcional..."
+                        class="control"
+                    ></textarea>
+
+                </div>
+
+                <div class="actions">
+
+                    <button
+                        type="submit"
+                        class="btn btn-primary"
+                    >
+                        Guardar gasto
+                    </button>
+
+                    <a
+                        href="{% url 'caja:tablero' %}"
+                        class="btn btn-secondary"
+                    >
+                        Cancelar
+                    </a>
+
+                </div>
+
+            </form>
+
+        </section>
+
+    </main>
 
 </div>
 
-{% endblock %}
+</body>
+</html>

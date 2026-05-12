@@ -1,208 +1,650 @@
 {% extends "base.html" %}
-
+{% load static %}
 {% block title %}Caja del día | Sonrisar{% endblock %}
 
 {% block content %}
 
-<div class="tablero-grid">
+<style>
 
-  <!-- IZQUIERDA: MOVIMIENTOS -->
-  <section class="movimientos-card glass">
-    <div class="section-head">
-      <h2 class="h2-soft">Movimientos de caja</h2>
-      <span class="pill">Manual</span>
-    </div>
+    body{
+        background:#ffffff;
+    }
 
-    <form method="POST" action="{% url 'caja:movimiento_nuevo' %}" class="form-mov">
-      {% csrf_token %}
+    body::before{
+        content:"";
+        position:fixed;
+        inset:0;
+        background:
+            url("{% static 'img/logo.png' %}")
+            center center / 800px
+            no-repeat;
+        opacity:.1;
+        pointer-events:none;
+        z-index:0;
+    }
 
-      <div class="field">
-        <label>Tipo</label>
-        <select name="tipo" required>
-          <option value="entrada">Entrada</option>
-          <option value="salida">Salida</option>
-        </select>
-      </div>
+    .dashboard-wrapper{
+        position:relative;
+        z-index:2;
+        display:flex;
+        gap:10px;
+        padding:10px 18px 18px 10px;
+        align-items:flex-start;
+    }
 
-      <div class="field">
-        <label>Concepto</label>
-        <input type="text" name="concepto" required placeholder="Ej: Compra insumos / Retiro / Etc">
-      </div>
+    .sidebar{
+        width:210px !important;
+        min-width:210px !important;
+        background:rgba(255,255,255,.10);
+        backdrop-filter:blur(8px);
+        -webkit-backdrop-filter:blur(8px);
+        border:1px solid #edf1f4;
+        border-radius:28px;
+        padding:18px 16px;
+        box-shadow:0 4px 18px rgba(15,23,42,.04);
+        position:sticky;
+        top:20px;
+    }
 
-      <div class="field">
-        <label>Monto</label>
-        <input type="number" step="0.01" name="monto" required placeholder="0.00">
-      </div>
+    .sidebar-logo{
+        width:120px;
+        display:block;
+        margin:0 auto 18px auto;
+    }
 
-      <button class="btn-sonrisar primary" type="submit">Agregar movimiento</button>
-    </form>
+    .menu{
+        display:flex;
+        flex-direction:column;
+        gap:8px;
+    }
 
-    <div class="mini-kpis">
-      <div class="mini-kpi">
-        <span>Entradas</span>
-        <strong>${{ total_entradas|floatformat:2 }}</strong>
-      </div>
-      <div class="mini-kpi">
-        <span>Salidas</span>
-        <strong>${{ total_salidas|floatformat:2 }}</strong>
-      </div>
-      <div class="mini-kpi">
-        <span>Balance</span>
-        <strong>${{ balance|floatformat:2 }}</strong>
-      </div>
-    </div>
+    .menu a{
+        height:44px;
+        border-radius:16px;
+        display:flex;
+        align-items:center;
+        padding:0 16px;
+        text-decoration:none;
+        color:#334155;
+        font-size:15px;
+        font-weight:600;
+        transition:.18s ease;
+    }
 
-    <h3 class="h3-soft">Últimos movimientos</h3>
+    .menu a:hover{
+        background:#f6fafb;
+    }
 
-    {% if ultimos_mov %}
-      <ul class="lista-mov">
-        {% for m in ultimos_mov %}
-          <li class="mov-row">
-            <div class="mov-left">
-              <strong class="mov-tipo">{{ m.get_tipo_display }}</strong>
-              <span class="mov-concepto">{{ m.concepto }}</span>
+    .menu a.active{
+        background:#e9fbfa;
+        color:#26ABA5;
+    }
+
+    .caja-page{
+        flex:1;
+        margin-left:-4px;
+    }
+
+    .panel-movimientos,
+    .panel-caja{
+        gap:13px;
+    }
+
+    .grid-kpis{
+        gap:10px !important;
+    }
+
+    .kpi-card{
+        min-height:auto !important;
+        padding:14px 16px !important;
+        border-radius:18px !important;
+
+        background:rgba(255,255,255,.10) !important;
+        backdrop-filter:blur(10px);
+        -webkit-backdrop-filter:blur(10px);
+
+        border:1px solid rgba(255,255,255,.18) !important;
+
+        box-shadow:
+            0 4px 18px rgba(15,23,42,.03) !important;
+    }
+
+    .kpi-card small{
+        font-size:9px !important;
+    }
+
+    .kpi-card h2{
+        font-size:15px !important;
+        margin-top:2px !important;
+    }
+
+    .campo{
+        margin-bottom:10px !important;
+    }
+
+    .input-sonrisar{
+        height:44px !important;
+        padding:10px 14px !important;
+        font-size:14px !important;
+    }
+
+    .input-sonrisar,
+    select,
+    textarea{
+        background:rgba(255,255,255,.10) !important;
+        backdrop-filter:blur(8px);
+        -webkit-backdrop-filter:blur(8px);
+
+        border:1px solid rgba(255,255,255,.22) !important;
+    }
+
+    .mov-item,
+    .accion,
+    .diferencia-card,
+    .mini-resumen{
+        background:rgba(255,255,255,.10) !important;
+        backdrop-filter:blur(8px);
+        -webkit-backdrop-filter:blur(8px);
+
+        border:1px solid rgba(255,255,255,.18) !important;
+    }
+
+    .btn-agregar{
+        height:42px !important;
+        font-size:15px !important;
+        margin-top:4px !important;
+    }
+
+    .mini-resumen{
+        margin-top:14px !important;
+        padding-top:10px !important;
+    }
+
+    .ultimos-movimientos{
+        max-height:320px;
+        overflow-y:auto;
+        padding-right:9px;
+    }
+
+    .mov-item{
+        padding:12px !important;
+        min-height:auto !important;
+        margin-bottom:10px !important;
+    }
+
+    .mov-texto strong{
+        font-size:14px !important;
+    }
+
+    .mov-texto span{
+        font-size:12px !important;
+    }
+
+    .acciones-box{
+        padding:12px 14px !important;
+        margin-top:8px !important;
+
+        background:rgba(255,255,255,.08) !important;
+
+        backdrop-filter:blur(10px);
+        -webkit-backdrop-filter:blur(10px);
+
+        border:1px solid rgba(255,255,255,.16) !important;
+    }
+
+    .acciones-header{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        margin-bottom:10px !important;
+    }
+
+    .acciones-header h3{
+        margin:0 !important;
+        font-size:18px !important;
+    }
+
+    .acciones-header span{
+        display:none !important;
+    }
+
+    .acciones-grid{
+        gap:8px !important;
+    }
+
+    .accion{
+        height:44px !important;
+        font-size:13px !important;
+        border-radius:14px !important;
+        padding:0 14px !important;
+    }
+
+    .diferencia-card{
+        padding:10px 14px !important;
+        margin-top:10px !important;
+    }
+
+    .diferencia-card h2{
+        font-size:24px !important;
+    }
+
+    .bloqueado{
+        opacity:.45 !important;
+        pointer-events:none !important;
+        filter:grayscale(.15);
+    }
+
+    .aviso-caja-cerrada{
+        background:#fff7ed;
+        color:#9a3412;
+        border:1px solid #fed7aa;
+        border-radius:16px;
+        padding:10px 14px;
+        font-size:13px;
+        font-weight:700;
+        margin-bottom:12px;
+    }
+
+    .panel-movimientos,
+    .panel-caja{
+        background:rgba(255,255,255,.10) !important;
+        backdrop-filter:blur(10px);
+        -webkit-backdrop-filter:blur(10px);
+        border:1px solid rgba(255,255,255,.28) !important;
+    }
+
+
+    @media(max-width:1100px){
+        .dashboard-wrapper{
+            flex-direction:column;
+        }
+
+        .sidebar{
+            width:100% !important;
+            min-width:100% !important;
+            position:relative;
+            top:0;
+        }
+    }
+
+</style>
+
+<div class="dashboard-wrapper">
+
+    <aside class="sidebar">
+
+        <img
+            src="{% static 'img/logo.png' %}"
+            class="sidebar-logo"
+        >
+
+        <nav class="menu">
+
+            <a href="/caja/" class="active">
+                Caja
+            </a>
+
+            <a href="/pagos/historial/">
+                Historial
+            </a>
+
+            <a href="/caja/cerradas/">
+                Cajas cerradas
+            </a>
+
+            <a href="/reportes/selector/">
+                Reportes
+            </a>
+
+        </nav>
+
+    </aside>
+
+    <div class="caja-page">
+
+        <section class="panel-movimientos">
+
+            <div class="panel-header">
+                <h2>Movimientos de caja</h2>
+                <span class="badge-pro">Profesional</span>
             </div>
-            <div class="mov-right">
-              <span class="mov-monto">${{ m.monto|floatformat:2 }}</span>
+
+            {% if caja.estado == "cerrada" %}
+                <div class="aviso-caja-cerrada">
+                    Caja cerrada. Los movimientos están bloqueados.
+                </div>
+            {% endif %}
+
+            <form
+                method="POST"
+                action="{% url 'caja:movimiento_nuevo' %}"
+                {% if caja.estado == "cerrada" %}
+                    class="bloqueado"
+                {% endif %}
+            >
+                {% csrf_token %}
+
+                <div class="campo">
+                    <label>Categoría</label>
+
+                    <select
+                        name="categoria"
+                        class="input-sonrisar"
+                        {% if caja.estado == "cerrada" %}disabled{% endif %}
+                    >
+                        <option value="Ingreso manual">💰 Ingreso manual</option>
+                        <option value="Proveedor / Insumos">🧾 Proveedor / Insumos</option>
+                        <option value="Limpieza">🧹 Limpieza</option>
+                        <option value="Almuerzo">🍔 Almuerzo</option>
+                        <option value="Papelería">📄 Papelería</option>
+                        <option value="Laboratorio">🦷 Laboratorio</option>
+                        <option value="Mantenimiento">🔧 Mantenimiento</option>
+                        <option value="Retiro personal">👤 Retiro personal</option>
+                        <option value="Otro egreso">📦 Otro egreso</option>
+                    </select>
+                </div>
+
+                <div class="campo">
+                    <label>Detalle</label>
+
+                    <input
+                        type="text"
+                        class="input-sonrisar"
+                        name="descripcion"
+                        placeholder="Ej: Compra de insumos odontológicos"
+                        {% if caja.estado == "cerrada" %}disabled{% endif %}
+                    >
+                </div>
+
+                <div class="campo">
+                    <label>Monto</label>
+
+                    <input
+                        type="number"
+                        step="0.01"
+                        class="input-sonrisar"
+                        placeholder="0.00"
+                        name="monto"
+                        {% if caja.estado == "cerrada" %}disabled{% endif %}
+                    >
+                </div>
+
+                <button
+                    class="btn-agregar"
+                    {% if caja.estado == "cerrada" %}disabled{% endif %}
+                >
+                    + Agregar movimiento
+                </button>
+
+            </form>
+
+            <div class="mini-resumen">
+
+                <div>
+                    <span>Entradas</span>
+                    <strong class="verde">
+                        ${{ total_entradas|floatformat:2 }}
+                    </strong>
+                </div>
+
+                <div>
+                    <span>Salidas</span>
+                    <strong class="rojo">
+                        ${{ total_salidas|floatformat:2 }}
+                    </strong>
+                </div>
+
+                <div>
+                    <span>Balance</span>
+                    <strong class="{% if balance < 0 %}rojo{% else %}verde{% endif %}">
+                        ${{ balance|floatformat:2 }}
+                    </strong>
+                </div>
+
             </div>
-          </li>
-        {% endfor %}
-      </ul>
-    {% else %}
-      <p class="muted">No hay movimientos registrados</p>
-    {% endif %}
-  </section>
 
+            <div class="ultimos-movimientos">
 
-  <!-- DERECHA: KPI + ACCIONES -->
-  <section class="kpi-derecha">
+                <h3>Últimos movimientos</h3>
 
-    <div class="caja-head">
-      <div>
-        <h1 class="h1-soft">Caja del día</h1>
-        <div class="meta">
-          <span class="date">{{ caja.fecha|date:"d/m/Y" }}</span>
-          <span class="estado-tag {{ caja.estado }}">{{ caja.estado|upper }}</span>
-        </div>
-      </div>
+                {% for mov in movimientos|slice:":5" %}
+
+                    <div class="mov-item">
+
+                        <div class="mov-icon {% if mov.tipo == 'entrada' %}verde{% else %}rojo{% endif %}">
+                            {% if mov.tipo == 'entrada' %}
+                                ↑
+                            {% else %}
+                                ↓
+                            {% endif %}
+                        </div>
+
+                        <div class="mov-texto">
+
+                            <strong>
+                                {{ mov.tipo|upper }} · {{ mov.categoria }}
+                            </strong>
+
+                            <span>
+                                {{ mov.concepto }}
+                            </span>
+
+                        </div>
+
+                        <div class="mov-monto {% if mov.tipo == 'entrada' %}verde{% else %}rojo{% endif %}">
+                            {% if mov.tipo == 'entrada' %}
+                                +
+                            {% else %}
+                                -
+                            {% endif %}
+                            ${{ mov.monto|floatformat:2 }}
+                        </div>
+
+                    </div>
+
+                {% empty %}
+
+                    <p style="color:#64748b;">
+                        No hay movimientos registrados.
+                    </p>
+
+                {% endfor %}
+
+            </div>
+
+        </section>
+
+        <section class="panel-caja">
+
+            <div class="titulo-caja">
+
+                <h1>Caja del día</h1>
+
+                <div class="estado-caja">
+                    {{ caja.fecha|date:"d/m/Y" }}
+                    <span>
+                        {% if caja.estado == "abierta" %}
+                            ABIERTA
+                        {% else %}
+                            CERRADA
+                        {% endif %}
+                    </span>
+                </div>
+
+            </div>
+
+            <div class="grid-kpis">
+
+                <div class="kpi-card">
+                    <small>Ingresos</small>
+                    <h2 class="verde">
+                        ${{ total_pagos|floatformat:2 }}
+                    </h2>
+                </div>
+
+                <div class="kpi-card">
+                    <small>Egresos totales</small>
+                    <h2 class="rojo">
+                        -${{ total_salidas|floatformat:2 }}
+                    </h2>
+                </div>
+
+                <div class="kpi-card">
+                    <small>Saldo esperado</small>
+                    <h2 class="{% if balance < 0 %}rojo{% else %}verde{% endif %}">
+                        ${{ balance|floatformat:2 }}
+                    </h2>
+                </div>
+
+                <div class="kpi-card">
+
+                    <small>Saldo inicial</small>
+
+                    
+                        {% if caja.saldo_inicial == 0 %}
+
+                        <form
+                            method="POST"
+                            action="{% url 'caja:saldo_inicial' %}"
+                            class="saldo-inline {% if caja.estado == 'cerrada' %}bloqueado{% endif %}"
+                        >
+                            {% csrf_token %}
+
+                            <input
+                                type="number"
+                                step="0.01"
+                                name="saldo_inicial"
+                                value="{{ caja.saldo_inicial|floatformat:2 }}"
+                                placeholder="0.00"
+                                autocomplete="off"
+                                {% if caja.estado == "cerrada" %}disabled{% endif %}
+                            >
+
+                            <button
+                                type="submit"
+                                {% if caja.estado == "cerrada" %}disabled{% endif %}
+                            >
+                                Guardar
+                            </button>
+
+                        </form>
+
+                        {% else %}
+
+                        <div class="saldo-fijo">
+                            <strong>
+                                ${{ caja.saldo_inicial|floatformat:2 }}
+                            </strong>
+                        </div>
+
+                        {% endif %}                   
+
+                </div>
+
+                <div class="kpi-card">
+                    <small>Entradas manuales</small>
+                    <h2 class="verde">
+                        ${{ total_entradas|floatformat:2 }}
+                    </h2>
+                </div>
+
+                <div class="kpi-card">
+                    <small>Salidas manuales</small>
+                    <h2 class="rojo">
+                        -${{ total_salidas|floatformat:2 }}
+                    </h2>
+                </div>
+
+                <div class="kpi-card">
+                    <small>Pagos</small>
+                    <h2>{{ cantidad_pagos }}</h2>
+                </div>
+
+                <div class="kpi-card">
+                    <small>Promedio</small>
+                    <h2>
+                        ${{ promedio|floatformat:2 }}
+                    </h2>
+                </div>
+
+                <div class="kpi-card">
+                    <small>Último pago</small>
+                    <h2>
+                        {% if ultimo_pago %}
+                            ${{ ultimo_pago.monto|floatformat:2 }}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </h2>
+                </div>
+
+            </div>
+
+            <div class="diferencia-card">
+
+                <small>Diferencia</small>
+
+                <h2>
+                    ${{ diferencia|floatformat:2 }}
+                </h2>
+
+            </div>
+
+            <div class="acciones-box">
+
+                <div class="acciones-header">
+                    <h3>Acciones rápidas</h3>
+                    <span>Gestión diaria de caja</span>
+                </div>
+
+                <div class="acciones-grid">
+
+                    {% if caja.estado == "abierta" %}
+
+                        <a href="/pagos/nuevo/" class="accion accion-principal">
+                            + Nuevo pago
+                        </a>
+
+                        <a href="/pagos/gastos/nuevo/" class="accion accion-secundaria">
+                            + Gastos
+                        </a>
+
+                        <a href="/pagos/gastos/" class="accion accion-secundaria">
+                            Ver gastos
+                        </a>
+
+                        <a href="/caja/cerrar/" class="accion accion-danger">
+                            Cerrar caja
+                        </a>
+
+                    {% else %}
+
+                        <div class="accion accion-principal bloqueado">
+                            + Nuevo pago
+                        </div>
+
+                        <div class="accion accion-secundaria bloqueado">
+                            + Gastos
+                        </div>
+
+                        <a href="/pagos/gastos/" class="accion accion-secundaria">
+                            Ver gastos
+                        </a>
+
+                        <div class="accion accion-danger bloqueado">
+                            Caja cerrada
+                        </div>
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+        </section>
+
     </div>
 
-    <!-- ========================= -->
-    <!-- 💰 RESUMEN FINANCIERO REAL -->
-    <!-- ========================= -->
-
-    <div class="kpi-grid" style="margin-bottom: 14px;">
-
-      <div class="kpi glass kpi-compact">
-        <span>Ingresos</span>
-        <strong>${{ total_pagos|floatformat:2 }}</strong>
-      </div>
-
-      <div class="kpi glass kpi-compact">
-        <span>Gastos</span>
-        <strong style="color:#b42318;">-${{ total_gastos|floatformat:2 }}</strong>
-      </div>
-
-      <div class="kpi glass kpi-compact">
-        <span>Resultado real</span>
-        <strong style="
-            color:{% if resultado_real < 0 %}#b42318{% else %}#15803d{% endif %};
-        ">
-          ${{ resultado_real|floatformat:2 }}
-        </strong>
-      </div>
-
-    </div>
-
-    <div class="kpi-grid">
-
-      <!-- SALDO INICIAL EDITABLE -->
-      <div class="kpi glass kpi-compact">
-        <span>Saldo inicial</span>
-
-        <form action="{% url 'caja:saldo_inicial' %}" 
-              method="POST" 
-              style="display:flex; gap:6px; align-items:center; margin-top:6px;">
-          {% csrf_token %}
-          <input 
-            type="number"
-            step="0.01"
-            name="saldo_inicial"
-            value="{{ caja.saldo_inicial }}"
-            style="width:85px; padding:4px; border-radius:6px; border:1px solid #ccc;">
-          <button type="submit" class="btn-sonrisar secondary" style="padding:4px 10px;">Guardar</button>
-        </form>
-      </div>
-
-      <!-- TOTAL DEL DÍA (NO incluye saldo inicial) -->
-      <div class="kpi glass kpi-compact">
-        <span>Total del día</span>
-        <strong>${{ total_del_dia|floatformat:2 }}</strong>
-      </div>
-
-      <!-- CANTIDAD DE PAGOS -->
-      <div class="kpi glass kpi-compact">
-        <span>Pagos</span>
-        <strong>{{ cantidad_pagos }}</strong>
-      </div>
-
-      <!-- PROMEDIO -->
-      <div class="kpi glass kpi-compact">
-        <span>Promedio</span>
-        <strong>${{ promedio|floatformat:2 }}</strong>
-      </div>
-
-      <!-- ÚLTIMO PAGO -->
-      <div class="kpi glass kpi-compact">
-        <span>Último pago</span>
-        <strong>
-          {% if ultimo_pago %}
-            ${{ ultimo_pago.monto|floatformat:2 }}
-          {% else %}
-            —
-          {% endif %}
-        </strong>
-      </div>
-
-      <!-- TOTAL PAGOS -->
-      <div class="kpi glass kpi-compact">
-        <span>Pagos del día</span>
-        <strong>${{ total_pagos|floatformat:2 }}</strong>
-      </div>
-
-      <!-- TOTAL CALCULADO (Saldo inicial + Total del día) -->
-      <div class="kpi glass kpi-compact">
-        <span>Total calculado</span>
-        <strong>${{ total_caja|floatformat:2 }}</strong>
-      </div>
-    </div>
-
-    <div class="caja-acciones">
-        <a href="{% url 'pagos:nuevo' %}" class="btn-sonrisar primary">+ Nuevo pago</a>
-
-        <a href="{% url 'pagos:nuevo_gasto' %}" class="btn-sonrisar secondary">+ Gasto</a>
-
-        <a href="{% url 'pagos:lista_gastos' %}" class="btn-sonrisar secondary">Ver gastos</a>
-
-        {% if caja.estado == "abierta" %}
-            <a href="{% url 'caja:cerrar' %}" class="btn-sonrisar danger">Cerrar caja</a>
-        {% endif %}
-    </div>
-
-  </section>
-
-</div>
-
-
-<!-- ========================= -->
-<!-- BOTONERA FLOTANTE DERECHA -->
-<!-- ========================= -->
-
-<div class="botonera-fija">
-    <a href="{% url 'caja:tablero' %}" class="btn-sonrisar secondary">Caja</a>
-    <a href="{% url 'pagos:historial' %}" class="btn-sonrisar secondary">Historial</a>
-    <a href="{% url 'caja:cerradas' %}" class="btn-sonrisar secondary">Cajas cerradas</a>
-    <a href="{% url 'reportes:selector' %}" class="btn-sonrisar secondary">Reportes</a>
 </div>
 
 {% endblock %}

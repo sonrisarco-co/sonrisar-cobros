@@ -1,114 +1,694 @@
-{% extends "base.html" %}
-{% block title %}Cerrar caja | Sonrisar{% endblock %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
 
-{% block content %}
+    <meta charset="UTF-8">
 
-<div class="card card-cierre" style="padding: 25px; border-radius: 14px;">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-    <h1 class="titulo" style="margin-bottom: 25px;">Cierre de caja</h1>
+    <title>
+        Cierre de caja | Sonrisar
+    </title>
 
-    <div style="
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 25px;
-        align-items: start;
-    ">
+    <link
+        rel="stylesheet"
+        href="{% static 'css/sonrisar-pro.css' %}"
+    >
 
-        <!-- MEDIOS DE PAGO -->
-        <div style="border-left: 4px solid #26ABA5; padding-left: 14px;">
+    <style>
 
-            <h3 style="color:#26ABA5; font-size:1rem; margin-bottom:10px;">
-                Totales por medio de pago
-            </h3>
+        *{
+            box-sizing:border-box;
+        }
 
-            <p style="margin:4px 0;">Efectivo <strong>${{ efectivo|floatformat:2 }}</strong></p>
-            <p style="margin:4px 0;">Tarjeta <strong>${{ tarjeta|floatformat:2 }}</strong></p>
-            <p style="margin:4px 0;">Transferencias <strong>${{ transferencia|floatformat:2 }}</strong></p>
+        body{
 
-            <hr style="margin: 10px 0;">
+            margin:0;
 
-            <p style="margin:4px 0; font-size:1.05rem;">
-                <strong>Total pagos ${{ total_pagos|floatformat:2 }}</strong>
-            </p>
-        </div>
+            background:#ffffff;
 
-        <!-- RESUMEN GENERAL -->
-        <div style="
-            background: rgba(255,255,255,0.75);
-            border: 1px solid #e5e5e5;
-            border-radius: 12px;
-            padding: 16px 18px;
-        ">
+            font-family:
+                Inter,
+                sans-serif;
 
-            <h3 style="color:#26ABA5; font-size:1rem; margin-bottom:12px;">
-                Resumen general
-            </h3>
+            color:#0f172a;
+        }
 
-            <p style="margin:4px 0;">Ingresos <strong>${{ total_pagos|floatformat:2 }}</strong></p>
+        .layout{
 
-            <p style="margin:4px 0;">
-                Gastos
-                <strong style="color:#b42318;">-${{ total_gastos|floatformat:2 }}</strong>
-            </p>
+            display:flex;
 
-            <p style="margin:4px 0;">
-                Resultado real
-                <strong style="color:{% if resultado < 0 %}#b42318{% else %}#15803d{% endif %};">
-                    ${{ resultado|floatformat:2 }}
-                </strong>
-            </p>
+            gap:22px;
 
-            <hr style="margin: 10px 0;">
+            padding:18px;
 
-            <p style="margin:4px 0;">Balance movimientos <strong>${{ balance|floatformat:2 }}</strong></p>
-            <p style="margin:4px 0;">Total calculado <strong>${{ total_caja|floatformat:2 }}</strong></p>
+            min-height:100vh;
+        }
 
-        </div>
+        /* =========================
+           SIDEBAR
+        ========================== */
 
-    </div>
+        .sidebar{
 
-    <!-- FORMULARIO -->
-    <form method="post" class="form-cierre" style="margin-top:30px;">
-        {% csrf_token %}
+            width:230px;
 
-        <label for="saldo" style="font-weight:500; margin-bottom:6px; display:block;">
-            Saldo final declarado
-        </label>
+            background:#ffffff;
 
-        <input
-            type="number"
-            step="0.01"
-            name="saldo_final"
-            id="saldo"
-            class="form-control"
-            style="
-                border-radius:10px;
-                height: 42px;
-                font-size: 1rem;
-                margin-bottom: 5px;
-            "
-            required
+            border:1px solid #edf1f4;
+
+            border-radius:28px;
+
+            padding:18px 16px;
+
+            box-shadow:
+                0 4px 18px rgba(15,23,42,.04);
+
+            height:fit-content;
+
+            position:sticky;
+
+            top:20px;
+        }
+
+        .sidebar-logo{
+
+            width:120px;
+
+            display:block;
+
+            margin:0 auto 18px auto;
+        }
+
+        .menu{
+
+            display:flex;
+
+            flex-direction:column;
+
+            gap:8px;
+        }
+
+        .menu a{
+
+            height:44px;
+
+            border-radius:16px;
+
+            display:flex;
+
+            align-items:center;
+
+            padding:0 16px;
+
+            text-decoration:none;
+
+            color:#334155;
+
+            font-size:15px;
+
+            font-weight:600;
+
+            transition:.18s ease;
+        }
+
+        .menu a:hover{
+
+            background:#f6fafb;
+        }
+
+        .menu a.active{
+
+            background:#e9fbfa;
+
+            color:#26ABA5;
+        }
+
+        /* =========================
+           CONTENT
+        ========================== */
+
+        .content{
+
+            flex:1;
+
+            max-width:1050px;
+        }
+
+        .title{
+
+            font-size:30px;
+
+            margin:6px 0 24px;
+
+            font-weight:700;
+
+            color:#0f172a;
+        }
+
+        /* =========================
+           CARD
+        ========================== */
+
+        .card{
+
+            position:relative;
+
+            overflow:hidden;
+
+            background:#ffffff;
+
+            border:
+                1px solid #edf1f4;
+
+            border-radius:30px;
+
+            padding:32px;
+
+            box-shadow:
+                0 4px 18px rgba(15,23,42,.04);
+        }
+
+        /* =========================
+           WATERMARK
+        ========================== */
+
+        .watermark{
+
+            position:absolute;
+
+            inset:0;
+
+            display:flex;
+
+            align-items:center;
+
+            justify-content:center;
+
+            pointer-events:none;
+
+            z-index:0;
+        }
+
+        .watermark img{
+
+            width:720px;
+
+            opacity:.08;
+
+            position:fixed;
+        }
+
+        .card-content{
+
+            position:relative;
+
+            z-index:2;
+        }
+
+        /* =========================
+           GRID
+        ========================== */
+
+        .grid{
+
+            display:grid;
+
+            grid-template-columns:1fr 1fr;
+
+            gap:18px;
+
+            margin-bottom:26px;
+        }
+
+        /* =========================
+           BOXES
+        ========================== */
+
+        .box{
+
+            background:
+                rgba(255,255,255,.72);
+
+            border:
+                1px solid #edf1f4;
+
+            border-radius:24px;
+
+            padding:18px;
+
+            backdrop-filter:blur(6px);
+
+            box-shadow:
+                0 4px 16px rgba(15,23,42,.03);
+        }
+
+        .box-title{
+
+            color:#26ABA5;
+
+            font-size:16px;
+
+            font-weight:700;
+
+            margin-bottom:18px;
+        }
+
+        /* =========================
+           ROWS
+        ========================== */
+
+        .row{
+
+            display:flex;
+
+            justify-content:space-between;
+
+            align-items:center;
+
+            padding:12px 0;
+
+            border-bottom:
+                1px solid #f1f5f9;
+        }
+
+        .row:last-child{
+
+            border-bottom:none;
+        }
+
+        .row span{
+
+            color:#475569;
+
+            font-size:15px;
+        }
+
+        .row strong{
+
+            color:#0f172a;
+
+            font-size:16px;
+        }
+
+        .negative{
+
+            color:#b42318 !important;
+        }
+
+        .positive{
+
+            color:#15803d !important;
+        }
+
+        .total{
+
+            margin-top:8px;
+
+            padding-top:16px;
+
+            border-top:
+                1px solid #e2e8f0;
+        }
+
+        .total strong{
+
+            font-size:18px;
+        }
+
+        /* =========================
+           FORM
+        ========================== */
+
+        .form{
+
+            margin-top:10px;
+        }
+
+        .group{
+
+            margin-bottom:22px;
+        }
+
+        .group label{
+
+            display:block;
+
+            font-size:16px;
+
+            font-weight:600;
+
+            margin-bottom:10px;
+
+            color:#0f172a;
+        }
+
+        .control{
+
+            width:90%;
+
+            height:40px;
+
+            border-radius:14px;
+
+            border:
+                1px solid #dbe3ea;
+
+            background:
+                rgba(255,255,255,.72);
+
+            padding:0 18px;
+
+            font-size:16px;
+
+            color:#334155;
+
+            transition:.18s ease;
+        }
+
+        .control:focus{
+
+            outline:none;
+
+            border-color:#26ABA5;
+
+            background:#ffffff;
+
+            box-shadow:
+                0 0 0 4px rgba(38,171,165,.08);
+        }
+
+        small{
+
+            display:block;
+
+            margin-top:8px;
+
+            color:#64748b;
+
+            font-size:10px;
+        }
+
+        /* =========================
+           BUTTONS
+        ========================== */
+
+        .actions{
+
+            display:flex;
+
+            gap:14px;
+
+            margin-top:24px;
+
+            flex-wrap:wrap;
+        }
+
+        .btn{
+
+            height:46px;
+
+            border:none;
+
+            border-radius:14px;
+
+            padding:0 28px;
+
+            cursor:pointer;
+
+            font-size:15px;
+
+            font-weight:700;
+
+            transition:.18s ease;
+
+            text-decoration:none;
+
+            display:flex;
+
+            align-items:center;
+
+            justify-content:center;
+        }
+
+        .btn-primary{
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #25c7c4,
+                    #1fb7d6
+                );
+
+            color:white;
+
+            box-shadow:
+                0 6px 18px rgba(37,199,196,.16);
+        }
+
+        .btn-primary:hover{
+
+            transform:translateY(-1px);
+
+            opacity:.9;
+        }
+
+        .btn-secondary{
+
+            background:#f8fafc;
+
+            border:1px solid #e2e8f0;
+
+            color:#475569;
+        }
+
+        .btn-secondary:hover{
+
+            background:#f1f5f9;
+        }
+
+        /* =========================
+           MOBILE
+        ========================== */
+
+        @media(max-width:1100px){
+
+            .layout{
+
+                flex-direction:column;
+            }
+
+            .sidebar{
+
+                width:100%;
+
+                position:relative;
+
+                top:0;
+            }
+
+            .grid{
+
+                grid-template-columns:1fr;
+            }
+
+            .card{
+
+                padding:24px;
+            }
+
+            .actions{
+
+                flex-direction:column;
+            }
+
+            .btn{
+
+                width:100%;
+            }
+        }
+
+    </style>
+
+</head>
+<body>
+
+<div class="layout">
+
+    <aside class="sidebar">
+
+        <img
+            src="{% static 'img/logo.png' %}"
+            class="sidebar-logo"
         >
 
-        <small style="color:#666; display:block; margin-bottom:12px;">
-            Acá ponés lo que contaste físicamente.
-        </small>
+        <nav class="menu">
 
-        <button type="submit" class="btn-sonrisar primary" style="padding: 8px 25px; font-size:0.9rem;">
-            Confirmar cierre
-        </button>
+            <a href="/caja/" class="active">
+                Caja
+            </a>
 
-        <a href="{% url 'caja:tablero' %}" class="btn-sonrisar secondary" style="
-            padding: 8px 25px;
-            font-size:0.9rem;
-            margin-left: 10px;
-            display:inline-block;
-        ">
-            Volver
-        </a>
+            <a href="/pagos/historial/">
+                Historial
+            </a>
 
-    </form>
+            <a href="/caja/cerradas/">
+                Cajas cerradas
+            </a>
+
+            <a href="/reportes/selector/">
+                Reportes
+            </a>
+
+            <a href="/pagos/gastos/nuevo/">
+                Nuevo gasto
+            </a>
+
+        </nav>
+
+    </aside>
+
+    <main class="content">
+
+        <h1 class="title">
+            Cierre de caja
+        </h1>
+
+        <section class="card">
+
+            <div class="grid">
+
+                <div class="box">
+
+                    <div class="box-title">
+                        Totales por medio de pago
+                    </div>
+
+                    <div class="row">
+                        <span>Efectivo</span>
+                        <strong>${{ efectivo|floatformat:2 }}</strong>
+                    </div>
+
+                    <div class="row">
+                        <span>Tarjeta</span>
+                        <strong>${{ tarjeta|floatformat:2 }}</strong>
+                    </div>
+
+                    <div class="row">
+                        <span>Transferencias</span>
+                        <strong>${{ transferencia|floatformat:2 }}</strong>
+                    </div>
+
+                    <div class="row total">
+                        <span><strong>Total pagos</strong></span>
+                        <strong>${{ total_pagos|floatformat:2 }}</strong>
+                    </div>
+
+                </div>
+
+                <div class="box">
+
+                    <div class="box-title">
+                        Resumen general
+                    </div>
+
+                    <div class="row">
+                        <span>Ingresos</span>
+                        <strong>
+                            ${{ total_pagos|floatformat:2 }}
+                        </strong>
+                    </div>
+
+                    <div class="row">
+                        <span>Gastos</span>
+
+                        <strong class="negative">
+                            -${{ total_gastos|floatformat:2 }}
+                        </strong>
+                    </div>
+
+                    <div class="row">
+                        <span>Resultado real</span>
+
+                        <strong class="{% if resultado_real < 0 %}negative{% else %}positive{% endif %}">
+                            ${{ resultado_real|floatformat:2 }}
+                        </strong>
+                    </div>
+
+                    <div class="row">
+                        <span>Balance movimientos</span>
+
+                        <strong class="{% if balance < 0 %}negative{% else %}positive{% endif %}">
+                            ${{ balance|floatformat:2 }}
+                        </strong>
+                    </div>
+
+                    <div class="row total">
+                        <span><strong>Total calculado</strong></span>
+
+                        <strong class="{% if total_calculado < 0 %}negative{% else %}positive{% endif %}">
+                            ${{ total_calculado|floatformat:2 }}
+                        </strong>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <form method="POST" class="form">
+
+                {% csrf_token %}
+
+                <div class="group">
+
+                    <label for="saldo">
+                        Saldo final declarado
+                    </label>
+
+                    <input
+                        type="number"
+                        step="0.01"
+                        name="saldo_final"
+                        id="saldo"
+                        class="control"
+                        required
+                    >
+
+                    <small>
+                        Acá ingresás el dinero contado físicamente.
+                    </small>
+
+                </div>
+
+                <div class="actions">
+
+                    <button
+                        type="submit"
+                        class="btn btn-primary"
+                    >
+                        Confirmar cierre
+                    </button>
+
+                    <a
+                        href="{% url 'caja:tablero' %}"
+                        class="btn btn-secondary"
+                    >
+                        Volver
+                    </a>
+
+                </div>
+
+            </form>
+
+        </section>
+
+    </main>
 
 </div>
 
-{% endblock %}
+</body>
+</html>

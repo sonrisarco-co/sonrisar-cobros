@@ -64,7 +64,8 @@ def tablero(request):
     # =====================================================
 
     gastos = Gasto.objects.filter(
-        fecha__date=caja_actual.fecha
+        fecha__date=caja_actual.fecha,
+        afecta_caja=True
     )
 
     total_gastos = _sum_montos(gastos)
@@ -283,7 +284,8 @@ def cerrar_caja(request):
     )
 
     gastos = Gasto.objects.filter(
-        fecha__date=caja.fecha
+        fecha__date=caja.fecha,
+        afecta_caja=True
     )
 
     movimientos = MovimientoCaja.objects.filter(
@@ -407,7 +409,8 @@ def cajas_cerradas(request):
         )
 
         gastos = Gasto.objects.filter(
-            fecha__date=c.fecha
+            fecha__date=c.fecha,
+            afecta_caja=True
         )
 
         movimientos = MovimientoCaja.objects.filter(
@@ -485,4 +488,248 @@ def pdf_cierre(request, caja_id):
     )
 
     return generar_pdf_cierre(caja)
+
+
+
+# =====================================================
+# MOVIMIENTOS FINANCIEROS
+# =====================================================
+
+def movimientos_financieros(request):
+
+    movimientos = []
+
+    hoy = timezone.now()
+
+    # ==========================================
+    # FILTROS
+    # ==========================================
+
+    try:
+
+        mes_actual = int(
+            request.GET.get("mes", hoy.month)
+        )
+
+    except:
+
+        mes_actual = hoy.month
+
+    try:
+
+        anio_actual = int(
+            request.GET.get("anio", hoy.year)
+        )
+
+    except:
+
+        anio_actual = hoy.year
+
+    # ==========================================
+    # PAGOS
+    # ==========================================
+
+    pagos = Pago.objects.filter(
+        fecha__month=mes_actual,
+        fecha__year=anio_actual
+    )
+
+    for pago in pagos:
+
+        movimientos.append({
+
+            "fecha": pago.fecha,
+
+            "tipo": "Ingreso",
+
+            "categoria": "Pago",
+
+            "concepto": (
+                pago.concepto
+                or "Pago registrado"
+            ),
+
+            "metodo": pago.get_metodo_display(),
+
+            "entrada": pago.monto,
+
+            "salida": None,
+
+            "color": "verde",
+        })
+
+    # ==========================================
+    # GASTOS
+    # ==========================================
+
+    gastos = Gasto.objects.filter(
+        fecha__month=mes_actual,
+        fecha__year=anio_actual
+    )
+
+    for gasto in gastos:
+
+        movimientos.append({
+
+            "fecha": gasto.fecha,
+
+            "tipo": "Egreso",
+
+            "categoria": (
+                gasto.get_categoria_display()
+            ),
+
+            "concepto": gasto.concepto,
+
+            "metodo": (
+                gasto.get_metodo_display()
+            ),
+
+            "entrada": None,
+
+            "salida": gasto.monto,
+
+            "color": "rojo",
+        })
+
+    # ==========================================
+    # MOVIMIENTOS MANUALES
+    # ==========================================
+
+    movs = MovimientoCaja.objects.filter(
+        fecha__month=mes_actual,
+        fecha__year=anio_actual
+    )
+
+    for mov in movs:
+
+        movimientos.append({
+
+            "fecha": mov.fecha,
+
+            "tipo": (
+                "Ingreso"
+                if mov.tipo == "entrada"
+                else "Egreso"
+            ),
+
+            "categoria": (
+                mov.categoria
+                or "Movimiento"
+            ),
+
+            "concepto": mov.concepto,
+
+            "metodo": "Caja",
+
+            "entrada": (
+                mov.monto
+                if mov.tipo == "entrada"
+                else None
+            ),
+
+            "salida": (
+                mov.monto
+                if mov.tipo == "salida"
+                else None
+            ),
+
+            "color": (
+                "verde"
+                if mov.tipo == "entrada"
+                else "rojo"
+            ),
+        })
+
+    # ==========================================
+    # ORDENAR
+    # ==========================================
+
+    movimientos.sort(
+        key=lambda x: x["fecha"],
+        reverse=True
+    )
+
+    # ==========================================
+    # TOTALES
+    # ==========================================
+
+    total_ingresos = Decimal("0.00")
+
+    total_egresos = Decimal("0.00")
+
+    for mov in movimientos:
+
+        if mov["entrada"]:
+
+            total_ingresos += mov["entrada"]
+
+        if mov["salida"]:
+
+            total_egresos += mov["salida"]
+
+    balance = (
+        total_ingresos
+        - total_egresos
+    )
+
+    # ==========================================
+    # NOMBRES MESES
+    # ==========================================
+
+    meses_es = [
+        "",
+        "Enero",
+        "Febrero",
+        "Marzo",
+        "Abril",
+        "Mayo",
+        "Junio",
+        "Julio",
+        "Agosto",
+        "Septiembre",
+        "Octubre",
+        "Noviembre",
+        "Diciembre",
+    ]
+
+    mes_nombre = (
+        f"{meses_es[mes_actual]} {anio_actual}"
+    )
+
+    anios = list(
+        range(
+            hoy.year - 5,
+            hoy.year + 1
+        )
+    )
+
+    return render(
+
+        request,
+
+        "caja/movimientos_financieros.html",
+
+        {
+
+            "movimientos": movimientos,
+
+            "total_ingresos": total_ingresos,
+
+            "total_egresos": total_egresos,
+
+            "balance": balance,
+
+            "mes_actual": mes_nombre,
+
+            "mes_seleccionado": mes_actual,
+
+            "anio_seleccionado": anio_actual,
+
+            "meses": meses_es,
+
+            "anios": anios,
+        }
+    )
+
 

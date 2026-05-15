@@ -53,14 +53,32 @@ class Gasto(models.Model):
     ]
 
     proveedor = models.CharField(max_length=150, blank=True)
-    categoria = models.CharField(max_length=50, choices=CATEGORIAS)
+
+    categoria = models.CharField(
+        max_length=50,
+        choices=CATEGORIAS
+    )
+
     concepto = models.CharField(max_length=255)
 
-    monto = models.DecimalField(max_digits=10, decimal_places=2)
+    monto = models.DecimalField(
+        max_digits=10,
+        decimal_places=2
+    )
 
-    metodo = models.CharField(max_length=20, choices=METODOS)
+    metodo = models.CharField(
+        max_length=20,
+        choices=METODOS
+    )
 
-    fecha = models.DateTimeField(auto_now_add=True)
+    afecta_caja = models.BooleanField(
+        default=True,
+        verbose_name="Afecta caja del día"
+    )
+
+    fecha = models.DateTimeField(
+        auto_now_add=True
+    )
 
     caja = models.ForeignKey(
         CashSession,
@@ -71,5 +89,3 @@ class Gasto(models.Model):
 
     def __str__(self):
         return f"{self.concepto} - ${self.monto}"
-
-

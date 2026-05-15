@@ -1,0 +1,962 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Movimientos financieros | Sonrisar
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{% static 'css/sonrisar-pro.css' %}"
+    >
+
+    <style>
+
+        *{
+            box-sizing:border-box;
+        }
+
+        body{
+
+            margin:0;
+
+            background:#ffffff;
+
+            font-family:
+                Inter,
+                sans-serif;
+
+            color:#0f172a;
+        }
+
+        .layout{
+
+            display:flex;
+
+            gap:22px;
+
+            padding:18px;
+
+            min-height:100vh;
+        }
+
+        /* =========================
+           SIDEBAR
+        ========================== */
+
+        .sidebar{
+
+            width:230px;
+
+            background:#ffffff;
+
+            border:1px solid #edf1f4;
+
+            border-radius:28px;
+
+            padding:18px 16px;
+
+            box-shadow:
+                0 4px 18px rgba(15,23,42,.04);
+
+            height:fit-content;
+
+            position:sticky;
+
+            top:20px;
+        }
+
+        .sidebar-logo{
+
+            width:120px;
+
+            display:block;
+
+            margin:0 auto 18px auto;
+        }
+
+        .menu{
+
+            display:flex;
+
+            flex-direction:column;
+
+            gap:8px;
+        }
+
+        .menu a{
+
+            height:44px;
+
+            border-radius:16px;
+
+            display:flex;
+
+            align-items:center;
+
+            padding:0 16px;
+
+            text-decoration:none;
+
+            color:#334155;
+
+            font-size:15px;
+
+            font-weight:600;
+
+            transition:.18s ease;
+        }
+
+        .menu a:hover{
+
+            background:#f6fafb;
+        }
+
+        .menu a.active{
+
+            background:#e9fbfa;
+
+            color:#26ABA5;
+        }
+
+        /* =========================
+           CONTENT
+        ========================== */
+
+        .content{
+
+            flex:1;
+        }
+
+        .topbar{
+
+            display:flex;
+
+            justify-content:space-between;
+
+            align-items:center;
+
+            gap:20px;
+
+            margin-bottom:22px;
+
+            flex-wrap:wrap;
+        }
+
+        .title{
+
+            font-size:22px;
+
+            margin:0;
+
+            font-weight:700;
+
+            color:#0f172a;
+        }
+
+        .top-actions{
+
+            display:flex;
+
+            gap:20px;
+
+            flex-wrap:wrap;
+        }
+
+        /* =========================
+           BUTTONS
+        ========================== */
+
+        .btn{
+
+            height:35px;
+
+            border:none;
+
+            border-radius:14px;
+
+            padding:0 24px;
+
+            cursor:pointer;
+
+            font-size:9px;
+
+            font-weight:700;
+
+            transition:.18s ease;
+
+            text-decoration:none;
+
+            display:flex;
+
+            align-items:center;
+
+            justify-content:center;
+        }
+
+        .btn-primary{
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #25c7c4,
+                    #1fb7d6
+                );
+
+            color:white;
+
+            box-shadow:
+                0 6px 18px rgba(37,199,196,.16);
+        }
+
+        .btn-primary:hover{
+
+            transform:translateY(-1px);
+
+            opacity:.9;
+        }
+
+        .btn-secondary{
+
+            background:#f8fafc;
+
+            border:1px solid #e2e8f0;
+
+            color:#475569;
+        }
+
+        .btn-secondary:hover{
+
+            background:#f1f5f9;
+        }
+
+        /* =========================
+           KPI
+        ========================== */
+
+        .kpi-grid{
+
+            display:grid;
+
+            grid-template-columns:
+                repeat(3, 1fr);
+
+            gap:20px;
+
+            width:100%;
+
+            margin-top:18px;
+
+            margin-bottom:22px;
+        }
+
+        .kpi{
+
+            background:#ffffff;
+
+            border:
+                1px solid #edf1f4;
+
+            border-radius:20px;
+
+            padding:16px 18px;
+
+            width:100%;
+        }    
+
+        .kpi span{
+
+            display:block;
+
+            color:#64748b;
+
+            font-size:14px;
+
+            margin-bottom:10px;
+        }
+
+        .kpi strong{
+
+            font-size:20px;
+        }
+
+        .verde{
+
+            color:#15803d;
+        }
+
+        .rojo{
+
+            color:#b42318;
+        }
+
+        .azul{
+
+            color:#0f172a;
+        }
+
+        /* =========================
+           CARD
+        ========================== */
+
+        .card{
+
+            position:relative;
+
+            z-index:1;
+
+            overflow:hidden;
+
+            background:#ffffff;
+
+            border:
+                1px solid #edf1f4;
+
+            border-radius:30px;
+
+            padding:28px;
+
+            box-shadow:
+                0 4px 18px rgba(15,23,42,.04);
+        }
+
+        /* =========================
+           WATERMARK
+        ========================== */
+
+        .watermark{
+
+            position:absolute;
+
+            inset:0;
+
+            display:flex;
+
+            align-items:center;
+
+            justify-content:center;
+
+            pointer-events:none;
+
+            z-index:0;
+        }
+
+        .watermark img{
+
+            width:650px;
+
+            opacity:.07;
+
+            user-select:none;
+        }
+
+        .table-wrap{
+
+            position:relative;
+
+            z-index:2;
+
+            overflow-x:auto;
+
+            background:transparent;
+        }
+
+        /* =========================
+           TABLE
+        ========================== */
+
+        table{
+
+            width:100%;
+
+            border-collapse:collapse;
+
+            min-width:950px;
+        }
+
+        thead tr{
+
+            border-bottom:
+                1px solid #e8edf2;
+        }
+
+        th{
+
+            text-align:left;
+
+            padding:14px 12px;
+
+            font-size:14px;
+
+            color:#64748b;
+
+            font-weight:700;
+        }
+
+        td{
+
+            padding:14px 10px;
+
+            border-bottom:
+                1px solid #f1f5f9;
+
+            color:#334155;
+
+            font-size:15px;
+        }
+
+        tbody tr:hover{
+
+            background:
+                rgba(38,171,165,.015);
+        }
+
+        .pill{
+
+            display:inline-flex;
+
+            align-items:center;
+
+            justify-content:center;
+
+            padding:7px 14px;
+
+            border-radius:999px;
+
+            font-size:13px;
+
+            font-weight:700;
+        }
+
+        .pill.verde{
+
+            background:#ecfdf3;
+
+            color:#15803d;
+        }
+
+        .pill.rojo{
+
+            background:#fef3f2;
+
+            color:#b42318;
+        }
+
+        .amount-in{
+
+            font-size:16px;
+
+            font-weight:700;
+
+            color:#15803d;
+        }
+
+        .amount-out{
+
+            font-size:16px;
+
+            font-weight:700;
+
+            color:#b42318;
+        }
+
+        .empty{
+
+            position:relative;
+
+            z-index:2;
+
+            text-align:center;
+
+            padding:40px 20px;
+
+            color:#64748b;
+
+            font-size:15px;
+        }
+
+        /* =========================
+           MOBILE
+        ========================== */
+
+        @media(max-width:1100px){
+
+            .layout{
+
+                flex-direction:column;
+            }
+
+            .sidebar{
+
+                width:100%;
+
+                position:relative;
+
+                top:0;
+            }
+
+            .card{
+
+                padding:22px;
+            }
+        }
+
+    </style>
+
+</head>
+<body>
+
+<div class="layout">
+
+    <!-- SIDEBAR -->
+
+    <aside class="sidebar">
+
+        <img
+            src="{% static 'img/logo.png' %}"
+            class="sidebar-logo"
+        >
+
+        <nav class="menu">
+
+            <a href="/caja/">
+                Caja
+            </a>
+
+            <a
+                href="/caja/movimientos-financieros/"
+                class="active"
+            >
+                Movimientos financieros
+            </a>
+
+            <a href="/pagos/historial/">
+                Historial pagos
+            </a>
+
+            <a href="/pagos/gastos/">
+                Gastos
+            </a>
+
+            <a href="/caja/cerradas/">
+                Cajas cerradas
+            </a>
+
+        </nav>
+
+    </aside>
+
+    <!-- CONTENT -->
+
+    <main class="content">
+
+        <!-- TOPBAR -->
+
+        <div class="topbar">
+
+            <h1 class="title">
+                Movimiento financiero · {{ mes_actual }}
+            </h1>
+
+            <div
+                class="top-actions"
+                style="
+                    width:100%;
+                    margin-top:10px;
+                "
+            >
+
+                <div
+                    style="
+                        width:fit-content;
+                        background:white;
+                        border:1px solid rgba(38,171,165,.35);
+                        border-radius:26px;
+                        padding:22px;
+                        box-shadow:0 6px 18px rgba(15,23,42,.04);
+                    "
+                >
+
+                    <form
+                        method="GET"
+                        style="
+                            display:flex;
+                            gap:16px;
+                            align-items:end;
+                            flex-wrap:wrap;
+                        "
+                    >
+
+                        <!-- MES -->
+
+                        <div
+                            style="
+                                display:flex;
+                                flex-direction:column;
+                                gap:8px;
+                                min-width:220px;
+                            "
+                        >
+
+                            <label
+                                style="
+                                    font-size:14px;
+                                    font-weight:700;
+                                    color:#475569;
+                                "
+                            >
+                                Mes
+                            </label>
+
+                            <select
+                                name="mes"
+                                style="
+                                    height:54px;
+                                    border:1px solid #dbe4ea;
+                                    border-radius:16px;
+                                    padding:0 18px;
+                                    font-size:16px;
+                                    background:white;
+                                    color:#0f172a;
+                                    outline:none;
+                                "
+                            >
+
+                                {% for m in meses %}
+
+                                    {% if m %}
+
+                                        <option
+                                            value="{{ forloop.counter0 }}"
+                                            {% if mes_seleccionado == forloop.counter0 %}
+                                                selected
+                                            {% endif %}
+                                        >
+                                            {{ m }}
+                                        </option>
+
+                                    {% endif %}
+
+                                {% endfor %}
+
+                            </select>
+
+                        </div>
+
+                        <!-- AÑO -->
+
+                        <div
+                            style="
+                                display:flex;
+                                flex-direction:column;
+                                gap:8px;
+                                min-width:160px;
+                            "
+                        >
+
+                            <label
+                                style="
+                                    font-size:14px;
+                                    font-weight:700;
+                                    color:#475569;
+                                "
+                            >
+                                Año
+                            </label>
+
+                            <select
+                                name="anio"
+                                style="
+                                    height:54px;
+                                    border:1px solid #dbe4ea;
+                                    border-radius:16px;
+                                    padding:0 18px;
+                                    font-size:16px;
+                                    background:white;
+                                    color:#0f172a;
+                                    outline:none;
+                                "
+                            >
+
+                                {% for a in anios %}
+
+                                    <option
+                                        value="{{ a }}"
+                                        {% if anio_seleccionado == a %}
+                                            selected
+                                        {% endif %}
+                                    >
+                                        {{ a }}
+                                    </option>
+
+                                {% endfor %}
+
+                            </select>
+
+                        </div>
+
+                        <!-- BOTÓN -->
+
+                        <button
+                            type="submit"
+                            style="
+                                height:54px;
+                                padding:0 34px;
+                                border:none;
+                                border-radius:18px;
+                                background:
+                                    linear-gradient(
+                                        135deg,
+                                        #0ea5b7,
+                                        #06b6d4
+                                    );
+                                color:white;
+                                font-size:17px;
+                                font-weight:700;
+                                cursor:pointer;
+                                box-shadow:
+                                    0 8px 18px rgba(14,165,183,.22);
+                                transition:.18s ease;
+                            "
+                            onmouseover="
+                                this.style.transform='translateY(-1px)';
+                                this.style.opacity='.92';
+                            "
+                            onmouseout="
+                                this.style.transform='translateY(0px)';
+                                this.style.opacity='1';
+                            "
+                        >
+                            Filtrar
+                        </button>
+
+                        <!-- VOLVER -->
+
+                        <a
+                            href="{% url 'caja:tablero' %}"
+                            style="
+                                height:54px;
+                                padding:0 30px;
+                                border-radius:18px;
+                                background:#f8fafc;
+                                border:1px solid #e2e8f0;
+                                color:#475569;
+                                font-size:16px;
+                                font-weight:700;
+                                text-decoration:none;
+                                display:flex;
+                                align-items:center;
+                                justify-content:center;
+                                transition:.18s ease;
+                            "
+                            onmouseover="
+                                this.style.background='#f1f5f9';
+                            "
+                            onmouseout="
+                                this.style.background='#f8fafc';
+                            "
+                        >
+                            Volver
+                        </a>
+
+                    </form>
+
+                </div>
+
+            </div>
+
+        <!-- KPI -->
+
+        <div class="kpi-grid">
+
+            <div class="kpi">
+
+                <span>
+                    Total ingresos
+                </span>
+
+                <strong class="verde">
+                    ${{ total_ingresos|floatformat:2 }}
+                </strong>
+
+            </div>
+
+            <div class="kpi">
+
+                <span>
+                    Total egresos
+                </span>
+
+                <strong class="rojo">
+                    ${{ total_egresos|floatformat:2 }}
+                </strong>
+
+            </div>
+
+            <div class="kpi">
+
+                <span>
+                    Balance general
+                </span>
+
+                <strong class="azul">
+                    ${{ balance|floatformat:2 }}
+                </strong>
+
+            </div>
+
+        </div>
+
+        <!-- CARD -->
+
+        <section class="card">
+
+            <!-- WATERMARK -->
+
+            <div class="watermark">
+
+                <img
+                    src="{% static 'img/logo.png' %}"
+                >
+
+            </div>
+
+            <div class="table-wrap">
+
+                {% if movimientos %}
+
+                    <table>
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    Fecha
+                                </th>
+
+                                <th>
+                                    Tipo
+                                </th>
+
+                                <th>
+                                    Categoría
+                                </th>
+
+                                <th>
+                                    Concepto
+                                </th>
+
+                                <th>
+                                    Método
+                                </th>
+
+                                <th>
+                                    Entrada
+                                </th>
+
+                                <th>
+                                    Salida
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                            {% for m in movimientos %}
+
+                            <tr>
+
+                                <td>
+                                    {{ m.fecha|date:"d/m/Y H:i" }}
+                                </td>
+
+                                <td>
+
+                                    <span class="pill {{ m.color }}">
+                                        {{ m.tipo }}
+                                    </span>
+
+                                </td>
+
+                                <td>
+                                    {{ m.categoria }}
+                                </td>
+
+                                <td>
+                                    {{ m.concepto }}
+                                </td>
+
+                                <td>
+                                    {{ m.metodo }}
+                                </td>
+
+                                <td>
+
+                                    {% if m.entrada %}
+
+                                        <span class="amount-in">
+                                            ${{ m.entrada|floatformat:2 }}
+                                        </span>
+
+                                    {% else %}
+
+                                        —
+
+                                    {% endif %}
+
+                                </td>
+
+                                <td>
+
+                                    {% if m.salida %}
+
+                                        <span class="amount-out">
+                                            ${{ m.salida|floatformat:2 }}
+                                        </span>
+
+                                    {% else %}
+
+                                        —
+
+                                    {% endif %}
+
+                                </td>
+
+                            </tr>
+
+                            {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                {% else %}
+
+                    <div class="empty">
+                        No hay movimientos financieros registrados.
+                    </div>
+
+                {% endif %}
+
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+</body>
+</html>

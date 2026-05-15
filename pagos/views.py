@@ -189,8 +189,32 @@ def api_pago_por_cita(request):
 
 
 def nuevo_gasto(request):
+
+    caja = CashSession.obtener_caja_del_dia()
+
     if request.method == "POST":
-        caja = CashSession.obtener_caja_del_dia()
+
+        afecta_caja = (
+            request.POST.get("afecta_caja") == "on"
+        )
+
+        # ==========================================
+        # SI AFECTA CAJA Y ESTÁ CERRADA → BLOQUEAR
+        # ==========================================
+
+        if (
+            afecta_caja
+            and caja.estado == CashSession.Status.CERRADA
+        ):
+            return redirect("caja:tablero")
+
+        # ==========================================
+        # SOLO ASIGNAR CAJA SI AFECTA
+        # ==========================================
+
+        caja_asignada = (
+            caja if afecta_caja else None
+        )
 
         Gasto.objects.create(
             proveedor=request.POST.get("proveedor"),
@@ -198,7 +222,8 @@ def nuevo_gasto(request):
             concepto=request.POST.get("concepto"),
             monto=request.POST.get("monto"),
             metodo=request.POST.get("metodo"),
-            caja=caja,
+            afecta_caja=afecta_caja,
+            caja=caja_asignada,
         )
 
         return redirect("caja:tablero")

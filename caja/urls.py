@@ -41,4 +41,10 @@ urlpatterns = [
         views.pdf_cierre,
         name="pdf_cierre"
     ),
+
+    path(
+        "validar-pin/",
+        views.validar_pin,
+        name="validar_pin"
+    ),
 ]

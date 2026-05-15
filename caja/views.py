@@ -1,3 +1,5 @@
+from django.contrib import messages
+
 from decimal import Decimal
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
@@ -497,6 +499,17 @@ def pdf_cierre(request, caja_id):
 
 def movimientos_financieros(request):
 
+    permitido = request.session.get("pin_ok")
+
+    if permitido != request.path:
+        return redirect(
+            f"/caja/validar-pin/?next={request.path}"
+        )
+
+    request.session["pin_ok"] = None
+
+    # resto de la vista
+
     movimientos = []
 
     hoy = timezone.now()
@@ -729,6 +742,28 @@ def movimientos_financieros(request):
             "meses": meses_es,
 
             "anios": anios,
+        }
+    )
+
+
+def validar_pin(request):
+
+    siguiente = request.GET.get("next", "/")
+
+    if request.method == "POST":
+        pin = request.POST.get("pin")
+
+        if pin == settings.ADMIN_PIN:
+            request.session["pin_ok"] = siguiente
+            return redirect(siguiente)
+
+        messages.error(request, "PIN incorrecto")
+
+    return render(
+        request,
+        "caja/validar_pin.html",
+        {
+            "next": siguiente
         }
     )
 

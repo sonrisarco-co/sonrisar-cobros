@@ -628,10 +628,14 @@
                     </div>
 
                     <div class="row total">
-                        <span><strong>Total calculado</strong></span>
+                        <span>
+                            <strong>
+                                Efectivo esperado en caja
+                            </strong>
+                        </span>
 
-                        <strong class="{% if total_calculado < 0 %}negative{% else %}positive{% endif %}">
-                            ${{ total_calculado|floatformat:2 }}
+                        <strong class="{% if efectivo_esperado < 0 %}negative{% else %}positive{% endif %}">
+                            ${{ efectivo_esperado|floatformat:2 }}
                         </strong>
                     </div>
 
@@ -646,7 +650,7 @@
                 <div class="group">
 
                     <label for="saldo">
-                        Saldo final declarado
+                        Efectivo contado
                     </label>
 
                     <input
@@ -659,7 +663,8 @@
                     >
 
                     <small>
-                        Acá ingresás el dinero contado físicamente.
+                        Ingresá solamente el efectivo físico real disponible en caja.
+                        Las transferencias y tarjetas no generan diferencia de caja.
                     </small>
 
                 </div>

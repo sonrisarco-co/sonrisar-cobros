@@ -65,8 +65,8 @@ def generar_pdf_cierre(caja):
     doc = SimpleDocTemplate(
         buffer,
         pagesize=A4,
-        rightMargin=10 * mm,
-        leftMargin=10 * mm,
+        rightMargin=12 * mm,
+        leftMargin=12 * mm,
         topMargin=10 * mm,
         bottomMargin=8 * mm,
     )
@@ -83,8 +83,8 @@ def generar_pdf_cierre(caja):
         "titulo",
         parent=styles["Normal"],
         fontName="Helvetica-Bold",
-        fontSize=16,
-        leading=18,
+        fontSize=22,
+        leading=24,
         textColor=COLOR_PRINCIPAL,
         alignment=TA_RIGHT,
     )
@@ -94,7 +94,7 @@ def generar_pdf_cierre(caja):
         parent=styles["Normal"],
         fontName="Helvetica",
         fontSize=10,
-        leading=15,
+        leading=14,
         textColor=COLOR_TEXTO,
         alignment=TA_RIGHT,
     )
@@ -103,10 +103,10 @@ def generar_pdf_cierre(caja):
         "footer",
         parent=styles["Normal"],
         fontName="Helvetica",
-        fontSize=8.5,
-        leading=12,
+        fontSize=8,
+        leading=11,
         alignment=TA_CENTER,
-        textColor=colors.HexColor("#666666"),
+        textColor=colors.HexColor("#667085"),
     )
 
     # =====================================================
@@ -118,7 +118,8 @@ def generar_pdf_cierre(caja):
     )
 
     gastos = Gasto.objects.filter(
-        fecha__date=caja.fecha
+        fecha__date=caja.fecha,
+        afecta_caja=True
     )
 
     movimientos = MovimientoCaja.objects.filter(
@@ -127,6 +128,30 @@ def generar_pdf_cierre(caja):
 
     total_pagos = sum(
         [p.monto for p in pagos],
+        Decimal("0.00")
+    )
+
+    efectivo = sum(
+        [
+            p.monto
+            for p in pagos.filter(metodo="efectivo")
+        ],
+        Decimal("0.00")
+    )
+
+    tarjeta = sum(
+        [
+            p.monto
+            for p in pagos.filter(metodo="tarjeta")
+        ],
+        Decimal("0.00")
+    )
+
+    transferencia = sum(
+        [
+            p.monto
+            for p in pagos.filter(metodo="transferencia")
+        ],
         Decimal("0.00")
     )
 
@@ -155,15 +180,29 @@ def generar_pdf_cierre(caja):
         total_entradas - total_salidas
     )
 
-    resultado_real = (
+    resultado_general = (
         total_pagos
+        + total_entradas
         - total_gastos
-        + balance_movimientos
+        - total_salidas
     )
 
-    total_calculado = (
+    efectivo_esperado = (
         (caja.saldo_inicial or Decimal("0.00"))
-        + resultado_real
+        + efectivo
+        + total_entradas
+        - total_gastos
+        - total_salidas
+    )
+
+    efectivo_contado = (
+        caja.saldo_final_declarado
+        or Decimal("0.00")
+    )
+
+    diferencia = (
+        efectivo_contado
+        - efectivo_esperado
     )
 
     # =====================================================
@@ -181,7 +220,7 @@ def generar_pdf_cierre(caja):
 
         logo = Image(
             logo_path,
-            width=58 * mm,
+            width=60 * mm,
             height=25 * mm,
             kind='proportional'
         )
@@ -220,13 +259,8 @@ def generar_pdf_cierre(caja):
     ]
 
     cabecera = Table(
-        [
-            [
-                logo,
-                derecha
-            ]
-        ],
-        colWidths=[110 * mm, 70 * mm]
+        [[logo, derecha]],
+        colWidths=[95 * mm, 85 * mm]
     )
 
     cabecera.setStyle(TableStyle([
@@ -239,46 +273,73 @@ def generar_pdf_cierre(caja):
     elementos.append(cabecera)
 
     elementos.append(
-        Spacer(1, 5 * mm)
+        Spacer(1, 6 * mm)
     )
 
     # =====================================================
-    # TITULO RESUMEN
-    # =====================================================
-
-    resumen_header = Table(
-        [[
-            "Resumen financiero"
-        ]],
-        colWidths=[190 * mm]
-    )
-
-    resumen_header.setStyle(TableStyle([
-
-        ("BACKGROUND", (0, 0), (-1, -1), COLOR_FONDO),
-
-        ("BOX", (0, 0), (-1, -1), 0.5, COLOR_BORDE),
-
-        ("TEXTCOLOR", (0, 0), (-1, -1), COLOR_PRINCIPAL),
-
-        ("FONTNAME", (0, 0), (-1, -1), "Helvetica-Bold"),
-
-        ("FONTSIZE", (0, 0), (-1, -1), 13),
-
-        ("TOPPADDING", (0, 0), (-1, -1), 8),
-
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
-
-        ("LEFTPADDING", (0, 0), (-1, -1), 12),
-    ]))
-
-    elementos.append(resumen_header)
-
-    # =====================================================
-    # TABLA RESUMEN
+    # RESUMEN GENERAL
     # =====================================================
 
     resumen_data = [
+
+        ["Ingresos totales", money(total_pagos)],
+
+        ["Gastos", money(total_gastos)],
+
+        ["Balance movimientos", money(balance_movimientos)],
+
+        ["Resultado general", money(resultado_general)],
+    ]
+
+    resumen = Table(
+        resumen_data,
+        colWidths=[95 * mm, 85 * mm],
+        rowHeights=9 * mm
+    )
+
+    resumen.setStyle(TableStyle([
+
+        ("BACKGROUND", (0, 0), (-1, -1), colors.white),
+
+        ("GRID", (0, 0), (-1, -1), 0.5, COLOR_BORDE),
+
+        ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
+
+        ("FONTSIZE", (0, 0), (-1, -1), 10),
+
+        ("ALIGN", (1, 0), (1, -1), "RIGHT"),
+
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 7),
+
+        ("TOPPADDING", (0, 0), (-1, -1), 7),
+
+        ("TEXTCOLOR", (0, 0), (-1, -1), COLOR_TEXTO),
+
+        ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
+    ]))
+
+    elementos.append(
+        Paragraph(
+            "<b>Resumen general</b>",
+            styles["Heading3"]
+        )
+    )
+
+    elementos.append(
+        Spacer(1, 2 * mm)
+    )
+
+    elementos.append(resumen)
+
+    elementos.append(
+        Spacer(1, 6 * mm)
+    )
+
+    # =====================================================
+    # CAJA FÍSICA
+    # =====================================================
+
+    caja_data = [
 
         [
             "Saldo inicial",
@@ -286,43 +347,49 @@ def generar_pdf_cierre(caja):
         ],
 
         [
-            "Ingresos",
-            money(total_pagos)
+            "Efectivo cobrado",
+            money(efectivo)
         ],
 
         [
-            "Gastos",
-            money(total_gastos)
+            "Entradas manuales",
+            money(total_entradas)
         ],
 
         [
-            "Resultado real",
-            money(resultado_real)
+            "Gastos / salidas",
+            money(total_gastos + total_salidas)
         ],
 
         [
-            "Balance movimientos",
-            money(balance_movimientos)
+            "Efectivo esperado",
+            money(efectivo_esperado)
         ],
 
         [
-            "Saldo declarado",
-            money(
-                caja.saldo_final_declarado
-                or Decimal("0.00")
-            )
+            "Efectivo contado",
+            money(efectivo_contado)
+        ],
+
+        [
+            "Diferencia",
+            money(diferencia)
         ],
     ]
 
-    resumen = Table(
-        resumen_data,
-        colWidths=[95 * mm, 95 * mm],
+    caja_table = Table(
+        caja_data,
+        colWidths=[95 * mm, 85 * mm],
         rowHeights=10 * mm
     )
 
-    resumen.setStyle(TableStyle([
+    caja_table.setStyle(TableStyle([
+
+        ("BOX", (0, 0), (-1, -1), 1, COLOR_PRINCIPAL),
 
         ("GRID", (0, 0), (-1, -1), 0.4, COLOR_BORDE),
+
+        ("BACKGROUND", (0, 4), (-1, 5), colors.HexColor("#F5FFFD")),
 
         ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
 
@@ -330,133 +397,49 @@ def generar_pdf_cierre(caja):
 
         ("ALIGN", (1, 0), (1, -1), "RIGHT"),
 
-        ("TOPPADDING", (0, 0), (-1, -1), 7),
-
         ("BOTTOMPADDING", (0, 0), (-1, -1), 7),
 
-        ("TEXTCOLOR", (0, 1), (1, 1), COLOR_VERDE),
+        ("TOPPADDING", (0, 0), (-1, -1), 7),
 
-        ("TEXTCOLOR", (0, 2), (1, 2), COLOR_ROJO),
+        ("FONTNAME", (0, 4), (-1, 6), "Helvetica-Bold"),
 
-        ("TEXTCOLOR", (0, 3), (1, 3), COLOR_VERDE),
-
-        ("TEXTCOLOR", (0, 4), (1, 4), COLOR_NARANJA),
-
-        ("FONTNAME", (0, 1), (-1, 4), "Helvetica-Bold"),
+        ("TEXTCOLOR", (0, 6), (1, 6),
+            COLOR_VERDE if diferencia == 0
+            else COLOR_ROJO
+        ),
     ]))
-
-    elementos.append(resumen)
 
     elementos.append(
-        Spacer(1, 5 * mm)
+        Paragraph(
+            "<b>Caja física</b>",
+            styles["Heading3"]
+        )
     )
-
-    # =====================================================
-    # TOTAL CALCULADO
-    # =====================================================
-
-    total_table = Table(
-        [[
-            "TOTAL CALCULADO",
-            money(total_calculado)
-        ]],
-        colWidths=[100 * mm, 70 * mm],
-        rowHeights=12 * mm
-    )
-
-    total_table.setStyle(TableStyle([
-
-        ("BOX", (0, 0), (-1, -1), 1, COLOR_VERDE),
-
-        ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#F7FFF9")),
-
-        ("FONTNAME", (0, 0), (-1, -1), "Helvetica-Bold"),
-
-        ("TEXTCOLOR", (0, 0), (0, 0), COLOR_PRINCIPAL),
-
-        ("TEXTCOLOR", (1, 0), (1, 0), COLOR_VERDE),
-
-        ("FONTSIZE", (0, 0), (0, 0), 14),
-
-        ("FONTSIZE", (1, 0), (1, 0), 20),
-
-        ("ALIGN", (1, 0), (1, 0), "RIGHT"),
-
-        ("LEFTPADDING", (0, 0), (0, 0), 12),
-
-        ("RIGHTPADDING", (1, 0), (1, 0), 12),
-
-        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-    ]))
-
-    elementos.append(total_table)
 
     elementos.append(
-        Spacer(1, 5 * mm)
+        Spacer(1, 2 * mm)
+    )
+
+    elementos.append(caja_table)
+
+    elementos.append(
+        Spacer(1, 6 * mm)
     )
 
     # =====================================================
-    # MEDIOS HEADER
-    # =====================================================
-
-    medios_header = Table(
-        [[
-            "Medios de pago"
-        ]],
-        colWidths=[190 * mm]
-    )
-
-    medios_header.setStyle(TableStyle([
-
-        ("BACKGROUND", (0, 0), (-1, -1), COLOR_FONDO),
-
-        ("BOX", (0, 0), (-1, -1), 0.5, COLOR_BORDE),
-
-        ("TEXTCOLOR", (0, 0), (-1, -1), COLOR_PRINCIPAL),
-
-        ("FONTNAME", (0, 0), (-1, -1), "Helvetica-Bold"),
-
-        ("FONTSIZE", (0, 0), (-1, -1), 13),
-
-        ("TOPPADDING", (0, 0), (-1, -1), 8),
-
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
-
-        ("LEFTPADDING", (0, 0), (-1, -1), 12),
-    ]))
-
-    elementos.append(medios_header)
-
-    # =====================================================
-    # TABLA MEDIOS
+    # MEDIOS DIGITALES
     # =====================================================
 
     medios_data = [
 
-        [
-            "Efectivo",
-            money(caja.efectivo or Decimal("0.00"))
-        ],
+        ["Transferencias", money(transferencia)],
 
-        [
-            "Tarjeta",
-            money(caja.tarjeta or Decimal("0.00"))
-        ],
-
-        [
-            "Transferencia",
-            money(caja.transferencia or Decimal("0.00"))
-        ],
-
-        [
-            "Total pagos",
-            money(total_pagos)
-        ],
+        ["Tarjetas", money(tarjeta)],
     ]
 
     medios = Table(
         medios_data,
-        colWidths=[95 * mm, 95 * mm],
+        colWidths=[95 * mm, 85 * mm],
         rowHeights=9 * mm
     )
 
@@ -464,35 +447,63 @@ def generar_pdf_cierre(caja):
 
         ("GRID", (0, 0), (-1, -1), 0.4, COLOR_BORDE),
 
+        ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#FAFCFC")),
+
         ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
 
-        ("FONTSIZE", (0, 0), (-1, -1), 10.5),
+        ("FONTSIZE", (0, 0), (-1, -1), 10),
 
         ("ALIGN", (1, 0), (1, -1), "RIGHT"),
 
-        ("TOPPADDING", (0, 0), (-1, -1), 6),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 7),
 
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
-
-        ("TEXTCOLOR", (0, -1), (1, -1), COLOR_VERDE),
-
-        ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
+        ("TOPPADDING", (0, 0), (-1, -1), 7),
     ]))
+
+    elementos.append(
+        Paragraph(
+            "<b>Medios digitales</b>",
+            styles["Heading3"]
+        )
+    )
+
+    elementos.append(
+        Spacer(1, 2 * mm)
+    )
 
     elementos.append(medios)
 
     elementos.append(
-        Spacer(1, 5 * mm)
+        Spacer(1, 10 * mm)
     )
 
-    
     # =====================================================
-    # FOOTER
+    # MENSAJE FINAL
     # =====================================================
+
+    if diferencia == 0:
+
+        estado_final = Paragraph(
+            "<font color='#1F8B3B'><b>✔ Caja cerrada correctamente</b></font>",
+            styles["BodyText"]
+        )
+
+    else:
+
+        estado_final = Paragraph(
+            "<font color='#D62828'><b>⚠ Diferencia detectada en caja</b></font>",
+            styles["BodyText"]
+        )
+
+    elementos.append(estado_final)
 
     elementos.append(
         Spacer(1, 8 * mm)
     )
+
+    # =====================================================
+    # FOOTER
+    # =====================================================
 
     footer_line = HRFlowable(
         width="100%",
@@ -525,34 +536,29 @@ def generar_pdf_cierre(caja):
 
         ("ALIGN", (0, 0), (-1, -1), "CENTER"),
 
-        ("TEXTCOLOR", (0, 0), (-1, -1), colors.HexColor("#475569")),
+        ("TEXTCOLOR", (0, 0), (-1, -1),
+            colors.HexColor("#64748b")
+        ),
 
         ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
 
-        ("FONTSIZE", (0, 0), (-1, -1), 8.5),
-
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+        ("FONTSIZE", (0, 0), (-1, -1), 8),
     ]))
 
     elementos.append(footer_data)
 
     elementos.append(
-        Spacer(1, 4 * mm)
+        Spacer(1, 3 * mm)
     )
 
     footer_text = Paragraph(
         """
-        Documento generado automáticamente por Sonrisar Pro<br/>
-        Este documento no requiere firma.
+        Documento generado automáticamente por Sistema Sonrisar
         """,
         footer_style
     )
 
     elementos.append(footer_text)
-
-    # =====================================================
-    # GENERAR PDF
-    # =====================================================
 
     doc.build(elementos)
 

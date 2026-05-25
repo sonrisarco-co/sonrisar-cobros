@@ -476,7 +476,7 @@
             <div class="grid-kpis">
 
                 <div class="kpi-card">
-                    <small>Ingresos</small>
+                    <small>Ingresos totales</small>
                     <h2 class="verde">
                         ${{ total_pagos|floatformat:2 }}
                     </h2>
@@ -490,7 +490,7 @@
                 </div>
 
                 <div class="kpi-card">
-                    <small>Saldo esperado</small>
+                    <small>Efectivo esperado en caja</small>
                     <h2 class="{% if balance < 0 %}rojo{% else %}verde{% endif %}">
                         ${{ balance|floatformat:2 }}
                     </h2>
@@ -582,11 +582,15 @@
 
             <div class="diferencia-card">
 
-                <small>Diferencia</small>
+                <small>Diferencia de efectivo</small>
 
                 <h2>
                     ${{ diferencia|floatformat:2 }}
                 </h2>
+
+                <p style="margin:4px 0 0; font-size:11px; color:#64748b;">
+                    Se calcula solo con efectivo físico. Transferencias y tarjetas no generan diferencia de caja.
+                </p>
 
             </div>
 

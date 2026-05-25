@@ -42,15 +42,23 @@ def tablero(request):
         caja_actual.estado == CashSession.Status.CERRADA
     )
 
-    # =====================================================
-    # PAGOS
-    # =====================================================
-
     pagos = Pago.objects.filter(
         fecha__date=caja_actual.fecha
     ).order_by("-fecha")
 
     total_pagos = _sum_montos(pagos)
+
+    efectivo = _sum_montos(
+        pagos.filter(metodo="efectivo")
+    )
+
+    tarjeta = _sum_montos(
+        pagos.filter(metodo="tarjeta")
+    )
+
+    transferencia = _sum_montos(
+        pagos.filter(metodo="transferencia")
+    )
 
     cantidad_pagos = pagos.count()
 
@@ -61,10 +69,6 @@ def tablero(request):
 
     ultimo_pago = pagos.first()
 
-    # =====================================================
-    # GASTOS
-    # =====================================================
-
     gastos = Gasto.objects.filter(
         fecha__date=caja_actual.fecha,
         afecta_caja=True
@@ -72,82 +76,68 @@ def tablero(request):
 
     total_gastos = _sum_montos(gastos)
 
-    # =====================================================
-    # MOVIMIENTOS MANUALES
-    # =====================================================
-
     movimientos = MovimientoCaja.objects.filter(
         caja=caja_actual
     ).order_by("-fecha")
 
     entradas = movimientos.filter(tipo="entrada")
-
     salidas = movimientos.filter(tipo="salida")
 
     total_entradas = _sum_montos(entradas)
-
     total_salidas = _sum_montos(salidas)
-
-    balance_movimientos = total_entradas - total_salidas
-
-    # =====================================================
-    # TOTALES REALES
-    # =====================================================
-
-    ingresos_totales = total_pagos + total_entradas
 
     egresos_totales = total_gastos + total_salidas
 
     saldo_esperado = (
         (caja_actual.saldo_inicial or Decimal("0.00"))
-        + ingresos_totales
+        + efectivo
+        + total_entradas
         - egresos_totales
     )
 
-    # =====================================================
-    # TOTALES FINALES
-    # =====================================================
-
-    resultado_real = ingresos_totales - total_gastos
-
-    total_calculado = saldo_esperado
+    diferencia = (
+        (caja_actual.saldo_final_declarado or saldo_esperado)
+        - saldo_esperado
+    )
 
     return render(request, "caja/tablero.html", {
 
         "caja": caja_actual,
 
-        # PAGOS
         "pagos": pagos,
         "total_pagos": total_pagos,
         "cantidad_pagos": cantidad_pagos,
         "promedio": promedio,
         "ultimo_pago": ultimo_pago,
 
-        # GASTOS
+        "efectivo": efectivo,
+        "tarjeta": tarjeta,
+        "transferencia": transferencia,
+
         "gastos": gastos,
         "total_gastos": total_gastos,
 
-        # MOVIMIENTOS
         "movimientos": movimientos,
         "ultimos_mov": movimientos[:5],
 
         "total_entradas": total_entradas,
         "total_salidas": total_salidas,
 
+        "ingresos_totales": total_pagos,
+        "egresos_totales": egresos_totales,
+
+        "saldo_esperado": saldo_esperado,
         "balance": saldo_esperado,
 
-        # CAJA
-        "ingresos_totales": ingresos_totales,
-        "egresos_totales": egresos_totales,
-        "saldo_esperado": saldo_esperado,
-
-        "resultado_real": resultado_real,
-        "total_calculado": total_calculado,
-
-        "diferencia": (
-            (caja_actual.saldo_final_declarado or saldo_esperado)
-            - saldo_esperado
+        "resultado_real": (
+            total_pagos
+            + total_entradas
+            - egresos_totales
         ),
+
+        "total_calculado": saldo_esperado,
+
+        "diferencia": diferencia,
 
         "caja_bloqueada": caja_bloqueada,
     })
@@ -320,13 +310,21 @@ def cerrar_caja(request):
         pagos.filter(metodo="transferencia")
     )
 
-    total_calculado = (
+    # =====================================================
+    # EFECTIVO REAL EN CAJA
+    # =====================================================
+
+    efectivo_esperado = (
         (caja.saldo_inicial or Decimal("0.00"))
-        + total_pagos
+        + efectivo
         + total_entradas
         - total_gastos
         - total_salidas
     )
+
+    # =====================================================
+    # RESULTADO GENERAL
+    # =====================================================
 
     resultado_real = (
         total_pagos
@@ -382,7 +380,7 @@ def cerrar_caja(request):
 
         "resultado_real": resultado_real,
 
-        "total_calculado": total_calculado,
+        "efectivo_esperado": efectivo_esperado,
     })
 
 

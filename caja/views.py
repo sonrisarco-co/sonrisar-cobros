@@ -20,6 +20,8 @@ from django.conf import settings
 
 from .utils_pdf import generar_pdf_cierre
 
+from urllib.parse import quote
+
 
 def _sum_montos(queryset):
     total = Decimal("0.00")
@@ -499,19 +501,20 @@ def movimientos_financieros(request):
 
     permitido = request.session.get("pin_ok")
 
-    if permitido != request.path:
+    full_path = request.get_full_path()
+
+    if permitido != full_path:
         return redirect(
-            f"/caja/validar-pin/?next={request.path}"
+            f"/caja/validar-pin/?next={quote(full_path)}"
         )
 
-    request.session["pin_ok"] = None
-
-    # resto de la vista
+    request.session.pop("pin_ok", None)
 
     movimientos = []
 
     hoy = timezone.now()
 
+    
     # ==========================================
     # FILTROS
     # ==========================================

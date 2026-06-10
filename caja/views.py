@@ -434,6 +434,10 @@ def cajas_cerradas(request):
             afecta_caja=True
         )
 
+        gastos_efectivo = gastos.filter(
+            metodo="efectivo"
+        )
+
         movimientos = MovimientoCaja.objects.filter(
             caja=c
         )
@@ -450,12 +454,17 @@ def cajas_cerradas(request):
 
         total_gastos = _sum_montos(gastos)
 
+        total_gastos_efectivo = _sum_montos(
+            gastos_efectivo
+        )
+
         total_entradas = _sum_montos(entradas)
 
         total_salidas = _sum_montos(salidas)
 
         # =============================================
-        # RESULTADO REAL
+        # RESULTADO REAL GENERAL
+        # Incluye todos los gastos: efectivo, transferencia y tarjeta
         # =============================================
 
         c.total_pagos_calc = (
@@ -480,12 +489,20 @@ def cajas_cerradas(request):
         )
 
         # =============================================
-        # TOTAL CAJA
+        # TOTAL CAJA FÍSICA
+        # Solo descuenta gastos en efectivo
         # =============================================
+
+        efectivo = _sum_montos(
+            pagos.filter(metodo="efectivo")
+        )
 
         c.total_caja_calc = (
             (c.saldo_inicial or Decimal("0.00"))
-            + c.resultado_calc
+            + efectivo
+            + total_entradas
+            - total_gastos_efectivo
+            - total_salidas
         )
 
     return render(

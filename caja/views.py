@@ -78,6 +78,14 @@ def tablero(request):
 
     total_gastos = _sum_montos(gastos)
 
+    gastos_efectivo = gastos.filter(
+        metodo="efectivo"
+    )
+
+    total_gastos_efectivo = _sum_montos(
+        gastos_efectivo
+    )
+
     movimientos = MovimientoCaja.objects.filter(
         caja=caja_actual
     ).order_by("-fecha")
@@ -88,7 +96,7 @@ def tablero(request):
     total_entradas = _sum_montos(entradas)
     total_salidas = _sum_montos(salidas)
 
-    egresos_totales = total_gastos + total_salidas
+    egresos_totales = total_gastos_efectivo + total_salidas
 
     saldo_esperado = (
         (caja_actual.saldo_inicial or Decimal("0.00"))
@@ -134,7 +142,8 @@ def tablero(request):
         "resultado_real": (
             total_pagos
             + total_entradas
-            - egresos_totales
+            - total_gastos
+            - total_salidas
         ),
 
         "total_calculado": saldo_esperado,
@@ -282,6 +291,10 @@ def cerrar_caja(request):
         afecta_caja=True
     )
 
+    gastos_efectivo = gastos.filter(
+        metodo="efectivo"
+    )
+
     movimientos = MovimientoCaja.objects.filter(
         caja=caja
     )
@@ -289,6 +302,10 @@ def cerrar_caja(request):
     total_pagos = _sum_montos(pagos)
 
     total_gastos = _sum_montos(gastos)
+
+    total_gastos_efectivo = _sum_montos(
+        gastos_efectivo
+    )
 
     total_entradas = _sum_montos(
         movimientos.filter(tipo="entrada")
@@ -314,18 +331,20 @@ def cerrar_caja(request):
 
     # =====================================================
     # EFECTIVO REAL EN CAJA
+    # Solo descuentan caja los gastos en efectivo
     # =====================================================
 
     efectivo_esperado = (
         (caja.saldo_inicial or Decimal("0.00"))
         + efectivo
         + total_entradas
-        - total_gastos
+        - total_gastos_efectivo
         - total_salidas
     )
 
     # =====================================================
     # RESULTADO GENERAL
+    # Acá sí cuentan todos los gastos
     # =====================================================
 
     resultado_real = (

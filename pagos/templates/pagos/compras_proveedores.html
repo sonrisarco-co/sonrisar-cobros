@@ -1,0 +1,383 @@
+{% extends "base.html" %}
+{% block title %}Compras a proveedores | Sonrisar{% endblock %}
+
+{% block content %}
+
+<style>
+    .compras-page{
+        max-width:1400px;
+        width:95%;
+        margin:30px auto;
+    }
+
+    .compras-header{
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        margin-bottom:22px;
+    }
+
+    .compras-header h2{
+        margin:0;
+        font-size:30px;
+        font-weight:600;
+    }
+
+    .btn-sonrisar{
+        background:#26ABA5;
+        color:white;
+        border:none;
+        border-radius:18px;
+        padding:12px 20px;
+        font-weight:700;
+        text-decoration:none;
+    }
+
+    .stats-grid{
+        display:grid;
+        grid-template-columns:repeat(4,1fr);
+        gap:15px;
+        margin-bottom:20px;
+    }
+
+    .stat-card{
+        background:white;
+        border:1px solid #e5eef0;
+        border-radius:22px;
+        padding:18px;
+        text-align:center;
+        box-shadow:0 10px 20px rgba(0,0,0,.04);
+    }
+
+    .stat-title{
+        font-size:13px;
+        color:#64748b;
+        margin-bottom:8px;
+        font-weight:600;
+    }
+
+    .stat-value{
+        font-size:26px;
+        font-weight:700;
+    }
+
+    .stat-money{ color:#b91c1c; }
+    .stat-pendiente{ color:#6b7280; }
+    .stat-parcial{ color:#92400e; }
+    .stat-pagada{ color:#15803d; }
+
+    .buscador-card{
+        background:white;
+        border:1px solid #e5eef0;
+        border-radius:22px;
+        padding:16px;
+        margin-bottom:18px;
+        box-shadow:0 8px 18px rgba(0,0,0,.03);
+    }
+
+    .buscador-form{
+        display:flex;
+        gap:10px;
+    }
+
+    .buscador-form input{
+        flex:1;
+        height:44px;
+        border:1px solid #dbe7ea;
+        border-radius:14px;
+        padding:10px 14px;
+        font-size:15px;
+    }
+
+    .btn-buscar{
+        background:#26ABA5;
+        color:white;
+        border:none;
+        border-radius:14px;
+        padding:0 18px;
+        font-weight:700;
+    }
+
+    .btn-limpiar{
+        background:#f1f5f9;
+        color:#334155;
+        border-radius:14px;
+        padding:11px 16px;
+        text-decoration:none;
+        font-weight:700;
+    }
+
+    .compras-card{
+        background:rgba(255,255,255,.88);
+        border:1px solid #e5eef0;
+        border-radius:26px;
+        padding:30px;
+        box-shadow:0 10px 30px rgba(15,23,42,.06);
+    }
+
+    .compras-table{
+        width:100%;
+        border-collapse:collapse;
+    }
+
+    .compras-table th,
+    .compras-table td{
+        text-align:center;
+    }
+
+    .compras-table th{
+        color:#0f766e;
+        font-size:13px;
+        padding:12px 10px;
+        border-bottom:1px solid #e5eef0;
+    }
+
+    .compras-table td{
+        padding:14px 10px;
+        border-bottom:1px solid #edf2f4;
+        font-size:14px;
+    }
+
+    .monto-verde{
+        color:#15803d;
+        font-weight:700;
+    }
+
+    .monto-rojo{
+        color:#b91c1c;
+        font-weight:700;
+    }
+
+    .badge-estado{
+        border-radius:999px;
+        padding:6px 12px;
+        font-size:12px;
+        font-weight:700;
+        display:inline-block;
+    }
+
+    .pagada{
+        background:#dcfce7;
+        color:#166534;
+    }
+
+    .parcial{
+        background:#fef3c7;
+        color:#92400e;
+    }
+
+    .pendiente{
+        background:#e5e7eb;
+        color:#374151;
+    }
+
+    .vencida{
+        background:#fee2e2;
+        color:#991b1b;
+    }
+
+    .vence-hoy{
+        background:#ffedd5;
+        color:#9a3412;
+    }
+
+    .al-dia{
+        background:#e0f2fe;
+        color:#075985;
+    }
+
+    .sin-vencimiento{
+        background:#f1f5f9;
+        color:#475569;
+    }
+
+    .btn-ver{
+        border:1px solid #26ABA5;
+        color:#0f766e;
+        border-radius:14px;
+        padding:7px 12px;
+        text-decoration:none;
+        font-weight:700;
+        font-size:13px;
+    }
+
+    .volver{
+        display:inline-block;
+        margin-top:18px;
+        color:#64748b;
+        text-decoration:none;
+        font-weight:700;
+    }
+
+    @media(max-width:900px){
+        .stats-grid{
+            grid-template-columns:1fr 1fr;
+        }
+
+        .buscador-form{
+            flex-direction:column;
+        }
+    }
+</style>
+
+<div class="compras-page">
+
+    <div class="compras-header">
+        <h2>Compras a proveedores</h2>
+
+        <a href="{% url 'pagos:compra_proveedor_nueva' %}" class="btn-sonrisar">
+            + Nueva compra
+        </a>
+    </div>
+
+    <div class="stats-grid">
+
+        <div class="stat-card">
+            <div class="stat-title">Total adeudado</div>
+            <div class="stat-value stat-money">
+                ${{ total_adeudado|floatformat:2 }}
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-title">Pendientes</div>
+            <div class="stat-value stat-pendiente">
+                {{ pendientes }}
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-title">Parciales</div>
+            <div class="stat-value stat-parcial">
+                {{ parciales }}
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-title">Pagadas</div>
+            <div class="stat-value stat-pagada">
+                {{ pagadas }}
+            </div>
+        </div>
+
+    </div>
+
+    <div class="buscador-card">
+        <form method="GET" class="buscador-form">
+
+            <input
+                type="text"
+                name="q"
+                value="{{ query }}"
+                placeholder="Buscar por proveedor..."
+            >
+
+            <button class="btn-buscar">
+                Buscar
+            </button>
+
+            {% if query %}
+                <a href="{% url 'pagos:compras_proveedores' %}" class="btn-limpiar">
+                    Limpiar
+                </a>
+            {% endif %}
+
+        </form>
+    </div>
+
+    <div class="compras-card">
+
+        <table class="compras-table">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Vencimiento</th>
+                    <th>Proveedor</th>
+                    <th>Boleta</th>
+                    <th>Total</th>
+                    <th>Pagado</th>
+                    <th>Saldo</th>
+                    <th>Estado</th>
+                    <th>Vencimiento</th>
+                    <th></th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for compra in compras %}
+                    <tr>
+                        <td>{{ compra.fecha|date:"d/m/Y" }}</td>
+
+                        <td>
+                            {% if compra.fecha_vencimiento %}
+                                {{ compra.fecha_vencimiento|date:"d/m/Y" }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+
+                        <td style="text-align:left;">
+                            <strong>{{ compra.proveedor }}</strong>
+                        </td>
+
+                        <td>{{ compra.numero_boleta|default:"—" }}</td>
+
+                        <td>${{ compra.monto_total|floatformat:2 }}</td>
+
+                        <td class="monto-verde">
+                            ${{ compra.total_pagado|floatformat:2 }}
+                        </td>
+
+                        <td class="monto-rojo">
+                            ${{ compra.saldo_pendiente|floatformat:2 }}
+                        </td>
+
+                        <td>
+                            {% if compra.estado == "Pagada" %}
+                                <span class="badge-estado pagada">Pagada</span>
+                            {% elif compra.estado == "Parcial" %}
+                                <span class="badge-estado parcial">Parcial</span>
+                            {% else %}
+                                <span class="badge-estado pendiente">Pendiente</span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {% if compra.estado_vencimiento == "Vencida" %}
+                                <span class="badge-estado vencida">Vencida</span>
+                            {% elif compra.estado_vencimiento == "Vence hoy" %}
+                                <span class="badge-estado vence-hoy">Vence hoy</span>
+                            {% elif compra.estado_vencimiento == "Al día" %}
+                                <span class="badge-estado al-dia">Al día</span>
+                            {% elif compra.estado_vencimiento == "Pagada" %}
+                                <span class="badge-estado pagada">Pagada</span>
+                            {% else %}
+                                <span class="badge-estado sin-vencimiento">Sin fecha</span>
+                            {% endif %}
+                        </td>
+
+                        <td style="text-align:right;">
+                            <a href="{% url 'pagos:compra_proveedor_detalle' compra.id %}" class="btn-ver">
+                                Ver
+                            </a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="10" style="text-align:center; padding:35px; color:#64748b;">
+                            No hay compras registradas.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    </div>
+
+    <a href="{% url 'caja:tablero' %}" class="volver">
+        ← Volver a caja
+    </a>
+
+</div>
+
+{% endblock %}

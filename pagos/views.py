@@ -16,8 +16,12 @@ from django.utils.translation import gettext as _
 
 from django.http import JsonResponse
 
-from .models import Gasto
-
+from decimal import Decimal
+from .models import (
+    Gasto,
+    CompraProveedor,
+    PagoCompraProveedor
+)
 
 
 
@@ -339,6 +343,319 @@ def lista_gastos(request):
         "gastos": gastos,
         "total": total,
     })
+
+
+
+# =====================================================
+# COMPRAS A PROVEEDORES
+# =====================================================
+
+def compras_proveedores(request):
+
+    query = request.GET.get("q", "").strip()
+
+    compras = (
+        CompraProveedor.objects
+        .all()
+        .order_by("-fecha", "-id")
+    )
+
+    if query:
+        compras = compras.filter(
+            proveedor__icontains=query
+        )
+
+    total_adeudado = Decimal("0.00")
+
+    pendientes = 0
+    parciales = 0
+    pagadas = 0
+
+    for compra in compras:
+
+        saldo = compra.saldo_pendiente()
+
+        total_adeudado += saldo
+
+        if compra.estado() == "Pendiente":
+            pendientes += 1
+
+        elif compra.estado() == "Parcial":
+            parciales += 1
+
+        else:
+            pagadas += 1
+
+    return render(
+        request,
+        "pagos/compras_proveedores.html",
+        {
+            "compras": compras,
+            "total_adeudado": total_adeudado,
+            "pendientes": pendientes,
+            "parciales": parciales,
+            "pagadas": pagadas,
+            "query": query,
+        }
+    )
+
+
+def compra_proveedor_nueva(request):
+
+    if request.method == "POST":
+
+        fecha_vencimiento = request.POST.get(
+            "fecha_vencimiento",
+            ""
+        )
+
+        CompraProveedor.objects.create(
+            proveedor=request.POST.get("proveedor"),
+            fecha=request.POST.get("fecha"),
+            fecha_vencimiento=(
+                fecha_vencimiento
+                if fecha_vencimiento
+                else None
+            ),
+            numero_boleta=request.POST.get(
+                "numero_boleta",
+                ""
+            ),
+            concepto=request.POST.get(
+                "concepto",
+                ""
+            ),
+            monto_total=Decimal(
+                request.POST.get(
+                    "monto_total",
+                    "0"
+                )
+            ),
+            observaciones=request.POST.get(
+                "observaciones",
+                ""
+            ),
+        )
+
+        return redirect(
+            "pagos:compras_proveedores"
+        )
+
+    return render(
+        request,
+        "pagos/compra_proveedor_nueva.html"
+    )
+
+
+def compra_proveedor_detalle(
+    request,
+    compra_id
+):
+
+    compra = CompraProveedor.objects.get(
+        id=compra_id
+    )
+
+    pagos = (
+        compra.pagos
+        .all()
+        .order_by("-fecha")
+    )
+
+    return render(
+        request,
+        "pagos/compra_proveedor_detalle.html",
+        {
+            "compra": compra,
+            "pagos": pagos,
+        }
+    )
+
+
+def compra_proveedor_pago(
+    request,
+    compra_id
+):
+
+    compra = CompraProveedor.objects.get(
+        id=compra_id
+    )
+
+    if request.method == "POST":
+
+        monto = Decimal(
+            request.POST.get(
+                "monto",
+                "0"
+            )
+        )
+
+        metodo = request.POST.get(
+            "metodo"
+        )
+
+        afecta_caja = (
+            request.POST.get(
+                "afecta_caja"
+            ) == "on"
+        )
+
+        gasto = None
+
+        if afecta_caja:
+
+            caja = (
+                CashSession
+                .obtener_caja_del_dia()
+            )
+
+            gasto = Gasto.objects.create(
+                proveedor=compra.proveedor,
+                categoria="insumos",
+                concepto=f"Pago proveedor: {compra.proveedor}",
+                monto=monto,
+                metodo=metodo,
+                afecta_caja=True,
+                caja=caja,
+            )
+
+        PagoCompraProveedor.objects.create(
+            compra=compra,
+            monto=monto,
+            metodo=metodo,
+            afecta_caja=afecta_caja,
+            gasto=gasto,
+            observaciones=request.POST.get(
+                "observaciones",
+                ""
+            ),
+        )
+
+        return redirect(
+            "pagos:compra_proveedor_detalle",
+            compra_id=compra.id
+        )
+
+    return render(
+        request,
+        "pagos/compra_proveedor_pago.html",
+        {
+            "compra": compra
+        }
+    )
+
+
+def compra_proveedor_editar(
+    request,
+    compra_id
+):
+
+    compra = CompraProveedor.objects.get(
+        id=compra_id
+    )
+
+    if request.method == "POST":
+
+        fecha_vencimiento = request.POST.get(
+            "fecha_vencimiento",
+            ""
+        )
+
+        compra.proveedor = request.POST.get(
+            "proveedor"
+        )
+
+        compra.fecha = request.POST.get(
+            "fecha"
+        )
+
+        compra.fecha_vencimiento = (
+            fecha_vencimiento
+            if fecha_vencimiento
+            else None
+        )
+
+        compra.numero_boleta = request.POST.get(
+            "numero_boleta",
+            ""
+        )
+
+        compra.concepto = request.POST.get(
+            "concepto",
+            ""
+        )
+
+        compra.monto_total = Decimal(
+            request.POST.get(
+                "monto_total",
+                "0"
+            )
+        )
+
+        compra.observaciones = request.POST.get(
+            "observaciones",
+            ""
+        )
+
+        compra.save()
+
+        return redirect(
+            "pagos:compra_proveedor_detalle",
+            compra_id=compra.id
+        )
+
+    return render(
+        request,
+        "pagos/compra_proveedor_editar.html",
+        {
+            "compra": compra
+        }
+    )
+
+
+def compra_proveedor_eliminar(
+    request,
+    compra_id
+):
+
+    compra = CompraProveedor.objects.get(
+        id=compra_id
+    )
+
+    if compra.pagos.exists():
+
+        return redirect(
+            "pagos:compra_proveedor_detalle",
+            compra_id=compra.id
+        )
+
+    compra.delete()
+
+    return redirect(
+        "pagos:compras_proveedores"
+    )
+
+
+def pago_compra_eliminar(
+    request,
+    pago_id
+):
+
+    pago = PagoCompraProveedor.objects.get(
+        id=pago_id
+    )
+
+    compra_id = pago.compra.id
+
+    if pago.gasto:
+        pago.gasto.delete()
+
+    pago.delete()
+
+    return redirect(
+        "pagos:compra_proveedor_detalle",
+        compra_id=compra_id
+    )
 
 
 

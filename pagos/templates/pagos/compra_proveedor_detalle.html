@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{% block title %}Detalle de compra | Sonrisar{% endblock %}
+
+{% block content %}
+
+<style>
+.detalle-page{max-width:1100px;margin:30px auto;}
+.detalle-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;}
+.detalle-header h2{margin:0;font-size:32px;font-weight:600;}
+.header-actions{display:flex;gap:10px;}
+.btn-sonrisar{background:#26ABA5;color:white;border:none;border-radius:16px;padding:11px 18px;font-weight:600;text-decoration:none;}
+.btn-editar{background:#f1f5f9;color:#334155;border-radius:16px;padding:11px 18px;font-weight:600;text-decoration:none;}
+.btn-eliminar{background:#fee2e2;color:#991b1b;border:none;border-radius:16px;padding:11px 18px;font-weight:600;text-decoration:none;}
+.card-sonrisar{background:white;border:1px solid #e5eef0;border-radius:24px;padding:25px;box-shadow:0 10px 25px rgba(0,0,0,.04);margin-bottom:20px;}
+.proveedor{font-size:26px;font-weight:600;margin-bottom:15px;}
+.resumen-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin-top:20px;}
+.resumen-box{background:#f8fafc;border-radius:18px;padding:18px;text-align:center;}
+.resumen-box .titulo{font-size:13px;color:#64748b;margin-bottom:6px;}
+.resumen-box .valor{font-size:22px;font-weight:700;}
+.pagado{color:#15803d;}
+.saldo{color:#b91c1c;}
+.badge-estado{display:inline-block;padding:7px 14px;border-radius:999px;font-size:13px;font-weight:800;}
+.estado-pagada{background:#dcfce7;color:#166534;}
+.estado-parcial{background:#fef3c7;color:#92400e;}
+.estado-pendiente{background:#e5e7eb;color:#374151;}
+.tabla-pagos{width:100%;border-collapse:collapse;}
+.tabla-pagos th{padding:12px;border-bottom:1px solid #e5eef0;color:#0f766e;font-size:13px;}
+.tabla-pagos td{padding:14px 12px;border-bottom:1px solid #edf2f4;text-align:center;}
+.tabla-pagos td:first-child{text-align:left;}
+.btn-pago-eliminar{background:#fee2e2;color:#991b1b;border:none;border-radius:12px;padding:7px 10px;font-weight:600;text-decoration:none;font-size:12px;}
+.btn-volver{display:inline-block;margin-top:15px;text-decoration:none;color:#64748b;font-weight:700;}
+.aviso{background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;border-radius:16px;padding:12px 15px;margin-bottom:18px;font-weight:600;}
+@media (max-width:900px){.resumen-grid{grid-template-columns:1fr 1fr;}.detalle-header{flex-direction:column;align-items:flex-start;gap:12px;}}
+</style>
+
+<div class="detalle-page">
+
+    <div class="detalle-header">
+        <h2>Detalle de compra</h2>
+
+        <div class="header-actions">
+            <a href="{% url 'pagos:compra_proveedor_editar' compra.id %}" class="btn-editar">
+                ✏ Editar
+            </a>
+
+            {% if not pagos %}
+                <a
+                    href="{% url 'pagos:compra_proveedor_eliminar' compra.id %}"
+                    class="btn-eliminar"
+                    onclick="return confirm('¿Eliminar esta compra? Esta acción no se puede deshacer.')"
+                >
+                    🗑 Eliminar
+                </a>
+            {% endif %}
+
+            <a href="{% url 'pagos:compra_proveedor_pago' compra.id %}" class="btn-sonrisar">
+                + Agregar pago
+            </a>
+        </div>
+    </div>
+
+    {% if pagos %}
+        <div class="aviso">
+            Esta compra tiene pagos registrados. Para eliminar la compra, primero eliminá sus pagos.
+        </div>
+    {% endif %}
+
+    <div class="card-sonrisar">
+
+        <div class="proveedor">{{ compra.proveedor }}</div>
+
+        <p><strong>Fecha:</strong> {{ compra.fecha|date:"d/m/Y" }}</p>
+
+        <p>
+            <strong>Vencimiento:</strong>
+            {% if compra.fecha_vencimiento %}
+                {{ compra.fecha_vencimiento|date:"d/m/Y" }}
+            {% else %}
+                —
+            {% endif %}
+        </p>
+
+        <p><strong>Boleta / Factura:</strong> {{ compra.numero_boleta|default:"—" }}</p>
+        <p><strong>Concepto:</strong> {{ compra.concepto|default:"—" }}</p>
+
+        {% if compra.observaciones %}
+            <p><strong>Observaciones:</strong> {{ compra.observaciones }}</p>
+        {% endif %}
+
+        <div class="resumen-grid">
+
+            <div class="resumen-box">
+                <div class="titulo">Monto total</div>
+                <div class="valor">${{ compra.monto_total|floatformat:2 }}</div>
+            </div>
+
+            <div class="resumen-box">
+                <div class="titulo">Pagado</div>
+                <div class="valor pagado">${{ compra.total_pagado|floatformat:2 }}</div>
+            </div>
+
+            <div class="resumen-box">
+                <div class="titulo">Saldo</div>
+                <div class="valor saldo">${{ compra.saldo_pendiente|floatformat:2 }}</div>
+            </div>
+
+            <div class="resumen-box">
+                <div class="titulo">Estado</div>
+
+                {% if compra.estado == "Pagada" %}
+                    <span class="badge-estado estado-pagada">Pagada</span>
+                {% elif compra.estado == "Parcial" %}
+                    <span class="badge-estado estado-parcial">Parcial</span>
+                {% else %}
+                    <span class="badge-estado estado-pendiente">Pendiente</span>
+                {% endif %}
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="card-sonrisar">
+
+        <h4 style="margin-bottom:20px;">Pagos realizados</h4>
+
+        <table class="tabla-pagos">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Monto</th>
+                    <th>Método</th>
+                    <th>Afecta caja</th>
+                    <th>Observaciones</th>
+                    <th></th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for pago in pagos %}
+                    <tr>
+                        <td>{{ pago.fecha|date:"d/m/Y H:i" }}</td>
+                        <td>${{ pago.monto|floatformat:2 }}</td>
+                        <td>{{ pago.get_metodo_display }}</td>
+
+                        <td>
+                            {% if pago.afecta_caja %}
+                                ✅ Sí
+                            {% else %}
+                                ❌ No
+                            {% endif %}
+                        </td>
+
+                        <td>{{ pago.observaciones|default:"—" }}</td>
+
+                        <td>
+                            <a
+                                href="{% url 'pagos:pago_compra_eliminar' pago.id %}"
+                                class="btn-pago-eliminar"
+                                onclick="return confirm('¿Eliminar este pago? Si generó un gasto, también se eliminará el gasto asociado.')"
+                            >
+                                Eliminar
+                            </a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="6">No hay pagos registrados.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    </div>
+
+    <a href="{% url 'pagos:compras_proveedores' %}" class="btn-volver">
+        ← Volver
+    </a>
+
+</div>
+
+{% endblock %}

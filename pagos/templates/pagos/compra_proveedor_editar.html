@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}Editar compra | Sonrisar{% endblock %}
+
+{% block content %}
+
+<style>
+    .form-page{
+        max-width:720px;
+        margin:35px auto;
+    }
+
+    .form-card{
+        background:rgba(255,255,255,.92);
+        border:1px solid #e5eef0;
+        border-radius:26px;
+        padding:30px;
+        box-shadow:0 10px 30px rgba(15,23,42,.06);
+    }
+
+    .form-page h2{
+        font-size:32px;
+        font-weight:800;
+        margin-bottom:22px;
+    }
+
+    .campo{
+        margin-bottom:18px;
+    }
+
+    .campo label{
+        display:block;
+        font-weight:700;
+        margin-bottom:7px;
+        color:#334155;
+    }
+
+    .input-sonrisar{
+        width:100%;
+        height:46px;
+        border:1px solid #dbe7ea;
+        border-radius:14px;
+        padding:10px 14px;
+        font-size:15px;
+    }
+
+    textarea.input-sonrisar{
+        height:95px;
+        resize:vertical;
+    }
+
+    .acciones-form{
+        display:flex;
+        gap:10px;
+        margin-top:20px;
+    }
+
+    .btn-sonrisar{
+        background:#26ABA5;
+        color:white;
+        border:none;
+        border-radius:16px;
+        padding:11px 20px;
+        font-weight:800;
+        text-decoration:none;
+    }
+
+    .btn-cancelar{
+        background:#f1f5f9;
+        color:#334155;
+        border-radius:16px;
+        padding:11px 20px;
+        font-weight:800;
+        text-decoration:none;
+    }
+</style>
+
+<div class="form-page">
+
+    <h2>Editar compra</h2>
+
+    <div class="form-card">
+
+        <form method="POST">
+            {% csrf_token %}
+
+            <div class="campo">
+                <label>Proveedor</label>
+                <input type="text" name="proveedor" class="input-sonrisar" value="{{ compra.proveedor }}" required>
+            </div>
+
+            <div class="campo">
+                <label>Fecha de compra</label>
+                <input type="date" name="fecha" class="input-sonrisar" value="{{ compra.fecha|date:'Y-m-d' }}" required>
+            </div>
+
+            <div class="campo">
+                <label>Fecha de vencimiento</label>
+                <input type="date" name="fecha_vencimiento" class="input-sonrisar" value="{{ compra.fecha_vencimiento|date:'Y-m-d' }}">
+            </div>
+
+            <div class="campo">
+                <label>Número de boleta / factura</label>
+                <input type="text" name="numero_boleta" class="input-sonrisar" value="{{ compra.numero_boleta }}">
+            </div>
+
+            <div class="campo">
+                <label>Concepto</label>
+                <input type="text" name="concepto" class="input-sonrisar" value="{{ compra.concepto }}">
+            </div>
+
+            <div class="campo">
+                <label>Monto total</label>
+                <input type="number" step="0.01" name="monto_total" class="input-sonrisar" value="{{ compra.monto_total }}" required>
+            </div>
+
+            <div class="campo">
+                <label>Observaciones</label>
+                <textarea name="observaciones" class="input-sonrisar">{{ compra.observaciones }}</textarea>
+            </div>
+
+            <div class="acciones-form">
+                <button class="btn-sonrisar">
+                    Guardar cambios
+                </button>
+
+                <a href="{% url 'pagos:compra_proveedor_detalle' compra.id %}" class="btn-cancelar">
+                    Cancelar
+                </a>
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+{% endblock %}

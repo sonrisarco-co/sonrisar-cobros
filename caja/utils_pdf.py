@@ -122,6 +122,10 @@ def generar_pdf_cierre(caja):
         afecta_caja=True
     )
 
+    gastos_efectivo = gastos.filter(
+        metodo="efectivo"
+    )
+
     movimientos = MovimientoCaja.objects.filter(
         caja=caja
     )
@@ -160,6 +164,11 @@ def generar_pdf_cierre(caja):
         Decimal("0.00")
     )
 
+    total_gastos_efectivo = sum(
+        [g.monto for g in gastos_efectivo],
+        Decimal("0.00")
+    )
+
     total_entradas = sum(
         [
             m.monto
@@ -191,7 +200,7 @@ def generar_pdf_cierre(caja):
         (caja.saldo_inicial or Decimal("0.00"))
         + efectivo
         + total_entradas
-        - total_gastos
+        - total_gastos_efectivo
         - total_salidas
     )
 
@@ -357,8 +366,8 @@ def generar_pdf_cierre(caja):
         ],
 
         [
-            "Gastos / salidas",
-            money(total_gastos + total_salidas)
+            "Gastos / salidas en efectivo",
+            money(total_gastos_efectivo + total_salidas)
         ],
 
         [

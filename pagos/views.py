@@ -295,6 +295,73 @@ def api_pago_por_cita(request):
         "tipo_pago": tipo_pago,
         "pagos": data,
     })
+    
+
+def api_resumen_citas(request):
+    appointment_ids_raw = request.GET.get("appointment_ids", "").strip()
+
+    if not appointment_ids_raw:
+        return JsonResponse({
+            "ok": False,
+            "error": "Falta el parámetro appointment_ids."
+        }, status=400)
+
+    appointment_ids = []
+
+    for item in appointment_ids_raw.split(","):
+        item = item.strip()
+        if not item:
+            continue
+
+        try:
+            appointment_id = int(item)
+        except (TypeError, ValueError):
+            continue
+
+        if appointment_id not in appointment_ids:
+            appointment_ids.append(appointment_id)
+
+    if not appointment_ids:
+        return JsonResponse({
+            "ok": False,
+            "error": "No se recibieron appointment_ids válidos."
+        }, status=400)
+
+    pagos = Pago.objects.filter(
+        appointment_id__in=appointment_ids
+    ).order_by("-fecha")
+
+    resumen = {
+        appointment_id: {
+            "appointment_id": appointment_id,
+            "total_pagado": "0",
+            "cantidad_pagos": 0,
+            "tipo_pago": "pagado",
+            "pagos": [],
+        }
+        for appointment_id in appointment_ids
+    }
+
+    for pago in pagos:
+        appointment_id = pago.appointment_id
+
+        if appointment_id not in resumen:
+            continue
+
+        actual = Decimal(resumen[appointment_id]["total_pagado"])
+        actual += pago.monto or Decimal("0.00")
+
+        resumen[appointment_id]["total_pagado"] = str(actual)
+        resumen[appointment_id]["cantidad_pagos"] += 1
+        resumen[appointment_id]["pagos"].append(_pago_to_dict(pago))
+
+        if _es_sena(pago.concepto):
+            resumen[appointment_id]["tipo_pago"] = "sena"
+
+    return JsonResponse({
+        "ok": True,
+        "citas": list(resumen.values()),
+    })
 
 
 def api_pago_por_protesis(request):

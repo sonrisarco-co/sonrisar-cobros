@@ -11,6 +11,7 @@ urlpatterns = [
     path("api/por-cita/", views.api_pago_por_cita, name="api_pago_por_cita"),
     path("api/por-protesis/", views.api_pago_por_protesis, name="api_pago_por_protesis"),
     path("api/resumen-pacientes/", views.api_resumen_pacientes, name="api_resumen_pacientes"),
+    path("api/resumen-citas/", views.api_resumen_citas, name="api_resumen_citas"),
 
     path("gastos/", views.lista_gastos, name="lista_gastos"),
     path("gastos/nuevo/", views.nuevo_gasto, name="nuevo_gasto"),

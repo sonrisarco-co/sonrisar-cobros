@@ -9,6 +9,7 @@ urlpatterns = [
 
     path("api/por-paciente/", views.api_pagos_por_paciente, name="api_pagos_por_paciente"),
     path("api/por-cita/", views.api_pago_por_cita, name="api_pago_por_cita"),
+    path("api/por-protesis/", views.api_pago_por_protesis, name="api_pago_por_protesis"),
     path("api/resumen-pacientes/", views.api_resumen_pacientes, name="api_resumen_pacientes"),
 
     path("gastos/", views.lista_gastos, name="lista_gastos"),

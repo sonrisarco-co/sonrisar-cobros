@@ -37,6 +37,8 @@ def nuevo_pago(request):
         appointment_id = request.POST.get("appointment_id")
         patient_id = request.POST.get("patient_id")
 
+        protesis_id = request.POST.get("protesis_id")
+
         try:
             appointment_id = int(appointment_id) if appointment_id else None
         except:
@@ -46,6 +48,11 @@ def nuevo_pago(request):
             patient_id = int(patient_id) if patient_id else None
         except:
             patient_id = None
+
+        try:
+            protesis_id = int(protesis_id) if protesis_id else None
+        except:
+            protesis_id = None
 
         paciente = request.POST.get("paciente", "").strip()
 
@@ -57,6 +64,7 @@ def nuevo_pago(request):
             caja=caja,
             appointment_id=appointment_id,
             patient_id=patient_id,
+            protesis_id=protesis_id,
         )
 
         if next_url:
@@ -74,6 +82,7 @@ def nuevo_pago(request):
         "next": request.GET.get("next", ""),
         "appointment_id": request.GET.get("appointment_id", ""),
         "patient_id": request.GET.get("patient_id", ""),
+        "protesis_id": request.GET.get("protesis_id", ""),
         "fecha_cita": request.GET.get("fecha_cita", ""),
     }
 
@@ -284,6 +293,33 @@ def api_pago_por_cita(request):
         "total": len(data),
         "total_pagado": str(total_pagado),
         "tipo_pago": tipo_pago,
+        "pagos": data,
+    })
+
+
+def api_pago_por_protesis(request):
+    protesis_id = request.GET.get("protesis_id", "").strip()
+
+    if not protesis_id:
+        return JsonResponse({
+            "ok": False,
+            "error": "Falta el parámetro protesis_id."
+        }, status=400)
+
+    pagos = Pago.objects.filter(protesis_id=protesis_id).order_by("-fecha")
+
+    total_pagado = Decimal("0.00")
+    data = []
+
+    for pago in pagos:
+        total_pagado += pago.monto or Decimal("0.00")
+        data.append(_pago_to_dict(pago))
+
+    return JsonResponse({
+        "ok": True,
+        "protesis_id": protesis_id,
+        "total": len(data),
+        "total_pagado": str(total_pagado),
         "pagos": data,
     })
 

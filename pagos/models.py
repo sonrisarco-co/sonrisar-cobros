@@ -29,6 +29,8 @@ class Pago(models.Model):
     appointment_id = models.IntegerField(null=True, blank=True)
     patient_id = models.IntegerField(null=True, blank=True)
 
+    protesis_id = models.IntegerField(null=True, blank=True)
+
     fecha = models.DateTimeField(default=timezone.now)
 
     def __str__(self):

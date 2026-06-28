@@ -17,6 +17,7 @@ from django.utils.translation import gettext as _
 from django.http import JsonResponse
 
 from decimal import Decimal
+from urllib.parse import quote
 from .models import (
     Gasto,
     CompraProveedor,
@@ -93,7 +94,26 @@ def nuevo_pago(request):
 
 
 def historial(request):
-    pagos = Pago.objects.order_by('-fecha')
+
+    permitido = request.session.get("pin_ok")
+    full_path = request.get_full_path()
+
+    if permitido != full_path:
+        return redirect(
+            f"/caja/validar-pin/?next={quote(full_path)}"
+        )
+
+    request.session.pop("pin_ok", None)
+
+    pagos_qs = (
+        Pago.objects
+        .only("id", "fecha", "monto", "metodo", "paciente", "concepto")
+        .order_by("-fecha", "-id")
+    )
+
+    paginator = Paginator(pagos_qs, 120)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
 
     meses_es = [
         "", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -102,8 +122,9 @@ def historial(request):
 
     pagos_por_mes = OrderedDict()
 
-    for pago in pagos:
-        mes_nombre = f"{meses_es[pago.fecha.month]} {pago.fecha.year}"
+    for pago in page_obj.object_list:
+        fecha_local = localtime(pago.fecha)
+        mes_nombre = f"{meses_es[fecha_local.month]} {fecha_local.year}"
 
         if mes_nombre not in pagos_por_mes:
             pagos_por_mes[mes_nombre] = []
@@ -111,7 +132,9 @@ def historial(request):
         pagos_por_mes[mes_nombre].append(pago)
 
     return render(request, "pagos/historial.html", {
-        "pagos_por_mes": pagos_por_mes
+        "pagos_por_mes": pagos_por_mes,
+        "page_obj": page_obj,
+        "total_pagos": paginator.count,
     })
 
 

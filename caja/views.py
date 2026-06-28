@@ -3,6 +3,9 @@ from django.contrib import messages
 from decimal import Decimal
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
+from django.core.paginator import Paginator
+from django.db.models import Sum, Q
+from django.db.models.functions import TruncDate
 
 from .models import CashSession, MovimientoCaja
 from pagos.models import Pago, Gasto
@@ -411,7 +414,17 @@ def cerrar_caja(request):
 
 def cajas_cerradas(request):
 
-    cajas = (
+    permitido = request.session.get("pin_ok")
+    full_path = request.get_full_path()
+
+    if permitido != full_path:
+        return redirect(
+            f"/caja/validar-pin/?next={quote(full_path)}"
+        )
+
+    request.session.pop("pin_ok", None)
+
+    cajas_qs = (
         CashSession.objects
         .filter(
             estado=CashSession.Status.CERRADA
@@ -419,48 +432,132 @@ def cajas_cerradas(request):
         .order_by("-fecha")
     )
 
+    paginator = Paginator(cajas_qs, 20)
+    page_number = request.GET.get("page")
+    cajas = paginator.get_page(page_number)
+
+    fechas = [c.fecha for c in cajas]
+    caja_ids = [c.id for c in cajas]
+
+    cero = Decimal("0.00")
+
     # =====================================================
-    # CALCULOS POR CAJA
+    # RESUMEN DE PAGOS POR FECHA
+    # Una sola consulta para todas las cajas de la página.
+    # =====================================================
+
+    pagos_por_fecha = {}
+
+    if fechas:
+        pagos_resumen = (
+            Pago.objects
+            .filter(fecha__date__in=fechas)
+            .annotate(dia=TruncDate("fecha"))
+            .values("dia")
+            .annotate(
+                total_pagos=Sum("monto"),
+                efectivo=Sum(
+                    "monto",
+                    filter=Q(metodo="efectivo")
+                ),
+            )
+        )
+
+        pagos_por_fecha = {
+            item["dia"]: {
+                "total_pagos": item["total_pagos"] or cero,
+                "efectivo": item["efectivo"] or cero,
+            }
+            for item in pagos_resumen
+        }
+
+    # =====================================================
+    # RESUMEN DE GASTOS POR FECHA
+    # Una sola consulta para todos los gastos de la página.
+    # =====================================================
+
+    gastos_por_fecha = {}
+
+    if fechas:
+        gastos_resumen = (
+            Gasto.objects
+            .filter(
+                fecha__date__in=fechas,
+                afecta_caja=True
+            )
+            .annotate(dia=TruncDate("fecha"))
+            .values("dia")
+            .annotate(
+                total_gastos=Sum("monto"),
+                gastos_efectivo=Sum(
+                    "monto",
+                    filter=Q(metodo="efectivo")
+                ),
+            )
+        )
+
+        gastos_por_fecha = {
+            item["dia"]: {
+                "total_gastos": item["total_gastos"] or cero,
+                "gastos_efectivo": item["gastos_efectivo"] or cero,
+            }
+            for item in gastos_resumen
+        }
+
+    # =====================================================
+    # RESUMEN DE MOVIMIENTOS POR CAJA
+    # Una sola consulta para entradas y salidas de la página.
+    # =====================================================
+
+    movimientos_por_caja = {}
+
+    if caja_ids:
+        movimientos_resumen = (
+            MovimientoCaja.objects
+            .filter(caja_id__in=caja_ids)
+            .values("caja_id")
+            .annotate(
+                total_entradas=Sum(
+                    "monto",
+                    filter=Q(tipo="entrada")
+                ),
+                total_salidas=Sum(
+                    "monto",
+                    filter=Q(tipo="salida")
+                ),
+            )
+        )
+
+        movimientos_por_caja = {
+            item["caja_id"]: {
+                "total_entradas": item["total_entradas"] or cero,
+                "total_salidas": item["total_salidas"] or cero,
+            }
+            for item in movimientos_resumen
+        }
+
+    # =====================================================
+    # CALCULOS FINALES POR CAJA
+    # Sin consultas extra dentro del for.
     # =====================================================
 
     for c in cajas:
 
-        pagos = Pago.objects.filter(
-            fecha__date=c.fecha
+        pagos_data = pagos_por_fecha.get(c.fecha, {})
+        gastos_data = gastos_por_fecha.get(c.fecha, {})
+        mov_data = movimientos_por_caja.get(c.id, {})
+
+        total_pagos = pagos_data.get("total_pagos", cero)
+        efectivo = pagos_data.get("efectivo", cero)
+
+        total_gastos = gastos_data.get("total_gastos", cero)
+        total_gastos_efectivo = gastos_data.get(
+            "gastos_efectivo",
+            cero
         )
 
-        gastos = Gasto.objects.filter(
-            fecha__date=c.fecha,
-            afecta_caja=True
-        )
-
-        gastos_efectivo = gastos.filter(
-            metodo="efectivo"
-        )
-
-        movimientos = MovimientoCaja.objects.filter(
-            caja=c
-        )
-
-        entradas = movimientos.filter(
-            tipo="entrada"
-        )
-
-        salidas = movimientos.filter(
-            tipo="salida"
-        )
-
-        total_pagos = _sum_montos(pagos)
-
-        total_gastos = _sum_montos(gastos)
-
-        total_gastos_efectivo = _sum_montos(
-            gastos_efectivo
-        )
-
-        total_entradas = _sum_montos(entradas)
-
-        total_salidas = _sum_montos(salidas)
+        total_entradas = mov_data.get("total_entradas", cero)
+        total_salidas = mov_data.get("total_salidas", cero)
 
         # =============================================
         # RESULTADO REAL GENERAL
@@ -493,12 +590,8 @@ def cajas_cerradas(request):
         # Solo descuenta gastos en efectivo
         # =============================================
 
-        efectivo = _sum_montos(
-            pagos.filter(metodo="efectivo")
-        )
-
         c.total_caja_calc = (
-            (c.saldo_inicial or Decimal("0.00"))
+            (c.saldo_inicial or cero)
             + efectivo
             + total_entradas
             - total_gastos_efectivo
@@ -512,6 +605,7 @@ def cajas_cerradas(request):
             "cajas": cajas
         }
     )
+
 
 
 # =====================================================

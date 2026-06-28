@@ -527,6 +527,99 @@
         }
 
         /* =========================
+           PAGINACION
+        ========================== */
+
+        .pagination{
+
+            display:flex;
+
+            justify-content:center;
+
+            align-items:center;
+
+            gap:10px;
+
+            margin-top:26px;
+
+            flex-wrap:wrap;
+        }
+
+        .page-link{
+
+            min-width:42px;
+
+            height:42px;
+
+            border-radius:14px;
+
+            padding:0 15px;
+
+            display:flex;
+
+            align-items:center;
+
+            justify-content:center;
+
+            text-decoration:none;
+
+            color:#334155;
+
+            font-size:14px;
+
+            font-weight:700;
+
+            background:
+                rgba(255,255,255,.22);
+
+            border:
+                1px solid rgba(255,255,255,.35);
+
+            backdrop-filter:blur(10px);
+
+            -webkit-backdrop-filter:blur(10px);
+
+            transition:.18s ease;
+        }
+
+        .page-link:hover{
+
+            background:
+                rgba(223,248,247,.46);
+
+            color:#119e99;
+        }
+
+        .page-current{
+
+            min-width:42px;
+
+            height:42px;
+
+            border-radius:14px;
+
+            padding:0 16px;
+
+            display:flex;
+
+            align-items:center;
+
+            justify-content:center;
+
+            background:#26ABA5;
+
+            color:white;
+
+            font-size:14px;
+
+            font-weight:700;
+
+            box-shadow:
+                0 8px 18px rgba(38,171,165,0.16);
+        }
+
+
+        /* =========================
            MOBILE
         ========================== */
 
@@ -774,6 +867,40 @@
                 {% endfor %}
 
             </div>
+
+            {% if cajas.has_other_pages %}
+
+                <div class="pagination">
+
+                    {% if cajas.has_previous %}
+
+                        <a
+                            href="?page={{ cajas.previous_page_number }}"
+                            class="page-link"
+                        >
+                            ← Anterior
+                        </a>
+
+                    {% endif %}
+
+                    <span class="page-current">
+                        Página {{ cajas.number }} de {{ cajas.paginator.num_pages }}
+                    </span>
+
+                    {% if cajas.has_next %}
+
+                        <a
+                            href="?page={{ cajas.next_page_number }}"
+                            class="page-link"
+                        >
+                            Siguiente →
+                        </a>
+
+                    {% endif %}
+
+                </div>
+
+            {% endif %}
 
         {% else %}
 

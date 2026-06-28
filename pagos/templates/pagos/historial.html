@@ -46,7 +46,13 @@
         <!-- HEADER -->
         <div class="hp-header">
 
-            <h1>Historial de pagos</h1>
+            <div>
+                <h1>Historial de pagos</h1>
+
+                <p class="hp-subtitle">
+                    Mostrando {{ page_obj.start_index }} a {{ page_obj.end_index }} de {{ total_pagos }} pagos
+                </p>
+            </div>
 
             <a href="{% url 'caja:tablero' %}" class="hp-btn-back">
                 ← Volver a Caja del día
@@ -143,7 +149,45 @@
 
         </section>
 
+        {% empty %}
+
+        <section class="hp-month-card hp-empty">
+            No hay pagos registrados todavía.
+        </section>
+
         {% endfor %}
+
+        {% if page_obj.has_other_pages %}
+
+        <div class="hp-pagination">
+
+            {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}">
+                ← Anterior
+            </a>
+            {% else %}
+            <span class="disabled">
+                ← Anterior
+            </span>
+            {% endif %}
+
+            <strong>
+                Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+            </strong>
+
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}">
+                Siguiente →
+            </a>
+            {% else %}
+            <span class="disabled">
+                Siguiente →
+            </span>
+            {% endif %}
+
+        </div>
+
+        {% endif %}
 
     </main>
 
@@ -310,6 +354,15 @@ body{
     letter-spacing:-1px;
 
     color:#0f172a;
+}
+
+.hp-subtitle{
+    margin:6px 0 0;
+
+    color:#64748b;
+
+    font-size:14px;
+    font-weight:600;
 }
 
 /* =========================
@@ -572,6 +625,61 @@ body{
     color:#317b8d !important;
 }
 
+
+/* =========================
+   PAGINACION
+========================= */
+
+.hp-pagination{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:14px;
+
+    margin:10px 0 28px;
+
+    position:relative;
+    z-index:2;
+}
+
+.hp-pagination a,
+.hp-pagination span,
+.hp-pagination strong{
+    background:rgba(255,255,255,.28);
+
+    border:1px solid rgba(226,232,240,.70);
+
+    border-radius:14px;
+
+    padding:10px 14px;
+
+    font-size:14px;
+    font-weight:700;
+
+    text-decoration:none;
+}
+
+.hp-pagination a{
+    color:#14938d;
+}
+
+.hp-pagination a:hover{
+    background:#dff7f4;
+}
+
+.hp-pagination strong{
+    color:#334155;
+}
+
+.hp-pagination .disabled{
+    color:#94a3b8;
+}
+
+.hp-empty{
+    color:#64748b;
+    font-weight:700;
+}
+
 /* =========================
    RESPONSIVE
 ========================= */
@@ -592,4 +700,3 @@ body{
 </style>
 
 {% endblock %}
-

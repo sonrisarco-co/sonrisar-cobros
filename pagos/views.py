@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from .models import Pago
 from django.core.paginator import Paginator
 from django.db.models import Sum
@@ -90,6 +90,16 @@ def nuevo_pago(request):
     return render(request, "pagos/nuevo.html", {
         "metodos": Pago.METODOS,
         "initial": initial,
+    })
+
+
+def recibo_pago(request, pago_id):
+    pago = get_object_or_404(Pago, id=pago_id)
+    ci = request.GET.get("ci", "").strip()
+
+    return render(request, "pagos/recibo.html", {
+        "pago": pago,
+        "ci": ci,
     })
 
 

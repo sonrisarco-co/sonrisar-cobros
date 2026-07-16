@@ -139,6 +139,13 @@
                             </strong>
                         </div>
 
+                        <a href="{% url 'pagos:recibo' pago.id %}"
+                           class="hp-btn-receipt"
+                           target="_blank"
+                           rel="noopener">
+                            🧾 Imprimir recibo
+                        </a>
+
                     </div>
 
                     {% endfor %}
@@ -607,6 +614,29 @@ body{
 
 .hp-row .green{
     color:#14938d;
+}
+
+.hp-btn-receipt{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:100%;
+    margin-top:10px;
+    padding:9px 12px;
+    border:1px solid #26ABA5;
+    border-radius:12px;
+    background:rgba(38,171,165,.08);
+    color:#14938d;
+    text-decoration:none;
+    font-size:12px;
+    font-weight:700;
+    transition:.18s ease;
+}
+
+.hp-btn-receipt:hover{
+    background:#26ABA5;
+    color:#fff;
+    transform:translateY(-1px);
 }
 
 /* =========================

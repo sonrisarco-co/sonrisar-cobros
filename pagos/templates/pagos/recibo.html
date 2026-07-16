@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Recibo #{{ pago.id }} | Sonrisar{% endblock %}
+
+{% block content %}
+<div class="receipt-page">
+    <div class="receipt-actions no-print">
+        <button type="button" class="receipt-print-btn" onclick="window.print()">
+            🖨 Imprimir recibo
+        </button>
+        <button type="button" class="receipt-back-btn" onclick="window.close()">
+            Cerrar
+        </button>
+    </div>
+
+    <section class="receipt-sheet" id="receipt-sheet">
+        <header class="receipt-header">
+            <div>
+                <img src="{% static 'img/logo.png' %}" alt="Sonrisar" class="receipt-logo">
+                <div class="clinic-name">Centro Odontológico</div>
+                <div class="clinic-data">
+                    Román Guerra 752, Maldonado<br>
+                    WhatsApp 092 706 293 · sonrisarco@gmail.com
+                </div>
+            </div>
+
+            <div class="receipt-number">
+                <span>RECIBO</span>
+                <strong>N.º {{ pago.id|stringformat:"06d" }}</strong>
+            </div>
+        </header>
+
+        <div class="receipt-divider"></div>
+
+        <div class="receipt-date">
+            <strong>Fecha:</strong> {{ pago.fecha|date:"d/m/Y" }}
+            <span>·</span>
+            <strong>Hora:</strong> {{ pago.fecha|date:"H:i" }}
+        </div>
+
+        <div class="receipt-patient">
+            <span>Recibimos de</span>
+            <strong>{{ pago.paciente|default:"Paciente" }}</strong>
+            {% if ci %}
+                <small>CI: {{ ci }}</small>
+            {% endif %}
+        </div>
+
+        <table class="receipt-table">
+            <tbody>
+                <tr>
+                    <th>Concepto</th>
+                    <td>{{ pago.concepto|default:"Pago de tratamiento odontológico" }}</td>
+                </tr>
+                <tr>
+                    <th>Método de pago</th>
+                    <td>{{ pago.get_metodo_display }}</td>
+                </tr>
+                <tr class="amount-row">
+                    <th>Importe recibido</th>
+                    <td>$ {{ pago.monto|floatformat:2 }}</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="receipt-note">
+            Recibimos de conformidad la suma indicada en concepto de los servicios odontológicos detallados en el presente comprobante.
+        </div>
+
+        <footer class="receipt-footer">
+            <div class="signature">
+                <div class="signature-line"></div>
+                <span>Firma y sello</span>
+            </div>
+            <p>Gracias por confiar en Sonrisar.</p>
+        </footer>
+    </section>
+</div>
+
+<style>
+*{box-sizing:border-box}
+body{background:#f4f7f8!important;color:#17212b;font-family:Inter,Arial,sans-serif}
+.receipt-page{max-width:900px;margin:0 auto;padding:28px 18px 50px}
+.receipt-actions{display:flex;justify-content:flex-end;gap:10px;margin-bottom:18px}
+.receipt-print-btn,.receipt-back-btn{border-radius:12px;padding:10px 18px;font-weight:700;cursor:pointer}
+.receipt-print-btn{border:0;background:#26ABA5;color:#fff}
+.receipt-back-btn{border:1px solid #cfd8dc;background:#fff;color:#455a64}
+.receipt-sheet{background:#fff;border:1px solid #dfe7ea;border-radius:18px;padding:28px 34px;box-shadow:0 10px 28px rgba(15,23,42,.08);min-height:520px}
+.receipt-header{display:flex;justify-content:space-between;align-items:flex-start;gap:24px}
+.receipt-logo{width:140px;height:auto;display:block}
+.clinic-name{margin-top:2px;font-size:13px;font-weight:700;color:#146B6C}
+.clinic-data{margin-top:5px;font-size:11px;line-height:1.45;color:#60717a}
+.receipt-number{text-align:right;border:2px solid #26ABA5;border-radius:14px;padding:10px 16px;min-width:170px}
+.receipt-number span{display:block;font-size:11px;letter-spacing:1.5px;color:#60717a}
+.receipt-number strong{display:block;margin-top:3px;font-size:20px;color:#146B6C}
+.receipt-divider{height:3px;background:#26ABA5;border-radius:999px;margin:20px 0 14px}
+.receipt-date{text-align:right;font-size:12px;color:#475569}.receipt-date span{margin:0 8px;color:#94a3b8}
+.receipt-patient{margin:20px 0 15px;padding:13px 16px;background:#f0fbfa;border-left:5px solid #26ABA5;border-radius:12px}
+.receipt-patient span{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:#64748b}
+.receipt-patient strong{display:block;margin-top:3px;font-size:20px;color:#17212b}
+.receipt-patient small{display:block;margin-top:4px;font-size:12px;color:#475569;font-weight:600}
+.receipt-table{width:100%;border-collapse:collapse}.receipt-table th,.receipt-table td{border:1px solid #dfe7ea;padding:11px 14px;text-align:left}.receipt-table th{width:210px;background:#f8fafb;color:#425466;font-size:12px}.receipt-table td{font-size:14px}.amount-row td{font-size:22px;font-weight:800;color:#146B6C}
+.receipt-note{margin-top:13px;font-size:11.5px;line-height:1.4;color:#64748b}
+.receipt-footer{display:flex;justify-content:space-between;align-items:flex-end;margin-top:42px;gap:20px}.receipt-footer p{margin:0;color:#146B6C;font-weight:700;font-size:13px}.signature{width:240px;text-align:center}.signature-line{border-top:1px solid #475569;margin-bottom:6px}.signature span{font-size:11px;color:#64748b}
+@media(max-width:700px){.receipt-sheet{padding:22px 18px}.receipt-header,.receipt-footer{flex-direction:column}.receipt-number{text-align:left}.receipt-date{text-align:left}.receipt-table th{width:130px}}
+@media print{
+    @page{size:A4 portrait;margin:0}
+    html,body{width:210mm;height:297mm;background:#fff!important;margin:0!important;padding:0!important}
+    body *{visibility:hidden!important}
+    #receipt-sheet,#receipt-sheet *{visibility:visible!important}
+    #receipt-sheet{
+        position:absolute;
+        left:0;
+        top:0;
+        width:210mm;
+        height:148.5mm;
+        min-height:148.5mm;
+        max-height:148.5mm;
+        overflow:hidden;
+        border:0;
+        border-radius:0;
+        box-shadow:none;
+        padding:10mm 12mm 8mm;
+        margin:0;
+    }
+    .no-print{display:none!important}
+    .receipt-logo{width:34mm}
+    .receipt-header{gap:8mm}
+    .receipt-number{min-width:42mm;padding:2.5mm 4mm}
+    .receipt-divider{margin:4mm 0 3mm}
+    .receipt-patient{margin:4mm 0 3mm;padding:3mm 4mm}
+    .receipt-table th,.receipt-table td{padding:2.4mm 3mm}
+    .receipt-note{margin-top:3mm}
+    .receipt-footer{margin-top:9mm}
+}
+</style>
+{% endblock %}

@@ -7,7 +7,7 @@ from django.core.paginator import Paginator
 from django.db.models import Sum, Q
 from django.db.models.functions import TruncDate
 
-from .models import CashSession, MovimientoCaja
+from .models import CashSession, MovimientoCaja, ArqueoCaja
 from pagos.models import Pago, Gasto
 
 from django.http import HttpResponse
@@ -153,6 +153,14 @@ def tablero(request):
 
         "diferencia": diferencia,
 
+        "ultimos_arqueos": ArqueoCaja.objects.filter(
+            caja=caja_actual
+        ).order_by("-fecha")[:5],
+
+        "ultimo_arqueo": ArqueoCaja.objects.filter(
+            caja=caja_actual
+        ).order_by("-fecha").first(),
+
         "caja_bloqueada": caja_bloqueada,
     })
 
@@ -272,6 +280,248 @@ def movimiento_nuevo(request):
             )
 
     return redirect("caja:tablero")
+
+
+# =====================================================
+# ARQUEO DE CAJA
+# Control intermedio: guarda el conteo sin cerrar la caja.
+# =====================================================
+
+def arqueo_caja(request):
+
+    caja = CashSession.obtener_caja_del_dia()
+
+    if caja.estado == CashSession.Status.CERRADA:
+        messages.error(
+            request,
+            "La caja del día está cerrada y no admite nuevos arqueos."
+        )
+        return redirect("caja:tablero")
+
+    pagos = Pago.objects.filter(
+        fecha__date=caja.fecha
+    )
+
+    efectivo = _sum_montos(
+        pagos.filter(metodo="efectivo")
+    )
+
+    gastos_efectivo = Gasto.objects.filter(
+        fecha__date=caja.fecha,
+        afecta_caja=True,
+        metodo="efectivo",
+    )
+
+    total_gastos_efectivo = _sum_montos(
+        gastos_efectivo
+    )
+
+    movimientos = MovimientoCaja.objects.filter(
+        caja=caja
+    )
+
+    total_entradas = _sum_montos(
+        movimientos.filter(tipo="entrada")
+    )
+
+    total_salidas = _sum_montos(
+        movimientos.filter(tipo="salida")
+    )
+
+    saldo_esperado = (
+        (caja.saldo_inicial or Decimal("0.00"))
+        + efectivo
+        + total_entradas
+        - total_gastos_efectivo
+        - total_salidas
+    )
+
+    if request.method == "POST":
+
+        tipo = request.POST.get(
+            "tipo",
+            ArqueoCaja.Tipo.CAMBIO_TURNO
+        ).strip()
+
+        responsable = request.POST.get(
+            "responsable",
+            ""
+        ).strip()
+
+        saldo_contado_texto = request.POST.get(
+            "saldo_contado",
+            ""
+        ).strip().replace(",", ".")
+
+        observacion = request.POST.get(
+            "observacion",
+            ""
+        ).strip()
+
+        tipos_validos = {
+            valor for valor, etiqueta in ArqueoCaja.Tipo.choices
+        }
+
+        if tipo not in tipos_validos:
+            tipo = ArqueoCaja.Tipo.CONTROL
+
+        if not responsable:
+            messages.error(
+                request,
+                "Debes indicar quién realizó el arqueo."
+            )
+
+        try:
+            saldo_contado = Decimal(saldo_contado_texto)
+
+            if saldo_contado < 0:
+                raise ValueError
+
+        except (ValueError, ArithmeticError):
+            saldo_contado = None
+            messages.error(
+                request,
+                "El efectivo contado debe ser un importe válido."
+            )
+
+        if responsable and saldo_contado is not None:
+
+            arqueo = ArqueoCaja.objects.create(
+                caja=caja,
+                tipo=tipo,
+                responsable=responsable,
+                saldo_esperado=saldo_esperado,
+                saldo_contado=saldo_contado,
+                observacion=observacion,
+            )
+
+            if arqueo.diferencia == 0:
+                messages.success(
+                    request,
+                    "Arqueo guardado. El efectivo coincide exactamente."
+                )
+            elif arqueo.diferencia > 0:
+                messages.warning(
+                    request,
+                    f"Arqueo guardado con un sobrante de ${arqueo.diferencia:.2f}."
+                )
+            else:
+                faltante = abs(arqueo.diferencia)
+                messages.warning(
+                    request,
+                    f"Arqueo guardado con un faltante de ${faltante:.2f}."
+                )
+
+            return redirect("caja:tablero")
+
+    return render(
+        request,
+        "caja/arqueo.html",
+        {
+            "caja": caja,
+            "saldo_esperado": saldo_esperado,
+            "tipos_arqueo": ArqueoCaja.Tipo.choices,
+            "ultimos_arqueos": ArqueoCaja.objects.filter(
+                caja=caja
+            ).order_by("-fecha")[:5],
+        }
+    )
+
+
+# =====================================================
+# HISTORIAL DE ARQUEOS
+# =====================================================
+
+def historial_arqueos(request):
+
+    permitido = request.session.get("pin_ok")
+    full_path = request.get_full_path()
+
+    if permitido != full_path:
+        return redirect(
+            f"/caja/validar-pin/?next={quote(full_path)}"
+        )
+
+    request.session.pop("pin_ok", None)
+
+    arqueos = (
+        ArqueoCaja.objects
+        .select_related("caja")
+        .all()
+        .order_by("-fecha")
+    )
+
+    fecha_desde = request.GET.get("fecha_desde", "").strip()
+    fecha_hasta = request.GET.get("fecha_hasta", "").strip()
+    responsable = request.GET.get("responsable", "").strip()
+    tipo = request.GET.get("tipo", "").strip()
+    resultado = request.GET.get("resultado", "").strip()
+
+    if fecha_desde:
+        arqueos = arqueos.filter(fecha__date__gte=fecha_desde)
+
+    if fecha_hasta:
+        arqueos = arqueos.filter(fecha__date__lte=fecha_hasta)
+
+    if responsable:
+        arqueos = arqueos.filter(
+            responsable__icontains=responsable
+        )
+
+    tipos_validos = {
+        valor for valor, etiqueta in ArqueoCaja.Tipo.choices
+    }
+
+    if tipo in tipos_validos:
+        arqueos = arqueos.filter(tipo=tipo)
+
+    if resultado == "exactos":
+        arqueos = arqueos.filter(diferencia=0)
+    elif resultado == "faltantes":
+        arqueos = arqueos.filter(diferencia__lt=0)
+    elif resultado == "sobrantes":
+        arqueos = arqueos.filter(diferencia__gt=0)
+    elif resultado == "diferencias":
+        arqueos = arqueos.exclude(diferencia=0)
+
+    total_registros = arqueos.count()
+
+    total_faltantes = (
+        arqueos.filter(diferencia__lt=0)
+        .aggregate(total=Sum("diferencia"))["total"]
+        or Decimal("0.00")
+    )
+
+    total_sobrantes = (
+        arqueos.filter(diferencia__gt=0)
+        .aggregate(total=Sum("diferencia"))["total"]
+        or Decimal("0.00")
+    )
+
+    paginator = Paginator(arqueos, 25)
+    page_number = request.GET.get("page")
+    pagina = paginator.get_page(page_number)
+
+    filtros = request.GET.copy()
+    filtros.pop("page", None)
+
+    return render(
+        request,
+        "caja/historial_arqueos.html",
+        {
+            "arqueos": pagina,
+            "total_registros": total_registros,
+            "total_faltantes": abs(total_faltantes),
+            "total_sobrantes": total_sobrantes,
+            "tipos_arqueo": ArqueoCaja.Tipo.choices,
+            "fecha_desde": fecha_desde,
+            "fecha_hasta": fecha_hasta,
+            "responsable": responsable,
+            "tipo_seleccionado": tipo,
+            "resultado_seleccionado": resultado,
+            "filtros_query": filtros.urlencode(),
+        }
+    )
 
 
 # =====================================================

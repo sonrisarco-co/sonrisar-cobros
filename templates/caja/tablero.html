@@ -254,6 +254,70 @@
     }
 
 
+    .arqueos-box{
+        margin-top:10px;
+        padding:14px;
+        border-radius:18px;
+        background:rgba(255,255,255,.10);
+        backdrop-filter:blur(10px);
+        -webkit-backdrop-filter:blur(10px);
+        border:1px solid rgba(255,255,255,.18);
+        box-shadow:0 4px 18px rgba(15,23,42,.03);
+    }
+
+    .arqueos-header{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:12px;
+        margin-bottom:10px;
+    }
+
+    .arqueos-header h3{
+        margin:0;
+        font-size:17px;
+    }
+
+    .arqueos-header span{
+        color:#64748b;
+        font-size:12px;
+    }
+
+    .arqueo-item{
+        display:grid;
+        grid-template-columns:minmax(150px,1.5fr) repeat(3,minmax(90px,1fr));
+        gap:10px;
+        align-items:center;
+        padding:10px 12px;
+        border-radius:14px;
+        background:rgba(255,255,255,.28);
+        border:1px solid #edf1f4;
+        margin-top:8px;
+    }
+
+    .arqueo-item strong,
+    .arqueo-item span{
+        display:block;
+    }
+
+    .arqueo-item small{
+        display:block;
+        color:#64748b;
+        font-size:10px;
+        margin-bottom:2px;
+    }
+
+    .arqueo-diferencia-ok{ color:#15803d; }
+    .arqueo-diferencia-mal{ color:#dc2626; }
+    .arqueo-diferencia-sobra{ color:#b45309; }
+
+    @media(max-width:760px){
+        .arqueo-item{
+            grid-template-columns:1fr 1fr;
+        }
+    }
+
+
     @media(max-width:1100px){
         .dashboard-wrapper{
             flex-direction:column;
@@ -290,6 +354,10 @@
 
             <a href="/pagos/compras/">
                 Compras
+            </a>
+
+            <a href="{% url 'caja:historial_arqueos' %}">
+                Arqueos
             </a>
 
             <a href="/caja/cerradas/">
@@ -586,15 +654,72 @@
 
             <div class="diferencia-card">
 
-                <small>Diferencia de efectivo</small>
+                {% if ultimo_arqueo %}
+                    <small>Último arqueo · {{ ultimo_arqueo.fecha|date:"H:i" }} · {{ ultimo_arqueo.responsable }}</small>
 
-                <h2>
-                    ${{ diferencia|floatformat:2 }}
-                </h2>
+                    <h2 class="{% if ultimo_arqueo.diferencia < 0 %}rojo{% elif ultimo_arqueo.diferencia > 0 %}arqueo-diferencia-sobra{% else %}verde{% endif %}">
+                        ${{ ultimo_arqueo.diferencia|floatformat:2 }}
+                    </h2>
 
-                <p style="margin:4px 0 0; font-size:11px; color:#64748b;">
-                    Se calcula solo con efectivo físico. Transferencias y tarjetas no generan diferencia de caja.
-                </p>
+                    <p style="margin:4px 0 0; font-size:11px; color:#64748b;">
+                        Esperado ${{ ultimo_arqueo.saldo_esperado|floatformat:2 }} · Contado ${{ ultimo_arqueo.saldo_contado|floatformat:2 }}
+                    </p>
+                {% else %}
+                    <small>Diferencia de efectivo</small>
+
+                    <h2>$0.00</h2>
+
+                    <p style="margin:4px 0 0; font-size:11px; color:#64748b;">
+                        Todavía no se realizó ningún arqueo de la caja actual.
+                    </p>
+                {% endif %}
+
+            </div>
+
+
+            <div class="arqueos-box">
+
+                <div class="arqueos-header">
+                    <div>
+                        <h3>Últimos arqueos</h3>
+                        <span>No cierran ni bloquean la caja</span>
+                    </div>
+                    <a href="{% url 'caja:historial_arqueos' %}" style="font-size:12px; font-weight:700; color:#26ABA5; text-decoration:none;">
+                        Ver historial completo
+                    </a>
+                </div>
+
+                {% for arqueo in ultimos_arqueos %}
+                    <div class="arqueo-item">
+
+                        <div>
+                            <small>{{ arqueo.get_tipo_display }} · {{ arqueo.fecha|date:"d/m/Y H:i" }}</small>
+                            <strong>{{ arqueo.responsable }}</strong>
+                        </div>
+
+                        <div>
+                            <small>Esperado</small>
+                            <span>${{ arqueo.saldo_esperado|floatformat:2 }}</span>
+                        </div>
+
+                        <div>
+                            <small>Contado</small>
+                            <span>${{ arqueo.saldo_contado|floatformat:2 }}</span>
+                        </div>
+
+                        <div>
+                            <small>Diferencia</small>
+                            <strong class="{% if arqueo.diferencia < 0 %}arqueo-diferencia-mal{% elif arqueo.diferencia > 0 %}arqueo-diferencia-sobra{% else %}arqueo-diferencia-ok{% endif %}">
+                                ${{ arqueo.diferencia|floatformat:2 }}
+                            </strong>
+                        </div>
+
+                    </div>
+                {% empty %}
+                    <p style="margin:0; color:#64748b; font-size:13px;">
+                        Todavía no hay arqueos registrados para esta caja.
+                    </p>
+                {% endfor %}
 
             </div>
 
@@ -628,6 +753,10 @@
                             Movimientos financieros
                         </a>
 
+                        <a href="{% url 'caja:arqueo' %}" class="accion accion-secundaria">
+                            Realizar arqueo
+                        </a>
+
                         <a href="/caja/cerrar/" class="accion accion-danger">
                             Cerrar caja
                         </a>
@@ -652,6 +781,10 @@
                         >
                             Movimientos financieros
                         </a>
+
+                        <div class="accion accion-secundaria bloqueado">
+                            Realizar arqueo
+                        </div>
 
                         <div class="accion accion-danger bloqueado">
                             Caja cerrada

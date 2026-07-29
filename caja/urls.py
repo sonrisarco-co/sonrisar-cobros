@@ -19,6 +19,18 @@ urlpatterns = [
     ),
 
     path(
+        "arqueo/",
+        views.arqueo_caja,
+        name="arqueo"
+    ),
+
+    path(
+        "arqueos/",
+        views.historial_arqueos,
+        name="historial_arqueos"
+    ),
+
+    path(
         "cerrar/",
         views.cerrar_caja,
         name="cerrar"

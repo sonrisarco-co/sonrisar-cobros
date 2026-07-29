@@ -1,0 +1,309 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Arqueo de caja | Sonrisar{% endblock %}
+
+{% block content %}
+
+<style>
+    body{
+        background:#ffffff;
+    }
+
+    body::before{
+        content:"";
+        position:fixed;
+        inset:0;
+        background:url("{% static 'img/logo.png' %}") center center / 760px no-repeat;
+        opacity:.08;
+        pointer-events:none;
+        z-index:0;
+    }
+
+    .arqueo-page{
+        position:relative;
+        z-index:2;
+        max-width:820px;
+        margin:24px auto;
+        padding:0 16px 30px;
+    }
+
+    .arqueo-card{
+        background:rgba(255,255,255,.92);
+        border:1px solid #e6edef;
+        border-radius:26px;
+        box-shadow:0 10px 35px rgba(15,23,42,.08);
+        overflow:hidden;
+    }
+
+    .arqueo-header{
+        padding:22px 24px;
+        display:flex;
+        align-items:flex-start;
+        justify-content:space-between;
+        gap:16px;
+        border-bottom:1px solid #edf1f4;
+    }
+
+    .arqueo-header h1{
+        margin:0;
+        font-size:25px;
+        color:#0f172a;
+    }
+
+    .arqueo-header p{
+        margin:5px 0 0;
+        color:#64748b;
+        font-size:13px;
+    }
+
+    .estado{
+        background:#e9fbfa;
+        color:#168f89;
+        border-radius:999px;
+        padding:7px 12px;
+        font-size:12px;
+        font-weight:800;
+        white-space:nowrap;
+    }
+
+    .esperado{
+        margin:20px 24px 0;
+        padding:20px;
+        border-radius:20px;
+        background:#f0fdfa;
+        border:1px solid #ccfbf1;
+        text-align:center;
+    }
+
+    .esperado small{
+        display:block;
+        color:#64748b;
+        font-size:12px;
+        margin-bottom:5px;
+    }
+
+    .esperado strong{
+        display:block;
+        color:#168f89;
+        font-size:32px;
+    }
+
+    .formulario{
+        padding:22px 24px 26px;
+    }
+
+    .grid-form{
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:16px;
+    }
+
+    .campo{
+        margin-bottom:16px;
+    }
+
+    .campo-completo{
+        grid-column:1 / -1;
+    }
+
+    label{
+        display:block;
+        margin-bottom:7px;
+        color:#334155;
+        font-size:13px;
+        font-weight:700;
+    }
+
+    input, select, textarea{
+        width:100%;
+        box-sizing:border-box;
+        border:1px solid #dbe4e8;
+        border-radius:14px;
+        background:#fff;
+        color:#0f172a;
+        padding:12px 14px;
+        font-size:15px;
+        outline:none;
+    }
+
+    input:focus, select:focus, textarea:focus{
+        border-color:#26ABA5;
+        box-shadow:0 0 0 3px rgba(38,171,165,.12);
+    }
+
+    textarea{
+        min-height:90px;
+        resize:vertical;
+    }
+
+    .ayuda{
+        margin-top:6px;
+        font-size:11px;
+        color:#64748b;
+    }
+
+    .acciones{
+        display:flex;
+        justify-content:flex-end;
+        gap:10px;
+        margin-top:5px;
+    }
+
+    .btn-volver,
+    .btn-guardar{
+        min-height:44px;
+        border-radius:14px;
+        padding:0 18px;
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        text-decoration:none;
+        font-size:14px;
+        font-weight:800;
+        cursor:pointer;
+    }
+
+    .btn-volver{
+        background:#f8fafc;
+        color:#475569;
+        border:1px solid #e2e8f0;
+    }
+
+    .btn-guardar{
+        border:0;
+        background:#26ABA5;
+        color:#fff;
+    }
+
+    .nota{
+        margin:0 24px 22px;
+        padding:11px 14px;
+        border-radius:14px;
+        background:#f8fafc;
+        color:#64748b;
+        font-size:12px;
+        border:1px solid #edf1f4;
+    }
+
+    @media(max-width:650px){
+        .grid-form{
+            grid-template-columns:1fr;
+        }
+
+        .campo-completo{
+            grid-column:auto;
+        }
+
+        .arqueo-header{
+            flex-direction:column;
+        }
+
+        .acciones{
+            flex-direction:column-reverse;
+        }
+
+        .btn-volver,
+        .btn-guardar{
+            width:100%;
+        }
+    }
+</style>
+
+<div class="arqueo-page">
+
+    <div class="arqueo-card">
+
+        <div class="arqueo-header">
+            <div>
+                <h1>Arqueo de caja</h1>
+                <p>{{ caja.fecha|date:"d/m/Y" }} · Control de efectivo sin cerrar la caja</p>
+            </div>
+            <div class="estado">CAJA ABIERTA</div>
+        </div>
+
+        <div class="esperado">
+            <small>Efectivo esperado en este momento</small>
+            <strong>${{ saldo_esperado|floatformat:2 }}</strong>
+        </div>
+
+        <form method="POST" class="formulario">
+            {% csrf_token %}
+
+            <div class="grid-form">
+
+                <div class="campo">
+                    <label for="tipo">Tipo de arqueo</label>
+                    <select id="tipo" name="tipo" required>
+                        {% for valor, etiqueta in tipos_arqueo %}
+                            <option value="{{ valor }}" {% if request.POST.tipo == valor %}selected{% endif %}>
+                                {{ etiqueta }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="campo">
+                    <label for="responsable">Responsable</label>
+                    <input
+                        id="responsable"
+                        type="text"
+                        name="responsable"
+                        maxlength="120"
+                        value="{{ request.POST.responsable|default:'' }}"
+                        placeholder="Ej: Ana o Andrés"
+                        autocomplete="off"
+                        required
+                    >
+                </div>
+
+                <div class="campo campo-completo">
+                    <label for="saldo_contado">Efectivo contado</label>
+                    <input
+                        id="saldo_contado"
+                        type="number"
+                        name="saldo_contado"
+                        min="0"
+                        step="0.01"
+                        value="{{ request.POST.saldo_contado|default:'' }}"
+                        placeholder="0.00"
+                        inputmode="decimal"
+                        autocomplete="off"
+                        required
+                        autofocus
+                    >
+                    <div class="ayuda">
+                        Ingresa únicamente el dinero físico contado en la caja.
+                    </div>
+                </div>
+
+                <div class="campo campo-completo">
+                    <label for="observacion">Observación</label>
+                    <textarea
+                        id="observacion"
+                        name="observacion"
+                        placeholder="Opcional: cambio de turno, diferencia revisada, retiro pendiente..."
+                    >{{ request.POST.observacion|default:'' }}</textarea>
+                </div>
+
+            </div>
+
+            <div class="acciones">
+                <a href="{% url 'caja:tablero' %}" class="btn-volver">
+                    Cancelar
+                </a>
+                <button type="submit" class="btn-guardar">
+                    Guardar arqueo
+                </button>
+            </div>
+
+        </form>
+
+        <div class="nota">
+            Guardar este arqueo no cierra la caja y no modifica pagos, gastos, movimientos ni el saldo esperado.
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

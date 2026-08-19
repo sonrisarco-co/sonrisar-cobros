@@ -1,3 +1,5 @@
+from decimal import Decimal, ROUND_HALF_UP
+
 from django.db import models
 from django.utils import timezone
 from caja.models import CashSession
@@ -8,10 +10,34 @@ class Pago(models.Model):
     TARJETA = "tarjeta"
     TRANSFERENCIA = "transferencia"
 
+    # Conservamos "tarjeta" como método interno para no romper caja/reportes
+    # existentes. El detalle Débito/Crédito se guarda aparte.
     METODOS = [
         (EFECTIVO, "Efectivo"),
         (TARJETA, "Tarjeta"),
         (TRANSFERENCIA, "Transferencia"),
+    ]
+
+    TARJETA_DEBITO = "debito"
+    TARJETA_CREDITO = "credito"
+
+    TIPOS_TARJETA = [
+        (TARJETA_DEBITO, "Débito"),
+        (TARJETA_CREDITO, "Crédito"),
+    ]
+
+    CFE_NO_SOLICITADO = "no_solicitado"
+    CFE_PENDIENTE = "pendiente"
+    CFE_EMITIDO = "emitido"
+    CFE_RECHAZADO = "rechazado"
+    CFE_ANULADO = "anulado"
+
+    ESTADOS_CFE = [
+        (CFE_NO_SOLICITADO, "Sin CFE"),
+        (CFE_PENDIENTE, "Pendiente CFE"),
+        (CFE_EMITIDO, "CFE emitido"),
+        (CFE_RECHAZADO, "CFE rechazado"),
+        (CFE_ANULADO, "CFE anulado"),
     ]
 
     caja = models.ForeignKey(
@@ -24,6 +50,13 @@ class Pago(models.Model):
     paciente = models.CharField(max_length=100, blank=True)
     monto = models.DecimalField(max_digits=10, decimal_places=2)
     metodo = models.CharField(max_length=20, choices=METODOS)
+    tipo_tarjeta = models.CharField(
+        max_length=10,
+        choices=TIPOS_TARJETA,
+        blank=True,
+        default="",
+        help_text="Detalle del pago con tarjeta: débito o crédito."
+    )
     concepto = models.CharField(max_length=200, blank=True)
 
     appointment_id = models.IntegerField(null=True, blank=True)
@@ -31,7 +64,80 @@ class Pago(models.Model):
 
     protesis_id = models.IntegerField(null=True, blank=True)
 
+    # ==========================================
+    # PREPARACIÓN PARA FACTURACIÓN ELECTRÓNICA
+    # ==========================================
+    # Por ahora estos campos son solo internos.
+    # No se envía nada a DGI/Facture hasta activar la integración.
+    cfe_solicitado = models.BooleanField(
+        default=False,
+        verbose_name="Preparar comprobante electrónico"
+    )
+
+    cfe_estado = models.CharField(
+        max_length=20,
+        choices=ESTADOS_CFE,
+        default=CFE_NO_SOLICITADO
+    )
+
+    # Guardamos la tasa aplicada al momento del cobro para conservar
+    # el histórico aunque la configuración fiscal cambie en el futuro.
+    tasa_iva_cfe = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal("10.00")
+    )
+
+    cfe_tipo = models.CharField(max_length=20, blank=True)
+    cfe_serie = models.CharField(max_length=10, blank=True)
+    cfe_numero = models.CharField(max_length=30, blank=True)
+    facture_cfe_id = models.CharField(max_length=100, blank=True)
+    cfe_pdf_url = models.URLField(max_length=500, blank=True)
+    cfe_xml_url = models.URLField(max_length=500, blank=True)
+    cfe_xml_firmado = models.TextField(blank=True)
+    cfe_error = models.TextField(blank=True)
+
+    # ==========================================
+    # NOTA DE CRÉDITO / ANULACIÓN DEL CFE
+    # ==========================================
+    # Se completa únicamente cuando el eTicket original fue corregido
+    # mediante una Nota de Crédito electrónica.
+    nc_cfe_id = models.CharField(max_length=100, blank=True)
+    nc_serie = models.CharField(max_length=10, blank=True)
+    nc_numero = models.CharField(max_length=30, blank=True)
+    nc_xml_firmado = models.TextField(blank=True)
+    nc_error = models.TextField(blank=True)
+
     fecha = models.DateTimeField(default=timezone.now)
+
+    @property
+    def metodo_detallado(self):
+        if self.metodo == self.TARJETA:
+            if self.tipo_tarjeta == self.TARJETA_DEBITO:
+                return "Débito"
+            if self.tipo_tarjeta == self.TARJETA_CREDITO:
+                return "Crédito"
+        return self.get_metodo_display()
+
+    @property
+    def monto_neto_cfe(self):
+        """Base imponible cuando el monto cargado ya incluye IVA."""
+        tasa = self.tasa_iva_cfe or Decimal("0.00")
+        divisor = Decimal("1.00") + (tasa / Decimal("100.00"))
+        if divisor == 0:
+            return self.monto
+        return (self.monto / divisor).quantize(
+            Decimal("0.01"),
+            rounding=ROUND_HALF_UP
+        )
+
+    @property
+    def monto_iva_cfe(self):
+        """IVA incluido en el monto final."""
+        return (self.monto - self.monto_neto_cfe).quantize(
+            Decimal("0.01"),
+            rounding=ROUND_HALF_UP
+        )
 
     def __str__(self):
         return f"{self.paciente or 'Sin nombre'} - ${self.monto}"

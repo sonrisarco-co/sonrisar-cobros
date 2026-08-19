@@ -60,6 +60,17 @@
 
         </div>
 
+
+        {% if messages %}
+        <div class="hp-messages">
+            {% for message in messages %}
+            <div class="hp-message hp-message-{{ message.tags|default:'info' }}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
         <!-- MESES -->
         {% for mes, pagos_del_mes in pagos_por_mes.items %}
 
@@ -113,13 +124,17 @@
                             <strong class="
                                 {% if pago.metodo == 'efectivo' %}
                                     metodo-efectivo
+                                {% elif pago.metodo == 'tarjeta' and pago.tipo_tarjeta == 'debito' %}
+                                    metodo-debito
+                                {% elif pago.metodo == 'tarjeta' and pago.tipo_tarjeta == 'credito' %}
+                                    metodo-credito
                                 {% elif pago.metodo == 'tarjeta' %}
                                     metodo-tarjeta
                                 {% elif pago.metodo == 'transferencia' %}
                                     metodo-transferencia
                                 {% endif %}
                             ">
-                                {{ pago.get_metodo_display }}
+                                {{ pago.metodo_detallado }}
                             </strong>
                         </div>
 
@@ -138,6 +153,126 @@
                                 {{ pago.concepto }}
                             </strong>
                         </div>
+
+                        <div class="hp-row">
+                            <span>Fiscal</span>
+
+                            {% if pago.cfe_solicitado %}
+                                <strong class="
+                                    {% if pago.cfe_estado == 'emitido' %}
+                                        cfe-emitido
+                                    {% elif pago.cfe_estado == 'rechazado' %}
+                                        cfe-rechazado
+                                    {% elif pago.cfe_estado == 'anulado' %}
+                                        cfe-anulado
+                                    {% else %}
+                                        cfe-pendiente
+                                    {% endif %}
+                                ">
+                                    {{ pago.get_cfe_estado_display }}
+                                </strong>
+                            {% else %}
+                                <strong class="cfe-sin">
+                                    Sin CFE
+                                </strong>
+                            {% endif %}
+                        </div>
+
+                        {% if pago.cfe_solicitado %}
+                        <div class="hp-fiscal-detail">
+                            Neto ${{ pago.monto_neto_cfe|floatformat:2 }}
+                            · IVA {{ pago.tasa_iva_cfe|floatformat:0 }}%
+                            ${{ pago.monto_iva_cfe|floatformat:2 }}
+                        </div>
+                        {% endif %}
+
+
+                        {% if pago.cfe_solicitado and pago.cfe_estado == 'pendiente' %}
+                        <form method="POST"
+                              action="{% url 'pagos:facture_emitir_pago_sandbox' pago.id %}"
+                              class="hp-cfe-form"
+                              onsubmit="return confirm('¿Emitir este eTicket de PRUEBA en el sandbox de Facture?');">
+                            {% csrf_token %}
+                            <button type="submit" class="hp-btn-cfe-test">
+                                🧪 Emitir CFE de prueba
+                            </button>
+                        </form>
+                        {% endif %}
+
+                        {% if pago.cfe_estado == 'emitido' or pago.cfe_estado == 'anulado' %}
+                        <div class="hp-cfe-number">
+                            {{ pago.cfe_tipo }} {{ pago.cfe_serie }} {{ pago.cfe_numero }}
+                        </div>
+                        {% endif %}
+
+                        {% if pago.cfe_estado == 'rechazado' and pago.cfe_error %}
+                        <div class="hp-cfe-error">
+                            {{ pago.cfe_error|truncatechars:220 }}
+                        </div>
+                        {% endif %}
+
+
+                        {% if pago.cfe_estado == 'emitido' %}
+                        <a href="{% url 'pagos:facture_pdf_pago' pago.id %}"
+                           class="hp-btn-cfe-pdf"
+                           target="_blank"
+                           rel="noopener">
+                            📄 Ver PDF CFE
+                        </a>
+                        {% endif %}
+
+
+                        {% if pago.cfe_estado == 'emitido' and pago.cfe_xml_firmado %}
+                        <a href="{% url 'pagos:facture_xml_pago' pago.id %}"
+                           class="hp-btn-cfe-xml">
+                            ⬇ Descargar XML CFE
+                        </a>
+                        {% elif pago.cfe_estado == 'emitido' %}
+                        <div class="hp-xml-unavailable">
+                            XML no guardado en esta emisión
+                        </div>
+                        {% endif %}
+
+                        {% if pago.cfe_estado == 'emitido' and not pago.nc_numero and not pago.nc_cfe_id %}
+                        <form method="POST"
+                              action="{% url 'pagos:facture_anular_pago_sandbox' pago.id %}"
+                              class="hp-cfe-form"
+                              onsubmit="return confirm('¿ANULAR este eTicket de PRUEBA mediante una Nota de Crédito en el sandbox de Facture?');">
+                            {% csrf_token %}
+                            <input type="hidden" name="razon" value="Anulación total de eTicket">
+                            <button type="submit" class="hp-btn-cfe-cancel">
+                                ↩ Anular CFE de prueba
+                            </button>
+                        </form>
+                        {% endif %}
+
+                        {% if pago.nc_numero %}
+                        <div class="hp-nc-box">
+                            <div class="hp-nc-number">
+                                Nota de Crédito {{ pago.nc_serie }} {{ pago.nc_numero }}
+                            </div>
+
+                            <a href="{% url 'pagos:facture_pdf_nota_credito_pago' pago.id %}"
+                               class="hp-btn-nc-pdf"
+                               target="_blank"
+                               rel="noopener">
+                                📄 Ver PDF Nota de Crédito
+                            </a>
+
+                            {% if pago.nc_xml_firmado %}
+                            <a href="{% url 'pagos:facture_xml_nota_credito_pago' pago.id %}"
+                               class="hp-btn-nc-xml">
+                                ⬇ Descargar XML Nota de Crédito
+                            </a>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+
+                        {% if pago.nc_error %}
+                        <div class="hp-cfe-error">
+                            Nota de Crédito: {{ pago.nc_error|truncatechars:220 }}
+                        </div>
+                        {% endif %}
 
                         <a href="{% url 'pagos:recibo' pago.id %}"
                            class="hp-btn-receipt"
@@ -651,10 +786,217 @@ body{
     color:#4b8fcf !important;
 }
 
+.metodo-debito{
+    color:#4b8fcf !important;
+}
+
+.metodo-credito{
+    color:#7c5ac7 !important;
+}
+
 .metodo-transferencia{
     color:#317b8d !important;
 }
 
+
+/* =========================
+   ESTADO CFE
+========================= */
+
+.cfe-pendiente{
+    color:#a16207 !important;
+}
+
+.cfe-emitido{
+    color:#16834a !important;
+}
+
+.cfe-rechazado{
+    color:#c2410c !important;
+}
+
+.cfe-anulado,
+.cfe-sin{
+    color:#64748b !important;
+}
+
+.hp-fiscal-detail{
+    margin:4px 0 2px;
+    padding:8px 10px;
+    border-radius:10px;
+    background:rgba(38,171,165,.06);
+    color:#64748b;
+    font-size:11px;
+    font-weight:700;
+}
+
+
+.hp-messages{
+    position:relative;
+    z-index:3;
+    margin:0 0 18px;
+}
+.hp-message{
+    padding:11px 14px;
+    border-radius:12px;
+    margin-bottom:8px;
+    font-size:13px;
+    font-weight:700;
+    border:1px solid #e2e8f0;
+    background:#fff;
+}
+.hp-message-success{ color:#166534; background:#f0fdf4; border-color:#bbf7d0; }
+.hp-message-error{ color:#991b1b; background:#fef2f2; border-color:#fecaca; }
+.hp-message-warning{ color:#92400e; background:#fffbeb; border-color:#fde68a; }
+
+.hp-cfe-form{
+    margin-top:10px;
+}
+.hp-btn-cfe-test{
+    width:100%;
+    padding:9px 12px;
+    border:1px dashed #7c5ac7;
+    border-radius:12px;
+    background:rgba(124,90,199,.08);
+    color:#6544ad;
+    font-size:12px;
+    font-weight:800;
+    cursor:pointer;
+}
+.hp-btn-cfe-test:hover{
+    background:#7c5ac7;
+    color:#fff;
+}
+.hp-cfe-number{
+    margin-top:8px;
+    padding:7px 9px;
+    border-radius:10px;
+    background:#ecfdf5;
+    color:#166534;
+    font-size:11px;
+    font-weight:800;
+    text-align:center;
+}
+.hp-cfe-error{
+    margin-top:8px;
+    padding:7px 9px;
+    border-radius:10px;
+    background:#fef2f2;
+    color:#991b1b;
+    font-size:10px;
+    font-weight:700;
+    overflow-wrap:anywhere;
+}
+
+
+
+.hp-btn-cfe-pdf{
+    display:flex;align-items:center;justify-content:center;width:100%;
+    margin-top:8px;padding:9px 12px;border:1px solid #16834a;
+    border-radius:12px;background:rgba(22,131,74,.08);color:#16834a;
+    text-decoration:none;font-size:12px;font-weight:800;transition:.18s ease;
+}
+.hp-btn-cfe-pdf:hover{background:#16834a;color:#fff;transform:translateY(-1px);}
+
+
+.hp-btn-cfe-xml{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:100%;
+    margin-top:8px;
+    padding:9px 12px;
+    border:1px solid #317b8d;
+    border-radius:12px;
+    background:rgba(49,123,141,.08);
+    color:#317b8d;
+    text-decoration:none;
+    font-size:12px;
+    font-weight:800;
+    transition:.18s ease;
+}
+.hp-btn-cfe-xml:hover{
+    background:#317b8d;
+    color:#fff;
+    transform:translateY(-1px);
+}
+.hp-xml-unavailable{
+    margin-top:8px;
+    padding:8px 10px;
+    border-radius:10px;
+    background:#f8fafc;
+    color:#64748b;
+    font-size:10px;
+    font-weight:700;
+    text-align:center;
+}
+
+.hp-btn-cfe-cancel{
+    width:100%;
+    margin-top:8px;
+    padding:9px 12px;
+    border:1px solid #c2410c;
+    border-radius:12px;
+    background:rgba(194,65,12,.07);
+    color:#c2410c;
+    font-size:12px;
+    font-weight:800;
+    cursor:pointer;
+    transition:.18s ease;
+}
+.hp-btn-cfe-cancel:hover{
+    background:#c2410c;
+    color:#fff;
+    transform:translateY(-1px);
+}
+.hp-nc-box{
+    margin-top:10px;
+    padding:9px;
+    border:1px solid rgba(124,90,199,.20);
+    border-radius:12px;
+    background:rgba(124,90,199,.05);
+}
+.hp-nc-number{
+    padding:7px 9px;
+    border-radius:10px;
+    background:#f5f3ff;
+    color:#6544ad;
+    font-size:11px;
+    font-weight:800;
+    text-align:center;
+}
+.hp-btn-nc-pdf,
+.hp-btn-nc-xml{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:100%;
+    margin-top:8px;
+    padding:9px 12px;
+    border-radius:12px;
+    text-decoration:none;
+    font-size:12px;
+    font-weight:800;
+    transition:.18s ease;
+}
+.hp-btn-nc-pdf{
+    border:1px solid #7c5ac7;
+    background:rgba(124,90,199,.08);
+    color:#6544ad;
+}
+.hp-btn-nc-pdf:hover{
+    background:#7c5ac7;
+    color:#fff;
+}
+.hp-btn-nc-xml{
+    border:1px solid #475569;
+    background:rgba(71,85,105,.07);
+    color:#475569;
+}
+.hp-btn-nc-xml:hover{
+    background:#475569;
+    color:#fff;
+}
 
 /* =========================
    PAGINACION

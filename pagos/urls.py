@@ -6,6 +6,13 @@ app_name = "pagos"
 urlpatterns = [
     path("nuevo/", views.nuevo_pago, name="nuevo"),
     path("historial/", views.historial, name="historial"),
+    path("facture/test-conexion/", views.facture_test_conexion, name="facture_test_conexion"),
+    path("facture/emitir-sandbox/<int:pago_id>/", views.facture_emitir_pago_sandbox, name="facture_emitir_pago_sandbox"),
+    path("facture/anular-sandbox/<int:pago_id>/", views.facture_anular_pago_sandbox, name="facture_anular_pago_sandbox"),
+    path("facture/pdf/<int:pago_id>/", views.facture_pdf_pago, name="facture_pdf_pago"),
+    path("facture/xml/<int:pago_id>/", views.facture_xml_pago, name="facture_xml_pago"),
+    path("facture/nc/pdf/<int:pago_id>/", views.facture_pdf_nota_credito_pago, name="facture_pdf_nota_credito_pago"),
+    path("facture/nc/xml/<int:pago_id>/", views.facture_xml_nota_credito_pago, name="facture_xml_nota_credito_pago"),
     path("<int:pago_id>/recibo/", views.recibo_pago, name="recibo"),
 
     path("api/por-paciente/", views.api_pagos_por_paciente, name="api_pagos_por_paciente"),

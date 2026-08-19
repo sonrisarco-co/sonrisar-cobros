@@ -6,6 +6,7 @@ app_name = "pagos"
 urlpatterns = [
     path("nuevo/", views.nuevo_pago, name="nuevo"),
     path("historial/", views.historial, name="historial"),
+    path("devoluciones/nueva/", views.nueva_devolucion, name="nueva_devolucion"),
     path("<int:pago_id>/recibo/", views.recibo_pago, name="recibo"),
 
     path("api/por-paciente/", views.api_pagos_por_paciente, name="api_pagos_por_paciente"),

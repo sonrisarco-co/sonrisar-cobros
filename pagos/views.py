@@ -1,7 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import Pago
 from django.core.paginator import Paginator
-from django.db.models import Sum
+from django.db.models import Sum, Q
+from django.db import transaction
 from collections import OrderedDict
 from caja.models import CashSession
 from pagos.models import Pago
@@ -15,11 +16,13 @@ import calendar
 from django.utils.translation import gettext as _
 
 from django.http import JsonResponse
+from django.contrib import messages
 
 from decimal import Decimal
 from urllib.parse import quote
 from .models import (
     Gasto,
+    DevolucionPaciente,
     CompraProveedor,
     PagoCompraProveedor
 )
@@ -173,22 +176,50 @@ def _pago_to_dict(pago):
     }
 
 
+def _devolucion_to_dict(devolucion):
+    return {
+        "id": devolucion.id,
+        "paciente": devolucion.paciente,
+        "monto": str(devolucion.monto),
+        "metodo": devolucion.get_metodo_display(),
+        "concepto": devolucion.concepto or "",
+        "fecha": localtime(devolucion.fecha).strftime("%d/%m/%Y %H:%M"),
+        "appointment_id": devolucion.appointment_id,
+        "patient_id": devolucion.patient_id,
+        "protesis_id": devolucion.protesis_id,
+        "pago_original_id": devolucion.pago_original_id,
+        "tipo_movimiento": "devolucion",
+    }
+
+
+def _to_int_or_none(value):
+    try:
+        return int(value) if value not in (None, "") else None
+    except (TypeError, ValueError):
+        return None
+
+
 def api_pagos_por_paciente(request):
     paciente = request.GET.get("paciente", "").strip()
     patient_id = request.GET.get("patient_id", "").strip()
 
     pagos_qs = Pago.objects.all()
+    devoluciones_qs = DevolucionPaciente.objects.all()
 
     if patient_id:
         try:
-            pagos_qs = pagos_qs.filter(patient_id=int(patient_id))
+            patient_id_int = int(patient_id)
         except (TypeError, ValueError):
             return JsonResponse({
                 "ok": False,
                 "error": "patient_id inválido."
             }, status=400)
+
+        pagos_qs = pagos_qs.filter(patient_id=patient_id_int)
+        devoluciones_qs = devoluciones_qs.filter(patient_id=patient_id_int)
     elif paciente:
         pagos_qs = pagos_qs.filter(paciente__iexact=paciente)
+        devoluciones_qs = devoluciones_qs.filter(paciente__iexact=paciente)
     else:
         return JsonResponse({
             "ok": False,
@@ -196,8 +227,14 @@ def api_pagos_por_paciente(request):
         }, status=400)
 
     pagos = pagos_qs.order_by("-fecha")
-    total_pagado = sum((pago.monto or 0) for pago in pagos)
+    devoluciones = devoluciones_qs.order_by("-fecha")
+
+    total_pagado_bruto = sum((pago.monto or 0) for pago in pagos)
+    total_devuelto = sum((dev.monto or 0) for dev in devoluciones)
+    total_pagado = total_pagado_bruto - total_devuelto
+
     data = [_pago_to_dict(pago) for pago in pagos[:50]]
+    devoluciones_data = [_devolucion_to_dict(dev) for dev in devoluciones[:50]]
     tiene_sena = any(_es_sena(pago.concepto) for pago in pagos)
 
     return JsonResponse({
@@ -205,17 +242,20 @@ def api_pagos_por_paciente(request):
         "paciente": paciente,
         "patient_id": patient_id or None,
         "total": pagos.count(),
+        "cantidad_devoluciones": devoluciones.count(),
+        "total_pagado_bruto": str(total_pagado_bruto),
+        "total_devuelto": str(total_devuelto),
         "total_pagado": str(total_pagado),
         "tipo_pago": "sena" if tiene_sena else "pagado",
         "pagos": data,
+        "devoluciones": devoluciones_data,
     })
 
 
 def api_resumen_pacientes(request):
     """
     API rápida para Sonrisar Pro.
-    Recibe: ?patient_ids=1,2,3
-    Devuelve el total pagado por cada paciente en una sola consulta.
+    Devuelve el total neto pagado por cada paciente: pagos - devoluciones.
     """
     patient_ids_raw = request.GET.get("patient_ids", "").strip()
 
@@ -226,16 +266,9 @@ def api_resumen_pacientes(request):
         }, status=400)
 
     patient_ids = []
-
     for item in patient_ids_raw.split(","):
-        item = item.strip()
-        if not item:
-            continue
-        try:
-            patient_id = int(item)
-        except (TypeError, ValueError):
-            continue
-        if patient_id not in patient_ids:
+        patient_id = _to_int_or_none(item.strip())
+        if patient_id is not None and patient_id not in patient_ids:
             patient_ids.append(patient_id)
 
     if not patient_ids:
@@ -245,41 +278,42 @@ def api_resumen_pacientes(request):
         }, status=400)
 
     pagos = Pago.objects.filter(patient_id__in=patient_ids)
+    devoluciones = DevolucionPaciente.objects.filter(patient_id__in=patient_ids)
 
     resumen = {
         patient_id: {
             "patient_id": patient_id,
             "total_pagado": "0",
+            "total_pagado_bruto": "0",
+            "total_devuelto": "0",
             "cantidad_pagos": 0,
+            "cantidad_devoluciones": 0,
             "tipo_pago": "pagado",
         }
         for patient_id in patient_ids
     }
 
-    acumulados = {}
-
     for pago in pagos:
-        patient_id = pago.patient_id
-        if patient_id not in resumen:
+        datos = resumen.get(pago.patient_id)
+        if not datos:
             continue
-
-        if patient_id not in acumulados:
-            acumulados[patient_id] = {
-                "total_pagado": 0,
-                "cantidad_pagos": 0,
-                "tiene_sena": False,
-            }
-
-        acumulados[patient_id]["total_pagado"] += pago.monto or 0
-        acumulados[patient_id]["cantidad_pagos"] += 1
-
+        bruto = Decimal(datos["total_pagado_bruto"]) + (pago.monto or Decimal("0.00"))
+        datos["total_pagado_bruto"] = str(bruto)
+        datos["cantidad_pagos"] += 1
         if _es_sena(pago.concepto):
-            acumulados[patient_id]["tiene_sena"] = True
+            datos["tipo_pago"] = "sena"
 
-    for patient_id, datos in acumulados.items():
-        resumen[patient_id]["total_pagado"] = str(datos["total_pagado"])
-        resumen[patient_id]["cantidad_pagos"] = datos["cantidad_pagos"]
-        resumen[patient_id]["tipo_pago"] = "sena" if datos["tiene_sena"] else "pagado"
+    for devolucion in devoluciones:
+        datos = resumen.get(devolucion.patient_id)
+        if not datos:
+            continue
+        devuelto = Decimal(datos["total_devuelto"]) + (devolucion.monto or Decimal("0.00"))
+        datos["total_devuelto"] = str(devuelto)
+        datos["cantidad_devoluciones"] += 1
+
+    for datos in resumen.values():
+        neto = Decimal(datos["total_pagado_bruto"]) - Decimal(datos["total_devuelto"])
+        datos["total_pagado"] = str(neto)
 
     return JsonResponse({
         "ok": True,
@@ -298,37 +332,47 @@ def api_pago_por_cita(request):
         }, status=400)
 
     pagos = Pago.objects.filter(appointment_id=appointment_id)
+    devoluciones = DevolucionPaciente.objects.filter(appointment_id=appointment_id)
 
     if patient_id:
-        try:
-            pagos = pagos.filter(patient_id=int(patient_id))
-        except (TypeError, ValueError):
-            pass
+        patient_id_int = _to_int_or_none(patient_id)
+        if patient_id_int is not None:
+            pagos = pagos.filter(patient_id=patient_id_int)
+            devoluciones = devoluciones.filter(patient_id=patient_id_int)
 
     pagos = pagos.order_by("-fecha")
+    devoluciones = devoluciones.order_by("-fecha")
 
     data = []
-    total_pagado = 0
+    total_pagado_bruto = Decimal("0.00")
+    total_devuelto = Decimal("0.00")
     tipo_pago = "pagado"
 
     for pago in pagos:
-        total_pagado += pago.monto or 0
-
+        total_pagado_bruto += pago.monto or Decimal("0.00")
         if _es_sena(pago.concepto):
             tipo_pago = "sena"
-
         data.append(_pago_to_dict(pago))
+
+    devoluciones_data = []
+    for devolucion in devoluciones:
+        total_devuelto += devolucion.monto or Decimal("0.00")
+        devoluciones_data.append(_devolucion_to_dict(devolucion))
 
     return JsonResponse({
         "ok": True,
         "appointment_id": appointment_id,
         "patient_id": patient_id or None,
         "total": len(data),
-        "total_pagado": str(total_pagado),
+        "cantidad_devoluciones": len(devoluciones_data),
+        "total_pagado_bruto": str(total_pagado_bruto),
+        "total_devuelto": str(total_devuelto),
+        "total_pagado": str(total_pagado_bruto - total_devuelto),
         "tipo_pago": tipo_pago,
         "pagos": data,
+        "devoluciones": devoluciones_data,
     })
-    
+
 
 def api_resumen_citas(request):
     appointment_ids_raw = request.GET.get("appointment_ids", "").strip()
@@ -340,18 +384,9 @@ def api_resumen_citas(request):
         }, status=400)
 
     appointment_ids = []
-
     for item in appointment_ids_raw.split(","):
-        item = item.strip()
-        if not item:
-            continue
-
-        try:
-            appointment_id = int(item)
-        except (TypeError, ValueError):
-            continue
-
-        if appointment_id not in appointment_ids:
+        appointment_id = _to_int_or_none(item.strip())
+        if appointment_id is not None and appointment_id not in appointment_ids:
             appointment_ids.append(appointment_id)
 
     if not appointment_ids:
@@ -360,36 +395,48 @@ def api_resumen_citas(request):
             "error": "No se recibieron appointment_ids válidos."
         }, status=400)
 
-    pagos = Pago.objects.filter(
-        appointment_id__in=appointment_ids
-    ).order_by("-fecha")
+    pagos = Pago.objects.filter(appointment_id__in=appointment_ids).order_by("-fecha")
+    devoluciones = DevolucionPaciente.objects.filter(appointment_id__in=appointment_ids).order_by("-fecha")
 
     resumen = {
         appointment_id: {
             "appointment_id": appointment_id,
             "total_pagado": "0",
+            "total_pagado_bruto": "0",
+            "total_devuelto": "0",
             "cantidad_pagos": 0,
+            "cantidad_devoluciones": 0,
             "tipo_pago": "pagado",
             "pagos": [],
+            "devoluciones": [],
         }
         for appointment_id in appointment_ids
     }
 
     for pago in pagos:
-        appointment_id = pago.appointment_id
-
-        if appointment_id not in resumen:
+        datos = resumen.get(pago.appointment_id)
+        if not datos:
             continue
-
-        actual = Decimal(resumen[appointment_id]["total_pagado"])
-        actual += pago.monto or Decimal("0.00")
-
-        resumen[appointment_id]["total_pagado"] = str(actual)
-        resumen[appointment_id]["cantidad_pagos"] += 1
-        resumen[appointment_id]["pagos"].append(_pago_to_dict(pago))
-
+        bruto = Decimal(datos["total_pagado_bruto"]) + (pago.monto or Decimal("0.00"))
+        datos["total_pagado_bruto"] = str(bruto)
+        datos["cantidad_pagos"] += 1
+        datos["pagos"].append(_pago_to_dict(pago))
         if _es_sena(pago.concepto):
-            resumen[appointment_id]["tipo_pago"] = "sena"
+            datos["tipo_pago"] = "sena"
+
+    for devolucion in devoluciones:
+        datos = resumen.get(devolucion.appointment_id)
+        if not datos:
+            continue
+        devuelto = Decimal(datos["total_devuelto"]) + (devolucion.monto or Decimal("0.00"))
+        datos["total_devuelto"] = str(devuelto)
+        datos["cantidad_devoluciones"] += 1
+        datos["devoluciones"].append(_devolucion_to_dict(devolucion))
+
+    for datos in resumen.values():
+        datos["total_pagado"] = str(
+            Decimal(datos["total_pagado_bruto"]) - Decimal(datos["total_devuelto"])
+        )
 
     return JsonResponse({
         "ok": True,
@@ -407,20 +454,244 @@ def api_pago_por_protesis(request):
         }, status=400)
 
     pagos = Pago.objects.filter(protesis_id=protesis_id).order_by("-fecha")
+    devoluciones = DevolucionPaciente.objects.filter(protesis_id=protesis_id).order_by("-fecha")
 
-    total_pagado = Decimal("0.00")
+    total_pagado_bruto = Decimal("0.00")
+    total_devuelto = Decimal("0.00")
     data = []
+    devoluciones_data = []
 
     for pago in pagos:
-        total_pagado += pago.monto or Decimal("0.00")
+        total_pagado_bruto += pago.monto or Decimal("0.00")
         data.append(_pago_to_dict(pago))
+
+    for devolucion in devoluciones:
+        total_devuelto += devolucion.monto or Decimal("0.00")
+        devoluciones_data.append(_devolucion_to_dict(devolucion))
 
     return JsonResponse({
         "ok": True,
         "protesis_id": protesis_id,
         "total": len(data),
-        "total_pagado": str(total_pagado),
+        "cantidad_devoluciones": len(devoluciones_data),
+        "total_pagado_bruto": str(total_pagado_bruto),
+        "total_devuelto": str(total_devuelto),
+        "total_pagado": str(total_pagado_bruto - total_devuelto),
         "pagos": data,
+        "devoluciones": devoluciones_data,
+    })
+
+
+def nueva_devolucion(request):
+    caja = CashSession.obtener_caja_del_dia()
+
+    if request.method == "POST":
+        afecta_caja = request.POST.get("afecta_caja") == "on"
+
+        if afecta_caja and caja.estado == CashSession.Status.CERRADA:
+            messages.error(
+                request,
+                "La caja del día está cerrada. Puedes registrar la devolución, pero no descontarla de la caja actual."
+            )
+            return redirect("pagos:nueva_devolucion")
+
+        pago_original_id = _to_int_or_none(request.POST.get("pago_original_id"))
+        pago_original = (
+            Pago.objects.filter(id=pago_original_id).first()
+            if pago_original_id is not None
+            else None
+        )
+
+        paciente = request.POST.get("paciente", "").strip()
+        patient_id = _to_int_or_none(request.POST.get("patient_id"))
+        appointment_id = _to_int_or_none(request.POST.get("appointment_id"))
+        protesis_id = _to_int_or_none(request.POST.get("protesis_id"))
+        metodo = request.POST.get("metodo", "").strip()
+        concepto = request.POST.get("concepto", "").strip()
+        next_url = request.POST.get("next", "").strip()
+
+        if pago_original:
+            paciente = pago_original.paciente or paciente
+            patient_id = pago_original.patient_id or patient_id
+            appointment_id = pago_original.appointment_id or appointment_id
+            protesis_id = pago_original.protesis_id or protesis_id
+
+        monto_texto = request.POST.get("monto", "").strip().replace(",", ".")
+
+        try:
+            monto = Decimal(monto_texto)
+            if monto <= 0:
+                raise ValueError
+        except (ValueError, ArithmeticError):
+            monto = None
+
+        metodos_validos = {valor for valor, _ in DevolucionPaciente.METODOS}
+
+        if not pago_original:
+            messages.error(request, "Selecciona el pago original que corresponde a la devolución.")
+        elif not paciente:
+            messages.error(request, "Debes indicar el paciente de la devolución.")
+        elif monto is None:
+            messages.error(request, "El monto de la devolución debe ser mayor a cero.")
+        elif metodo not in metodos_validos:
+            messages.error(request, "Selecciona un método de devolución válido.")
+        else:
+            ya_devuelto = (
+                DevolucionPaciente.objects
+                .filter(pago_original=pago_original)
+                .aggregate(total=Sum("monto"))["total"]
+                or Decimal("0.00")
+            )
+            disponible = (pago_original.monto or Decimal("0.00")) - ya_devuelto
+
+            if disponible <= 0:
+                messages.error(
+                    request,
+                    "Ese pago ya fue devuelto completamente y no tiene saldo disponible para otra devolución."
+                )
+                monto = None
+            elif monto > disponible:
+                messages.error(
+                    request,
+                    f"No puedes devolver ${monto:.2f}. De ese pago quedan ${disponible:.2f} disponibles para devolución."
+                )
+                monto = None
+
+            if monto is not None:
+                concepto_final = concepto or "Devolución de pago a paciente"
+
+                with transaction.atomic():
+                    caja_asignada = caja if afecta_caja else None
+
+                    gasto = Gasto.objects.create(
+                        proveedor=paciente,
+                        categoria="devolucion_paciente",
+                        concepto=f"Devolución a {paciente}: {concepto_final}",
+                        monto=monto,
+                        metodo=metodo,
+                        afecta_caja=afecta_caja,
+                        caja=caja_asignada,
+                    )
+
+                    DevolucionPaciente.objects.create(
+                        pago_original=pago_original,
+                        gasto=gasto,
+                        paciente=paciente,
+                        patient_id=patient_id,
+                        appointment_id=appointment_id,
+                        protesis_id=protesis_id,
+                        monto=monto,
+                        metodo=metodo,
+                        concepto=concepto_final,
+                    )
+
+                detalle_caja = (
+                    " Se descontó de la caja del día."
+                    if afecta_caja
+                    else " No afectó la caja del día."
+                )
+
+                messages.success(
+                    request,
+                    f"Devolución de ${monto:.2f} registrada para {paciente}.{detalle_caja}"
+                )
+
+                if next_url:
+                    return redirect(next_url)
+                return redirect("caja:tablero")
+
+    if request.method == "POST":
+        initial = {
+            "paciente": request.POST.get("paciente", ""),
+            "patient_id": request.POST.get("patient_id", ""),
+            "appointment_id": request.POST.get("appointment_id", ""),
+            "protesis_id": request.POST.get("protesis_id", ""),
+            "monto": request.POST.get("monto", ""),
+            "concepto": request.POST.get("concepto", ""),
+            "pago_original_id": request.POST.get("pago_original_id", ""),
+            "next": request.POST.get("next", ""),
+            "metodo": request.POST.get("metodo", ""),
+            "afecta_caja": request.POST.get("afecta_caja") == "on",
+        }
+        busqueda_pago = request.POST.get("busqueda_pago", "").strip()
+    else:
+        initial = {
+            "paciente": request.GET.get("paciente", ""),
+            "patient_id": request.GET.get("patient_id", ""),
+            "appointment_id": request.GET.get("appointment_id", ""),
+            "protesis_id": request.GET.get("protesis_id", ""),
+            "monto": request.GET.get("monto", ""),
+            "concepto": request.GET.get("concepto", ""),
+            "pago_original_id": request.GET.get("pago_id", ""),
+            "next": request.GET.get("next", ""),
+            "metodo": "",
+            "afecta_caja": False,
+        }
+        busqueda_pago = request.GET.get("buscar_pago", "").strip()
+
+    pagos_qs = (
+        Pago.objects
+        .annotate(total_devuelto_calc=Sum("devoluciones__monto"))
+        .only(
+            "id", "fecha", "paciente", "monto", "concepto",
+            "patient_id", "appointment_id", "protesis_id"
+        )
+        .order_by("-fecha", "-id")
+    )
+
+    if busqueda_pago:
+        filtro = (
+            Q(paciente__icontains=busqueda_pago)
+            | Q(concepto__icontains=busqueda_pago)
+        )
+
+        # También permite buscar un pago puntual escribiendo su ID como #302.
+        texto_id = busqueda_pago.strip()
+        if texto_id.startswith("#"):
+            try:
+                filtro |= Q(id=int(texto_id[1:].strip()))
+            except (TypeError, ValueError):
+                pass
+
+        texto_monto = busqueda_pago.replace("$", "").replace(".", "").replace(",", ".").strip()
+        try:
+            monto_buscado = Decimal(texto_monto)
+            filtro |= Q(monto=monto_buscado)
+        except (ValueError, ArithmeticError):
+            pass
+
+        pagos_qs = pagos_qs.filter(filtro)
+
+    # Con búsqueda mostramos más resultados del historial completo. Sin búsqueda,
+    # solo los últimos para mantener la pantalla liviana.
+    limite = 150 if busqueda_pago else 80
+    pagos_encontrados = list(pagos_qs[:limite])
+
+    pago_inicial_id = _to_int_or_none(initial.get("pago_original_id"))
+    if pago_inicial_id and not any(p.id == pago_inicial_id for p in pagos_encontrados):
+        pago_inicial = (
+            Pago.objects
+            .filter(id=pago_inicial_id)
+            .annotate(total_devuelto_calc=Sum("devoluciones__monto"))
+            .first()
+        )
+        if pago_inicial:
+            pagos_encontrados.insert(0, pago_inicial)
+
+    for pago in pagos_encontrados:
+        pago.total_devuelto_mostrado = pago.total_devuelto_calc or Decimal("0.00")
+        pago.disponible_devolver = max(
+            (pago.monto or Decimal("0.00")) - pago.total_devuelto_mostrado,
+            Decimal("0.00")
+        )
+
+    return render(request, "pagos/nueva_devolucion.html", {
+        "caja": caja,
+        "metodos": DevolucionPaciente.METODOS,
+        "pagos_recientes": pagos_encontrados,
+        "initial": initial,
+        "busqueda_pago": busqueda_pago,
+        "cantidad_resultados": len(pagos_encontrados),
     })
 
 

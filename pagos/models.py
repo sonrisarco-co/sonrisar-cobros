@@ -51,6 +51,7 @@ class Gasto(models.Model):
         ("servicios", "Servicios"),
         ("sueldos", "Sueldos"),
         ("mantenimiento", "Mantenimiento"),
+        ("devolucion_paciente", "Devolución a paciente"),
         ("otros", "Otros"),
     ]
 
@@ -91,6 +92,46 @@ class Gasto(models.Model):
 
     def __str__(self):
         return f"{self.concepto} - ${self.monto}"
+
+
+class DevolucionPaciente(models.Model):
+    METODOS = [
+        ("efectivo", "Efectivo"),
+        ("transferencia", "Transferencia"),
+        ("tarjeta", "Tarjeta"),
+    ]
+
+    pago_original = models.ForeignKey(
+        Pago,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="devoluciones"
+    )
+
+    gasto = models.OneToOneField(
+        Gasto,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="devolucion_paciente"
+    )
+
+    paciente = models.CharField(max_length=100)
+    patient_id = models.IntegerField(null=True, blank=True, db_index=True)
+    appointment_id = models.IntegerField(null=True, blank=True, db_index=True)
+    protesis_id = models.IntegerField(null=True, blank=True, db_index=True)
+
+    monto = models.DecimalField(max_digits=10, decimal_places=2)
+    metodo = models.CharField(max_length=20, choices=METODOS)
+    concepto = models.CharField(max_length=255, blank=True)
+    fecha = models.DateTimeField(default=timezone.now, db_index=True)
+
+    class Meta:
+        ordering = ["-fecha", "-id"]
+
+    def __str__(self):
+        return f"Devolución - {self.paciente} - ${self.monto}"
 
 
 class CompraProveedor(models.Model):

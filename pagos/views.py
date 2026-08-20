@@ -4,6 +4,7 @@ from django.core.paginator import Paginator
 from django.db.models import Sum, Q
 from django.db import transaction
 from collections import OrderedDict
+import json
 from caja.models import CashSession
 from pagos.models import Pago
 
@@ -15,7 +16,9 @@ import calendar
 
 from django.utils.translation import gettext as _
 
-from django.http import JsonResponse
+from django.http import JsonResponse, Http404, HttpResponseNotAllowed, HttpResponse
+from django.conf import settings
+
 from django.contrib import messages
 
 from decimal import Decimal
@@ -27,6 +30,8 @@ from .models import (
     PagoCompraProveedor
 )
 
+from .facture_service import probar_conexion, emitir_pago_sandbox, emitir_nota_credito_pago_sandbox, obtener_pdf_cfe_por_folio, FactureError
+
 
 
 def nuevo_pago(request):
@@ -35,7 +40,22 @@ def nuevo_pago(request):
 
         monto = request.POST.get("monto")
         concepto = request.POST.get("concepto", "").strip()
-        metodo = request.POST.get("metodo")
+        metodo_form = request.POST.get("metodo")
+
+        # En la interfaz distinguimos Débito y Crédito, pero internamente
+        # seguimos guardando metodo="tarjeta" para mantener compatibilidad
+        # con caja, reportes y pagos históricos.
+        tipo_tarjeta = ""
+        if metodo_form == Pago.TARJETA_DEBITO:
+            metodo = Pago.TARJETA
+            tipo_tarjeta = Pago.TARJETA_DEBITO
+        elif metodo_form == Pago.TARJETA_CREDITO:
+            metodo = Pago.TARJETA
+            tipo_tarjeta = Pago.TARJETA_CREDITO
+        else:
+            metodo = metodo_form
+
+        solicitar_cfe = request.POST.get("solicitar_cfe") == "on"
         next_url = request.POST.get("next", "").strip()
 
         appointment_id = request.POST.get("appointment_id")
@@ -65,10 +85,18 @@ def nuevo_pago(request):
             paciente=paciente,
             concepto=concepto,
             metodo=metodo,
+            tipo_tarjeta=tipo_tarjeta,
             caja=caja,
             appointment_id=appointment_id,
             patient_id=patient_id,
             protesis_id=protesis_id,
+            cfe_solicitado=solicitar_cfe,
+            cfe_estado=(
+                Pago.CFE_PENDIENTE
+                if solicitar_cfe
+                else Pago.CFE_NO_SOLICITADO
+            ),
+            tasa_iva_cfe=Decimal("10.00"),
         )
 
         if next_url:
@@ -120,7 +148,11 @@ def historial(request):
 
     pagos_qs = (
         Pago.objects
-        .only("id", "fecha", "monto", "metodo", "paciente", "concepto")
+        .only(
+            "id", "fecha", "monto", "metodo", "paciente", "concepto",
+            "cfe_solicitado", "cfe_estado", "tasa_iva_cfe",
+            "cfe_tipo", "cfe_serie", "cfe_numero", "cfe_error", "facture_cfe_id", "tipo_tarjeta", "cfe_xml_firmado", "nc_cfe_id", "nc_serie", "nc_numero", "nc_xml_firmado", "nc_error"
+        )
         .order_by("-fecha", "-id")
     )
 
@@ -168,6 +200,8 @@ def _pago_to_dict(pago):
         "paciente": pago.paciente,
         "monto": str(pago.monto),
         "metodo": pago.get_metodo_display(),
+        "metodo_detallado": pago.metodo_detallado,
+        "tipo_tarjeta": pago.tipo_tarjeta or "",
         "concepto": pago.concepto or "",
         "fecha": localtime(pago.fecha).strftime("%d/%m/%Y %H:%M"),
         "appointment_id": pago.appointment_id,
@@ -1065,4 +1099,376 @@ def pago_compra_eliminar(
     )
 
 
+
+
+
+# =====================================================
+# FACTURE - PRUEBA DE CONEXIÓN SANDBOX
+# =====================================================
+
+def facture_test_conexion(request):
+    """
+    Diagnóstico local de autenticación con Facture.
+    NO emite comprobantes.
+    Disponible solo con DEBUG=True y FACTURE_MODO=sandbox.
+    """
+    if not settings.DEBUG or getattr(settings, "FACTURE_MODO", "") != "sandbox":
+        raise Http404
+
+    try:
+        resultado = probar_conexion()
+    except FactureError as exc:
+        return JsonResponse({
+            "ok": False,
+            "mensaje": str(exc),
+        }, status=500)
+
+    status = 200 if resultado.get("ok") else 502
+
+    return JsonResponse({
+        "ok": resultado.get("ok", False),
+        "mensaje": (
+            "Conexión con Facture OK."
+            if resultado.get("ok")
+            else "Facture respondió, pero la autenticación/consulta falló."
+        ),
+        "http_status_facture": resultado.get("status"),
+        "config": resultado.get("config", {}),
+        "respuesta": resultado.get("data") if resultado.get("ok") else resultado.get("error"),
+    }, status=status)
+
+
+# =====================================================
+# FACTURE - PRIMERA EMISIÓN DE PRUEBA (SANDBOX)
+# =====================================================
+
+def facture_emitir_pago_sandbox(request, pago_id):
+    """
+    Emite UN eTicket de prueba desde un pago Pendiente CFE.
+    Solo POST, solo DEBUG, solo sandbox.
+    Para esta primera prueba el medio enviado a Facture es Efectivo
+    (idMedioPago=1), porque es el único ID confirmado en la guía oficial.
+    """
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    if not settings.DEBUG or getattr(settings, "FACTURE_MODO", "") != "sandbox":
+        raise Http404
+
+    pago = get_object_or_404(Pago, id=pago_id)
+
+    if not pago.cfe_solicitado:
+        messages.error(request, "Este pago no está marcado para CFE.")
+        return redirect("pagos:historial")
+
+    if pago.cfe_estado == Pago.CFE_EMITIDO:
+        messages.warning(request, "Este pago ya tiene un CFE emitido.")
+        return redirect("pagos:historial")
+
+    if pago.cfe_estado != Pago.CFE_PENDIENTE:
+        messages.warning(
+            request,
+            f"El pago no está Pendiente CFE (estado actual: {pago.get_cfe_estado_display()})."
+        )
+        return redirect("pagos:historial")
+
+    try:
+        resultado = emitir_pago_sandbox(pago)
+    except FactureError as exc:
+        pago.cfe_estado = Pago.CFE_RECHAZADO
+        pago.cfe_error = str(exc)
+        pago.save(update_fields=["cfe_estado", "cfe_error"])
+        messages.error(request, f"No se pudo emitir el CFE: {exc}")
+        return redirect("pagos:historial")
+
+    if not resultado.get("ok"):
+        detalle = resultado.get("error", {})
+        pago.cfe_estado = Pago.CFE_RECHAZADO
+        pago.cfe_error = json.dumps(detalle, ensure_ascii=False)[:5000]
+        pago.save(update_fields=["cfe_estado", "cfe_error"])
+        messages.error(
+            request,
+            f"Facture rechazó la emisión (HTTP {resultado.get('status')})."
+        )
+        return redirect("pagos:historial")
+
+    data = resultado.get("data") or {}
+
+    # Contrato documentado por Facture:
+    # _Id, CodRespuesta, MensajeRespuesta, TipoCfe, Serie, Nro, XmlFirmado.
+    cod_respuesta = str(data.get("CodRespuesta", "")).strip()
+
+    if cod_respuesta and cod_respuesta != "00":
+        pago.cfe_estado = Pago.CFE_RECHAZADO
+        pago.cfe_error = json.dumps(data, ensure_ascii=False)[:5000]
+        pago.save(update_fields=["cfe_estado", "cfe_error"])
+        messages.error(
+            request,
+            f"Facture respondió {cod_respuesta}: {data.get('MensajeRespuesta', 'Error')}"
+        )
+        return redirect("pagos:historial")
+
+    pago.cfe_estado = Pago.CFE_EMITIDO
+    pago.cfe_tipo = "eTicket"
+    pago.cfe_serie = str(data.get("Serie") or "")
+    pago.cfe_numero = str(data.get("Nro") or "")
+    pago.facture_cfe_id = str(data.get("_Id") or data.get("IdComprobante") or "")
+    pago.cfe_xml_firmado = str(data.get("XmlFirmado") or "")
+    pago.cfe_error = ""
+    pago.save(update_fields=[
+        "cfe_estado",
+        "cfe_tipo",
+        "cfe_serie",
+        "cfe_numero",
+        "facture_cfe_id",
+        "cfe_xml_firmado",
+        "cfe_error",
+    ])
+
+    messages.success(
+        request,
+        f"CFE de prueba emitido: {pago.cfe_tipo} {pago.cfe_serie} {pago.cfe_numero}".strip()
+    )
+    return redirect("pagos:historial")
+
+
+def facture_anular_pago_sandbox(request, pago_id):
+    """
+    Emite una Nota de Crédito de eTicket (CFE 102) en sandbox
+    para anular totalmente el eTicket original de un pago.
+    """
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    if not settings.DEBUG or getattr(settings, "FACTURE_MODO", "") != "sandbox":
+        raise Http404
+
+    pago = get_object_or_404(Pago, id=pago_id)
+
+    if pago.cfe_estado != Pago.CFE_EMITIDO:
+        messages.warning(
+            request,
+            "Solo se puede anular un pago que tenga un CFE emitido."
+        )
+        return redirect("pagos:historial")
+
+    if pago.nc_numero or pago.nc_cfe_id:
+        messages.warning(
+            request,
+            "Este pago ya tiene una Nota de Crédito asociada."
+        )
+        return redirect("pagos:historial")
+
+    if not pago.cfe_serie or not pago.cfe_numero:
+        messages.error(
+            request,
+            "El CFE original no tiene serie o número para poder referenciarlo."
+        )
+        return redirect("pagos:historial")
+
+    razon = request.POST.get(
+        "razon",
+        "Anulación total de eTicket"
+    ).strip() or "Anulación total de eTicket"
+
+    try:
+        resultado = emitir_nota_credito_pago_sandbox(
+            pago,
+            razon=razon,
+        )
+    except FactureError as exc:
+        pago.nc_error = str(exc)
+        pago.save(update_fields=["nc_error"])
+        messages.error(
+            request,
+            f"No se pudo emitir la Nota de Crédito: {exc}"
+        )
+        return redirect("pagos:historial")
+
+    if not resultado.get("ok"):
+        detalle = resultado.get("error", {})
+        pago.nc_error = json.dumps(
+            detalle,
+            ensure_ascii=False
+        )[:5000]
+        pago.save(update_fields=["nc_error"])
+        messages.error(
+            request,
+            f"Facture rechazó la Nota de Crédito (HTTP {resultado.get('status')})."
+        )
+        return redirect("pagos:historial")
+
+    data = resultado.get("data") or {}
+    cod_respuesta = str(
+        data.get("CodRespuesta", "")
+    ).strip()
+
+    if cod_respuesta and cod_respuesta != "00":
+        pago.nc_error = json.dumps(
+            data,
+            ensure_ascii=False
+        )[:5000]
+        pago.save(update_fields=["nc_error"])
+        messages.error(
+            request,
+            f"Facture respondió {cod_respuesta}: "
+            f"{data.get('MensajeRespuesta', 'Error')}"
+        )
+        return redirect("pagos:historial")
+
+    pago.nc_cfe_id = str(
+        data.get("_Id") or data.get("IdComprobante") or ""
+    )
+    pago.nc_serie = str(data.get("Serie") or "")
+    pago.nc_numero = str(data.get("Nro") or "")
+    pago.nc_xml_firmado = str(data.get("XmlFirmado") or "")
+    pago.nc_error = ""
+    pago.cfe_estado = Pago.CFE_ANULADO
+
+    pago.save(update_fields=[
+        "nc_cfe_id",
+        "nc_serie",
+        "nc_numero",
+        "nc_xml_firmado",
+        "nc_error",
+        "cfe_estado",
+    ])
+
+    messages.success(
+        request,
+        (
+            "Nota de Crédito de prueba emitida: "
+            f"{pago.nc_serie} {pago.nc_numero}. "
+            f"El eTicket {pago.cfe_serie} {pago.cfe_numero} quedó marcado como anulado."
+        ).strip()
+    )
+    return redirect("pagos:historial")
+
+
+def facture_pdf_pago(request, pago_id):
+    """Muestra el PDF de un CFE ya emitido. No emite un comprobante nuevo."""
+    pago = get_object_or_404(Pago, id=pago_id)
+
+    if pago.cfe_estado not in (Pago.CFE_EMITIDO, Pago.CFE_ANULADO):
+        messages.error(request, "Este pago todavía no tiene un CFE emitido.")
+        return redirect("pagos:historial")
+
+    if not pago.cfe_serie or not pago.cfe_numero:
+        messages.error(request, "Faltan serie o número del CFE.")
+        return redirect("pagos:historial")
+
+    try:
+        resultado = obtener_pdf_cfe_por_folio(
+            tipo_cfe=101,
+            serie=pago.cfe_serie,
+            numero=pago.cfe_numero,
+        )
+    except FactureError as exc:
+        messages.error(request, f"No se pudo obtener el PDF: {exc}")
+        return redirect("pagos:historial")
+
+    if not resultado.get("ok"):
+        detalle = resultado.get("error", {})
+        messages.error(
+            request,
+            f"Facture no pudo generar el PDF (HTTP {resultado.get('status')}): {detalle}"
+        )
+        return redirect("pagos:historial")
+
+    response = HttpResponse(resultado["content"], content_type="application/pdf")
+    response["Content-Disposition"] = (
+        f'inline; filename="CFE_{pago.cfe_serie}_{pago.cfe_numero}.pdf"'
+    )
+    return response
+
+
+def facture_xml_pago(request, pago_id):
+    """
+    Descarga el XML firmado guardado al momento de emitir el CFE.
+    No realiza una nueva llamada a Facture.
+    """
+    pago = get_object_or_404(Pago, id=pago_id)
+
+    if pago.cfe_estado not in (Pago.CFE_EMITIDO, Pago.CFE_ANULADO):
+        messages.error(request, "Este pago todavía no tiene un CFE emitido.")
+        return redirect("pagos:historial")
+
+    if not pago.cfe_xml_firmado:
+        messages.warning(
+            request,
+            "Este CFE fue emitido antes de comenzar a guardar el XML firmado."
+        )
+        return redirect("pagos:historial")
+
+    response = HttpResponse(
+        pago.cfe_xml_firmado,
+        content_type="application/xml; charset=utf-8",
+    )
+    response["Content-Disposition"] = (
+        f'attachment; filename="CFE_{pago.cfe_serie}_{pago.cfe_numero}.xml"'
+    )
+    return response
+
+def facture_pdf_nota_credito_pago(request, pago_id):
+    """Muestra el PDF de la Nota de Crédito asociada al pago."""
+    pago = get_object_or_404(Pago, id=pago_id)
+
+    if not pago.nc_serie or not pago.nc_numero:
+        messages.error(
+            request,
+            "Este pago todavía no tiene una Nota de Crédito emitida."
+        )
+        return redirect("pagos:historial")
+
+    try:
+        resultado = obtener_pdf_cfe_por_folio(
+            tipo_cfe=102,
+            serie=pago.nc_serie,
+            numero=pago.nc_numero,
+        )
+    except FactureError as exc:
+        messages.error(
+            request,
+            f"No se pudo obtener el PDF de la Nota de Crédito: {exc}"
+        )
+        return redirect("pagos:historial")
+
+    if not resultado.get("ok"):
+        detalle = resultado.get("error", {})
+        messages.error(
+            request,
+            f"Facture no pudo generar el PDF de la Nota de Crédito "
+            f"(HTTP {resultado.get('status')}): {detalle}"
+        )
+        return redirect("pagos:historial")
+
+    response = HttpResponse(
+        resultado["content"],
+        content_type="application/pdf"
+    )
+    response["Content-Disposition"] = (
+        f'inline; filename="NC_{pago.nc_serie}_{pago.nc_numero}.pdf"'
+    )
+    return response
+
+
+def facture_xml_nota_credito_pago(request, pago_id):
+    """Descarga el XML firmado de la Nota de Crédito."""
+    pago = get_object_or_404(Pago, id=pago_id)
+
+    if not pago.nc_xml_firmado:
+        messages.warning(
+            request,
+            "Este pago todavía no tiene XML de Nota de Crédito guardado."
+        )
+        return redirect("pagos:historial")
+
+    response = HttpResponse(
+        pago.nc_xml_firmado,
+        content_type="application/xml; charset=utf-8",
+    )
+    response["Content-Disposition"] = (
+        f'attachment; filename="NC_{pago.nc_serie}_{pago.nc_numero}.xml"'
+    )
+    return response
 

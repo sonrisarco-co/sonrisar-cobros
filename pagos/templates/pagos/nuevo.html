@@ -311,6 +311,57 @@
         }
 
         /* =========================
+        PREPARACIÓN CFE
+        ========================== */
+
+        .fiscal-box{
+            margin:8px 0 24px;
+            padding:18px;
+            border:1px solid #d9efed;
+            border-radius:18px;
+            background:rgba(233,251,250,.72);
+        }
+
+        .fiscal-check{
+            display:flex;
+            align-items:center;
+            gap:10px;
+            font-weight:700;
+            color:#0f172a;
+            cursor:pointer;
+        }
+
+        .fiscal-check input{
+            width:18px;
+            height:18px;
+            accent-color:#26ABA5;
+        }
+
+        .fiscal-help{
+            margin:8px 0 0 28px;
+            font-size:13px;
+            line-height:1.45;
+            color:#64748b;
+        }
+
+        .fiscal-summary{
+            display:none;
+            margin:14px 0 0 28px;
+            padding-top:12px;
+            border-top:1px solid rgba(38,171,165,.18);
+            font-size:13px;
+            color:#334155;
+        }
+
+        .fiscal-summary.active{
+            display:block;
+        }
+
+        .fiscal-summary strong{
+            color:#14938d;
+        }
+
+        /* =========================
         MOBILE
         ========================== */
 
@@ -514,10 +565,17 @@
                         </option>
 
                         <option
-                            value="tarjeta"
-                            {% if initial.metodo == "tarjeta" %}selected{% endif %}
+                            value="debito"
+                            {% if initial.metodo == "debito" %}selected{% endif %}
                         >
-                            Tarjeta
+                            Débito
+                        </option>
+
+                        <option
+                            value="credito"
+                            {% if initial.metodo == "credito" %}selected{% endif %}
+                        >
+                            Crédito
                         </option>
 
                         <option
@@ -528,6 +586,33 @@
                         </option>
 
                     </select>
+
+                </div>
+
+                <div class="fiscal-box">
+
+                    <label class="fiscal-check">
+                        <input
+                            type="checkbox"
+                            name="solicitar_cfe"
+                            id="solicitar_cfe"
+                        >
+                        Preparar comprobante electrónico (CFE)
+                    </label>
+
+                    <p class="fiscal-help">
+                        Por ahora solo deja el pago marcado como pendiente.
+                        No se envía nada a DGI ni a Facture hasta activar el sandbox.
+                    </p>
+
+                    <div class="fiscal-summary" id="fiscal_summary">
+                        Precio final con IVA 10% incluido:
+                        <strong id="fiscal_total">$0,00</strong><br>
+                        Neto:
+                        <strong id="fiscal_neto">$0,00</strong>
+                        · IVA 10%:
+                        <strong id="fiscal_iva">$0,00</strong>
+                    </div>
 
                 </div>
 
@@ -545,6 +630,68 @@
     </main>
 
 </div>
+
+<script>
+(function () {
+    const montoInput = document.querySelector('input[name="monto"]');
+    const metodoSelect = document.querySelector('select[name="metodo"]');
+    const cfeCheck = document.getElementById('solicitar_cfe');
+    const summary = document.getElementById('fiscal_summary');
+    const totalEl = document.getElementById('fiscal_total');
+    const netoEl = document.getElementById('fiscal_neto');
+    const ivaEl = document.getElementById('fiscal_iva');
+
+    const money = new Intl.NumberFormat('es-UY', {
+        style: 'currency',
+        currency: 'UYU',
+        minimumFractionDigits: 2
+    });
+
+    function actualizarResumenFiscal() {
+        const total = parseFloat(montoInput?.value || '0');
+
+        if (!cfeCheck?.checked) {
+            summary?.classList.remove('active');
+            return;
+        }
+
+        summary?.classList.add('active');
+
+        if (!Number.isFinite(total) || total <= 0) {
+            totalEl.textContent = money.format(0);
+            netoEl.textContent = money.format(0);
+            ivaEl.textContent = money.format(0);
+            return;
+        }
+
+        const neto = total / 1.10;
+        const iva = total - neto;
+
+        totalEl.textContent = money.format(total);
+        netoEl.textContent = money.format(neto);
+        ivaEl.textContent = money.format(iva);
+    }
+
+    function aplicarDefaultCfePorMetodo() {
+        if (!metodoSelect || !cfeCheck) return;
+
+        const metodo = metodoSelect.value;
+
+        // Débito y crédito: preparar CFE automáticamente.
+        // Efectivo y transferencia: desmarcado por defecto.
+        // Luego el usuario puede cambiarlo manualmente.
+        cfeCheck.checked = (metodo === 'debito' || metodo === 'credito');
+
+        actualizarResumenFiscal();
+    }
+
+    montoInput?.addEventListener('input', actualizarResumenFiscal);
+    cfeCheck?.addEventListener('change', actualizarResumenFiscal);
+    metodoSelect?.addEventListener('change', aplicarDefaultCfePorMetodo);
+
+    aplicarDefaultCfePorMetodo();
+})();
+</script>
 
 </body>
 </html>

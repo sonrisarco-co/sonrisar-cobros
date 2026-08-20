@@ -15,19 +15,81 @@ import os
 import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
+
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+def env_bool(name, default=False):
+    return os.getenv(name, str(default)).strip().lower() in {
+        "1", "true", "yes", "on"
+    }
+
+
+def env_list(name, default=""):
+    return [
+        item.strip()
+        for item in os.getenv(name, default).split(",")
+        if item.strip()
+    ]
+
+
+# =========================================================
+# VARIABLES LOCALES (.env)
+# =========================================================
+# Carga un archivo .env ubicado junto a manage.py.
+# No sobreescribe variables que ya existan en el sistema.
+ENV_FILE = BASE_DIR / ".env"
+if ENV_FILE.exists():
+    for _line in ENV_FILE.read_text(encoding="utf-8").splitlines():
+        _line = _line.strip()
+        if not _line or _line.startswith("#") or "=" not in _line:
+            continue
+        _key, _value = _line.split("=", 1)
+        _key = _key.strip()
+        _value = _value.strip().strip('"').strip("'")
+        os.environ.setdefault(_key, _value)
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-2ckkaef^z77ej_c84#qac35h^2x^_u7&8!!k@5@6m)wk8zqvce'
+# =========================================================
+# SEGURIDAD / ENTORNO
+# =========================================================
+# En desarrollo local puede usarse DEBUG=True desde .env.
+# En producción, configurar DJANGO_DEBUG=false y una SECRET_KEY nueva.
+DEBUG = env_bool("DJANGO_DEBUG", True)
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "").strip()
+if not SECRET_KEY:
+    if DEBUG:
+        # Solo para desarrollo local. No usar este fallback en producción.
+        SECRET_KEY = "dev-only-change-me-before-production"
+    else:
+        raise RuntimeError(
+            "Falta DJANGO_SECRET_KEY en el entorno de producción."
+        )
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = env_list(
+    "DJANGO_ALLOWED_HOSTS",
+    "127.0.0.1,localhost"
+)
+
+CSRF_TRUSTED_ORIGINS = env_list(
+    "DJANGO_CSRF_TRUSTED_ORIGINS",
+    ""
+)
+
+# Render / proxies HTTPS
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+if not DEBUG:
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = env_bool("DJANGO_SECURE_SSL_REDIRECT", True)
+    SECURE_HSTS_SECONDS = int(os.getenv("DJANGO_SECURE_HSTS_SECONDS", "3600"))
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = False
 
 
 # Application definition
@@ -144,4 +206,32 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-ADMIN_PIN = "2901"
+ADMIN_PIN = os.getenv("ADMIN_PIN", "").strip()
+if not ADMIN_PIN:
+    if DEBUG:
+        ADMIN_PIN = "0000"
+    else:
+        raise RuntimeError("Falta ADMIN_PIN en el entorno de producción.")
+
+# =========================================================
+# FACTURE
+# =========================================================
+# Defaults deliberadamente seguros:
+# - sandbox
+# - envío deshabilitado
+# Producción debe configurarse exclusivamente mediante variables de entorno.
+FACTURE_API_URL = os.getenv(
+    "FACTURE_API_URL",
+    "https://test.facture.uy/cfe"
+).rstrip("/")
+FACTURE_API_KEY = os.getenv("FACTURE_API_KEY", "").strip()
+FACTURE_EMPRESA_ID = int(os.getenv("FACTURE_EMPRESA_ID", "2"))
+FACTURE_COD_COMERCIO = os.getenv("FACTURE_COD_COMERCIO", "blue001").strip()
+FACTURE_COD_TERMINAL = os.getenv("FACTURE_COD_TERMINAL", "bl-01").strip()
+FACTURE_MODO = os.getenv("FACTURE_MODO", "sandbox").strip().lower()
+FACTURE_ENVIO_HABILITADO = env_bool("FACTURE_ENVIO_HABILITADO", False)
+
+if FACTURE_MODO not in {"sandbox", "produccion"}:
+    raise RuntimeError(
+        "FACTURE_MODO debe ser 'sandbox' o 'produccion'."
+    )

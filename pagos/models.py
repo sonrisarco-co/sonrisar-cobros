@@ -91,6 +91,14 @@ class Pago(models.Model):
     cfe_tipo = models.CharField(max_length=20, blank=True)
     cfe_serie = models.CharField(max_length=10, blank=True)
     cfe_numero = models.CharField(max_length=30, blank=True)
+
+    # Fecha fiscal real en la que se emitió el CFE.
+    # Es independiente de la fecha en que se registró el pago.
+    cfe_fecha_emision = models.DateField(
+        null=True,
+        blank=True
+    )
+
     facture_cfe_id = models.CharField(max_length=100, blank=True)
     cfe_pdf_url = models.URLField(max_length=500, blank=True)
     cfe_xml_url = models.URLField(max_length=500, blank=True)

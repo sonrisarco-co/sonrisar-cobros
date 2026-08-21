@@ -100,6 +100,7 @@ def _request_json(method, path, payload=None, timeout=15):
         method=method.upper(),
         headers={
             "Authorization": f'Bearer {cfg["api_key"]}',
+            "X-API-Key": cfg["api_key"],
             "Content-Type": "application/json",
             "Accept": "application/json",
             "User-Agent": "curl/8.0 SonrisarCobros/1.0",

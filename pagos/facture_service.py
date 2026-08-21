@@ -49,7 +49,7 @@ def configuracion_publica():
     }
 
 
-def _validar_configuracion_basica():
+def _validar_conexion():
     cfg = _config()
 
     if not cfg["api_url"]:
@@ -57,6 +57,17 @@ def _validar_configuracion_basica():
 
     if not cfg["api_key"]:
         raise FactureError("Falta FACTURE_API_KEY.")
+
+    if cfg["modo"] not in {"sandbox", "produccion"}:
+        raise FactureError(
+            "FACTURE_MODO debe ser 'sandbox' o 'produccion'."
+        )
+
+    return cfg
+
+
+def _validar_configuracion_basica():
+    cfg = _validar_conexion()
 
     if not cfg["empresa_id"]:
         raise FactureError("Falta FACTURE_EMPRESA_ID.")
@@ -67,11 +78,6 @@ def _validar_configuracion_basica():
     if not cfg["cod_terminal"]:
         raise FactureError("Falta FACTURE_COD_TERMINAL.")
 
-    if cfg["modo"] not in {"sandbox", "produccion"}:
-        raise FactureError(
-            "FACTURE_MODO debe ser 'sandbox' o 'produccion'."
-        )
-
     return cfg
 
 
@@ -80,7 +86,7 @@ def _validar_configuracion_basica():
 # =========================================================
 
 def _request_json(method, path, payload=None, timeout=15):
-    cfg = _validar_configuracion_basica()
+    cfg = _validar_conexion()
 
     url = f'{cfg["api_url"]}/{path.lstrip("/")}'
     data = None

@@ -30,8 +30,13 @@ from .models import (
     PagoCompraProveedor
 )
 
-from .facture_service import probar_conexion, emitir_pago_sandbox, emitir_nota_credito_pago_sandbox, obtener_pdf_cfe_por_folio, FactureError
-
+from .facture_service import (
+    probar_conexion,
+    emitir_pago,
+    emitir_nota_credito_pago,
+    obtener_pdf_cfe_por_folio,
+    FactureError,
+)
 
 
 def nuevo_pago(request):
@@ -1103,16 +1108,17 @@ def pago_compra_eliminar(
 
 
 # =====================================================
-# FACTURE - PRUEBA DE CONEXIÓN SANDBOX
+# FACTURE - PRUEBA DE CONEXIÓN
 # =====================================================
 
 def facture_test_conexion(request):
     """
     Diagnóstico local de autenticación con Facture.
     NO emite comprobantes.
-    Disponible solo con DEBUG=True y FACTURE_MODO=sandbox.
+    Disponible solo con DEBUG=True.
+    Funciona tanto en sandbox como en producción.
     """
-    if not settings.DEBUG or getattr(settings, "FACTURE_MODO", "") != "sandbox":
+    if not settings.DEBUG:
         raise Http404
 
     try:
@@ -1139,20 +1145,19 @@ def facture_test_conexion(request):
 
 
 # =====================================================
-# FACTURE - PRIMERA EMISIÓN DE PRUEBA (SANDBOX)
+# FACTURE - EMISIÓN DE ETICKET
 # =====================================================
 
 def facture_emitir_pago_sandbox(request, pago_id):
     """
-    Emite UN eTicket de prueba desde un pago Pendiente CFE.
-    Solo POST, solo DEBUG, solo sandbox.
-    Para esta primera prueba el medio enviado a Facture es Efectivo
-    (idMedioPago=1), porque es el único ID confirmado en la guía oficial.
+    Emite un eTicket desde un pago Pendiente CFE.
+    Solo POST y disponible localmente con DEBUG=True.
+    Puede trabajar en sandbox o producción según FACTURE_MODO.
     """
     if request.method != "POST":
         return HttpResponseNotAllowed(["POST"])
 
-    if not settings.DEBUG or getattr(settings, "FACTURE_MODO", "") != "sandbox":
+    if not settings.DEBUG:
         raise Http404
 
     pago = get_object_or_404(Pago, id=pago_id)
@@ -1173,7 +1178,7 @@ def facture_emitir_pago_sandbox(request, pago_id):
         return redirect("pagos:historial")
 
     try:
-        resultado = emitir_pago_sandbox(pago)
+        resultado = emitir_pago(pago)
     except FactureError as exc:
         pago.cfe_estado = Pago.CFE_RECHAZADO
         pago.cfe_error = str(exc)
@@ -1212,6 +1217,7 @@ def facture_emitir_pago_sandbox(request, pago_id):
     pago.cfe_tipo = "eTicket"
     pago.cfe_serie = str(data.get("Serie") or "")
     pago.cfe_numero = str(data.get("Nro") or "")
+    pago.cfe_fecha_emision = timezone.localdate()
     pago.facture_cfe_id = str(data.get("_Id") or data.get("IdComprobante") or "")
     pago.cfe_xml_firmado = str(data.get("XmlFirmado") or "")
     pago.cfe_error = ""
@@ -1220,6 +1226,7 @@ def facture_emitir_pago_sandbox(request, pago_id):
         "cfe_tipo",
         "cfe_serie",
         "cfe_numero",
+        "cfe_fecha_emision",
         "facture_cfe_id",
         "cfe_xml_firmado",
         "cfe_error",
@@ -1227,20 +1234,21 @@ def facture_emitir_pago_sandbox(request, pago_id):
 
     messages.success(
         request,
-        f"CFE de prueba emitido: {pago.cfe_tipo} {pago.cfe_serie} {pago.cfe_numero}".strip()
+        f"CFE emitido: {pago.cfe_tipo} {pago.cfe_serie} {pago.cfe_numero}".strip()
     )
     return redirect("pagos:historial")
 
 
 def facture_anular_pago_sandbox(request, pago_id):
     """
-    Emite una Nota de Crédito de eTicket (CFE 102) en sandbox
+    Emite una Nota de Crédito de eTicket (CFE 102)
     para anular totalmente el eTicket original de un pago.
+    Funciona en sandbox o producción según FACTURE_MODO.
     """
     if request.method != "POST":
         return HttpResponseNotAllowed(["POST"])
 
-    if not settings.DEBUG or getattr(settings, "FACTURE_MODO", "") != "sandbox":
+    if not settings.DEBUG:
         raise Http404
 
     pago = get_object_or_404(Pago, id=pago_id)
@@ -1272,7 +1280,7 @@ def facture_anular_pago_sandbox(request, pago_id):
     ).strip() or "Anulación total de eTicket"
 
     try:
-        resultado = emitir_nota_credito_pago_sandbox(
+        resultado = emitir_nota_credito_pago(
             pago,
             razon=razon,
         )
@@ -1337,7 +1345,7 @@ def facture_anular_pago_sandbox(request, pago_id):
     messages.success(
         request,
         (
-            "Nota de Crédito de prueba emitida: "
+            "Nota de Crédito emitida: "
             f"{pago.nc_serie} {pago.nc_numero}. "
             f"El eTicket {pago.cfe_serie} {pago.cfe_numero} quedó marcado como anulado."
         ).strip()

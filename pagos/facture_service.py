@@ -11,6 +11,10 @@ class FactureError(Exception):
     pass
 
 
+# =========================================================
+# CONFIGURACIÓN
+# =========================================================
+
 def _config():
     return {
         "api_url": getattr(settings, "FACTURE_API_URL", "").rstrip("/"),
@@ -19,12 +23,21 @@ def _config():
         "cod_comercio": getattr(settings, "FACTURE_COD_COMERCIO", ""),
         "cod_terminal": getattr(settings, "FACTURE_COD_TERMINAL", ""),
         "modo": getattr(settings, "FACTURE_MODO", "sandbox"),
-        "envio_habilitado": getattr(settings, "FACTURE_ENVIO_HABILITADO", False),
+        "envio_habilitado": getattr(
+            settings,
+            "FACTURE_ENVIO_HABILITADO",
+            False,
+        ),
     }
 
 
 def configuracion_publica():
+    """
+    Devuelve únicamente información segura para diagnóstico.
+    Nunca expone la API key.
+    """
     cfg = _config()
+
     return {
         "api_url": cfg["api_url"],
         "empresa_id": cfg["empresa_id"],
@@ -36,13 +49,38 @@ def configuracion_publica():
     }
 
 
-def _request_json(method, path, payload=None, timeout=15):
+def _validar_configuracion_basica():
     cfg = _config()
 
     if not cfg["api_url"]:
         raise FactureError("Falta FACTURE_API_URL.")
+
     if not cfg["api_key"]:
         raise FactureError("Falta FACTURE_API_KEY.")
+
+    if not cfg["empresa_id"]:
+        raise FactureError("Falta FACTURE_EMPRESA_ID.")
+
+    if not cfg["cod_comercio"]:
+        raise FactureError("Falta FACTURE_COD_COMERCIO.")
+
+    if not cfg["cod_terminal"]:
+        raise FactureError("Falta FACTURE_COD_TERMINAL.")
+
+    if cfg["modo"] not in {"sandbox", "produccion"}:
+        raise FactureError(
+            "FACTURE_MODO debe ser 'sandbox' o 'produccion'."
+        )
+
+    return cfg
+
+
+# =========================================================
+# HTTP / API
+# =========================================================
+
+def _request_json(method, path, payload=None, timeout=15):
+    cfg = _validar_configuracion_basica()
 
     url = f'{cfg["api_url"]}/{path.lstrip("/")}'
     data = None
@@ -64,7 +102,11 @@ def _request_json(method, path, payload=None, timeout=15):
 
     try:
         with urllib.request.urlopen(req, timeout=timeout) as response:
-            raw = response.read().decode("utf-8", errors="replace")
+            raw = response.read().decode(
+                "utf-8",
+                errors="replace",
+            )
+
             try:
                 body = json.loads(raw) if raw else {}
             except json.JSONDecodeError:
@@ -77,7 +119,11 @@ def _request_json(method, path, payload=None, timeout=15):
             }
 
     except urllib.error.HTTPError as exc:
-        raw = exc.read().decode("utf-8", errors="replace")
+        raw = exc.read().decode(
+            "utf-8",
+            errors="replace",
+        )
+
         try:
             body = json.loads(raw) if raw else {}
         except json.JSONDecodeError:
@@ -90,29 +136,51 @@ def _request_json(method, path, payload=None, timeout=15):
         }
 
     except urllib.error.URLError as exc:
-        raise FactureError(f"No se pudo conectar con Facture: {exc.reason}") from exc
+        raise FactureError(
+            f"No se pudo conectar con Facture: {exc.reason}"
+        ) from exc
 
+
+# =========================================================
+# PRUEBA DE CONEXIÓN
+# =========================================================
 
 def probar_conexion():
     """
-    Prueba autenticación contra el sandbox consultando las empresas
-    disponibles para la credencial actual. NO emite ningún CFE.
+    Prueba autenticación contra Facture consultando las
+    empresas disponibles para la credencial configurada.
+
+    NO emite ningún CFE.
+    Funciona tanto en sandbox como en producción.
     """
-    resultado = _request_json("GET", "/api/v1/usuario/empresas")
+    resultado = _request_json(
+        "GET",
+        "/api/v1/usuario/empresas",
+    )
+
     resultado["config"] = configuracion_publica()
+
     return resultado
 
 
+# =========================================================
+# EMISIÓN GENÉRICA
+# =========================================================
+
 def emitir_cfe(payload):
     """
-    Preparado para la próxima etapa.
-    Por seguridad no permite emitir mientras FACTURE_ENVIO_HABILITADO=False.
+    Envía un comprobante a Facture.
+
+    Protección principal:
+    mientras FACTURE_ENVIO_HABILITADO=False,
+    ningún CFE puede ser emitido.
     """
-    cfg = _config()
+    cfg = _validar_configuracion_basica()
 
     if not cfg["envio_habilitado"]:
         raise FactureError(
-            "Emisión deshabilitada. Primero validar conexión y luego activar "
+            "Emisión deshabilitada. "
+            "Primero validar la conexión con Facture y luego activar "
             "FACTURE_ENVIO_HABILITADO de forma explícita."
         )
 
@@ -124,58 +192,87 @@ def emitir_cfe(payload):
     )
 
 
-def construir_payload_eticket_sandbox(pago):
-    """
-    Construye un eTicket contado de prueba para Facture sandbox.
-    - tipoCfe 101 = eTicket
-    - montoBruto 1 = precio con IVA incluido
-    - indicadorFacturacion 2 = IVA tasa mínima
-    - formaPago 1 = Contado
-    - mediosPago estándar Facture:
-      1 = Efectivo, 2 = Tarjeta, 3 = Transferencia.
-      Débito y Crédito de Sonrisar se informan como Tarjeta (idMedioPago=2).
-    """
-    cfg = _config()
+# =========================================================
+# MEDIOS DE PAGO
+# =========================================================
 
-    fecha_emision = pago.fecha.date().isoformat()
-    monto = float(pago.monto)
+def _medio_pago_facture(pago):
+    metodo = (
+        getattr(pago, "metodo", "")
+        or ""
+    ).strip().lower()
 
-    metodo = (getattr(pago, "metodo", "") or "").strip().lower()
-    tipo_tarjeta = (getattr(pago, "tipo_tarjeta", "") or "").strip().lower()
+    tipo_tarjeta = (
+        getattr(pago, "tipo_tarjeta", "")
+        or ""
+    ).strip().lower()
 
     if metodo == "efectivo":
-        id_medio_pago = 1
-        glosa_medio_pago = "Efectivo"
-    elif metodo == "tarjeta":
-        id_medio_pago = 2
+        return 1, "Efectivo"
+
+    if metodo == "tarjeta":
         if tipo_tarjeta == "debito":
-            glosa_medio_pago = "Débito"
-        elif tipo_tarjeta == "credito":
-            glosa_medio_pago = "Crédito"
-        else:
-            glosa_medio_pago = "Tarjeta"
-    elif metodo == "transferencia":
-        id_medio_pago = 3
-        glosa_medio_pago = "Transferencia"
-    else:
-        raise FactureError(
-            f"Medio de pago no soportado para CFE: {metodo or 'vacío'}"
-        )
+            return 2, "Débito"
+
+        if tipo_tarjeta == "credito":
+            return 2, "Crédito"
+
+        return 2, "Tarjeta"
+
+    if metodo == "transferencia":
+        return 3, "Transferencia"
+
+    raise FactureError(
+        f"Medio de pago no soportado para CFE: "
+        f"{metodo or 'vacío'}"
+    )
+
+
+# =========================================================
+# ETICKET - CFE 101
+# =========================================================
+
+def construir_payload_eticket(pago):
+    """
+    Construye el eTicket de Sonrisar.
+
+    CFE 101 = eTicket
+    montoBruto 1 = importe con IVA incluido
+    indicadorFacturacion 2 = IVA tasa mínima (10 %)
+    formaPago 1 = Contado
+    moneda = UYU
+    """
+    cfg = _validar_configuracion_basica()
+
+    fecha_emision = timezone.localdate()
+    monto = float(pago.monto)
+
+    id_medio_pago, glosa_medio_pago = (
+        _medio_pago_facture(pago)
+    )
+
+    identificador = (
+        f"sonrisar-cobros-"
+        f"{cfg['modo']}-"
+        f"eticket-pago-{pago.id}"
+    )
 
     return {
         "idEmpresa": cfg["empresa_id"],
         "codComercio": cfg["cod_comercio"],
         "codTerminal": cfg["cod_terminal"],
-        "uuid": str(uuid.uuid5(
-            uuid.NAMESPACE_URL,
-            f"sonrisar-cobros-sandbox-pago-{pago.id}"
-        )),
+        "uuid": str(
+            uuid.uuid5(
+                uuid.NAMESPACE_URL,
+                identificador,
+            )
+        ),
         "origen": "Api",
         "registrarComprobanteInterno": False,
         "cfe": {
             "idDoc": {
                 "tipoCfe": 101,
-                "fechaEmision": fecha_emision,
+                "fechaEmision": fecha_emision.isoformat(),
                 "montoBruto": 1,
                 "formaPago": 1,
             },
@@ -183,7 +280,10 @@ def construir_payload_eticket_sandbox(pago):
                 {
                     "numeroLineaDetalle": 1,
                     "indicadorFacturacion": 2,
-                    "nombreItem": pago.concepto or "Servicio odontológico",
+                    "nombreItem": (
+                        pago.concepto
+                        or "Servicio odontológico"
+                    ),
                     "cantidad": 1,
                     "unidadMedida": "N/A",
                     "precioUnitario": monto,
@@ -210,63 +310,86 @@ def construir_payload_eticket_sandbox(pago):
     }
 
 
-def emitir_pago_sandbox(pago):
-    cfg = _config()
+def emitir_pago(pago):
+    """
+    Emite un eTicket para el pago indicado.
 
-    if cfg["modo"] != "sandbox":
-        raise FactureError("Esta función solo puede usarse en sandbox.")
-
-    payload = construir_payload_eticket_sandbox(pago)
+    Funciona tanto en sandbox como en producción.
+    La emisión real sigue dependiendo de
+    FACTURE_ENVIO_HABILITADO.
+    """
+    payload = construir_payload_eticket(pago)
     return emitir_cfe(payload)
 
 
-def construir_payload_nota_credito_eticket_sandbox(
+# =========================================================
+# NOTA DE CRÉDITO - CFE 102
+# =========================================================
+
+def construir_payload_nota_credito_eticket(
     pago,
     razon="Anulación de eTicket",
 ):
     """
-    Construye una Nota de Crédito de eTicket (tipo CFE 102) para sandbox,
-    referenciando el eTicket original asociado al pago.
-
-    Esta primera versión está pensada para una anulación TOTAL:
-    - mismo importe que el eTicket original
-    - IVA tasa mínima
-    - referencia al tipo 101, serie y número originales
+    Construye una Nota de Crédito de eTicket
+    para anular TOTALMENTE el CFE original.
     """
-    cfg = _config()
+    cfg = _validar_configuracion_basica()
 
-    if not getattr(pago, "cfe_serie", "") or not getattr(pago, "cfe_numero", ""):
+    if not getattr(pago, "cfe_serie", ""):
         raise FactureError(
-            "El pago no tiene serie/número del eTicket original para referenciar."
+            "El pago no tiene serie del eTicket original."
         )
 
-    monto = float(pago.monto)
-    fecha_emision = timezone.localdate().isoformat()
+    if not getattr(pago, "cfe_numero", ""):
+        raise FactureError(
+            "El pago no tiene número del eTicket original."
+        )
 
     try:
         numero_original = int(pago.cfe_numero)
     except (TypeError, ValueError) as exc:
         raise FactureError(
-            f"Número de CFE original inválido: {pago.cfe_numero!r}"
+            f"Número de CFE original inválido: "
+            f"{pago.cfe_numero!r}"
         ) from exc
 
-    # La fecha del CFE original coincide con la fecha usada al emitir el pago.
-    fecha_original = pago.fecha.date().isoformat()
+    monto = float(pago.monto)
+
+    fecha_emision_nc = timezone.localdate()
+
+    # Para los CFE nuevos usamos la fecha fiscal real guardada.
+    # El fallback permite seguir trabajando con CFE antiguos
+    # de sandbox emitidos antes de existir este campo.
+    fecha_original = (
+        getattr(pago, "cfe_fecha_emision", None)
+        or pago.fecha.date()
+    )
+
+    identificador = (
+        f"sonrisar-cobros-"
+        f"{cfg['modo']}-"
+        f"nota-credito-pago-{pago.id}"
+    )
 
     return {
         "idEmpresa": cfg["empresa_id"],
         "codComercio": cfg["cod_comercio"],
         "codTerminal": cfg["cod_terminal"],
-        "uuid": str(uuid.uuid5(
-            uuid.NAMESPACE_URL,
-            f"sonrisar-cobros-sandbox-nc-pago-{pago.id}"
-        )),
+        "uuid": str(
+            uuid.uuid5(
+                uuid.NAMESPACE_URL,
+                identificador,
+            )
+        ),
         "origen": "Api",
         "registrarComprobanteInterno": False,
         "cfe": {
             "idDoc": {
                 "tipoCfe": 102,
-                "fechaEmision": fecha_emision,
+                "fechaEmision": (
+                    fecha_emision_nc.isoformat()
+                ),
                 "montoBruto": 1,
                 "formaPago": 1,
             },
@@ -274,7 +397,10 @@ def construir_payload_nota_credito_eticket_sandbox(
                 {
                     "numeroLineaDetalle": 1,
                     "indicadorFacturacion": 2,
-                    "nombreItem": pago.concepto or "Servicio odontológico",
+                    "nombreItem": (
+                        pago.concepto
+                        or "Servicio odontológico"
+                    ),
                     "cantidad": 1,
                     "unidadMedida": "N/A",
                     "precioUnitario": monto,
@@ -285,9 +411,15 @@ def construir_payload_nota_credito_eticket_sandbox(
                 {
                     "numeroLineaReferencia": 1,
                     "tipoDocumentoReferencia": 101,
-                    "serieFacturaReferencia": str(pago.cfe_serie),
-                    "numeroFacturaReferencia": numero_original,
-                    "fechaFacturaReferencia": fecha_original,
+                    "serieFacturaReferencia": str(
+                        pago.cfe_serie
+                    ),
+                    "numeroFacturaReferencia": (
+                        numero_original
+                    ),
+                    "fechaFacturaReferencia": (
+                        fecha_original.isoformat()
+                    ),
                     "tipoMonedaCfeReferencia": "UYU",
                     "razonReferencia": razon,
                 }
@@ -297,36 +429,79 @@ def construir_payload_nota_credito_eticket_sandbox(
     }
 
 
-def emitir_nota_credito_pago_sandbox(
+def emitir_nota_credito_pago(
     pago,
     razon="Anulación de eTicket",
 ):
     """
-    Emite en sandbox una Nota de Crédito de eTicket (CFE 102)
-    que anula totalmente el CFE original del pago.
+    Emite una Nota de Crédito CFE 102 para
+    anular totalmente el eTicket original.
+
+    Funciona en sandbox y producción.
     """
-    cfg = _config()
-
-    if cfg["modo"] != "sandbox":
-        raise FactureError("Esta función solo puede usarse en sandbox.")
-
-    payload = construir_payload_nota_credito_eticket_sandbox(
+    payload = construir_payload_nota_credito_eticket(
         pago,
         razon=razon,
     )
+
     return emitir_cfe(payload)
 
 
-def obtener_pdf_cfe_por_folio(tipo_cfe, serie, numero):
-    """Obtiene el PDF de un CFE ya emitido desde Facture."""
-    cfg = _config()
+# =========================================================
+# COMPATIBILIDAD TEMPORAL
+# =========================================================
+# Estas funciones se mantienen por ahora porque views.py
+# todavía utiliza los nombres antiguos.
+# Las eliminaremos cuando adaptemos las vistas.
 
-    if not cfg["api_url"]:
-        raise FactureError("Falta FACTURE_API_URL.")
-    if not cfg["api_key"]:
-        raise FactureError("Falta FACTURE_API_KEY.")
+def construir_payload_eticket_sandbox(pago):
+    return construir_payload_eticket(pago)
 
-    url = f'{cfg["api_url"]}/api/v1/cfeemitido/pdf'
+
+def emitir_pago_sandbox(pago):
+    return emitir_pago(pago)
+
+
+def construir_payload_nota_credito_eticket_sandbox(
+    pago,
+    razon="Anulación de eTicket",
+):
+    return construir_payload_nota_credito_eticket(
+        pago,
+        razon=razon,
+    )
+
+
+def emitir_nota_credito_pago_sandbox(
+    pago,
+    razon="Anulación de eTicket",
+):
+    return emitir_nota_credito_pago(
+        pago,
+        razon=razon,
+    )
+
+
+# =========================================================
+# PDF DE CFE
+# =========================================================
+
+def obtener_pdf_cfe_por_folio(
+    tipo_cfe,
+    serie,
+    numero,
+):
+    """
+    Obtiene desde Facture el PDF de un CFE ya emitido.
+    No genera un comprobante nuevo.
+    """
+    cfg = _validar_configuracion_basica()
+
+    url = (
+        f'{cfg["api_url"]}'
+        f'/api/v1/cfeemitido/pdf'
+    )
+
     payload = {
         "tipo_cfe": int(tipo_cfe),
         "serie": str(serie),
@@ -346,19 +521,39 @@ def obtener_pdf_cfe_por_folio(tipo_cfe, serie, numero):
     )
 
     try:
-        with urllib.request.urlopen(req, timeout=30) as response:
+        with urllib.request.urlopen(
+            req,
+            timeout=30,
+        ) as response:
             return {
                 "ok": True,
                 "status": response.status,
-                "content_type": response.headers.get("Content-Type", ""),
+                "content_type": response.headers.get(
+                    "Content-Type",
+                    "",
+                ),
                 "content": response.read(),
             }
+
     except urllib.error.HTTPError as exc:
-        raw = exc.read().decode("utf-8", errors="replace")
+        raw = exc.read().decode(
+            "utf-8",
+            errors="replace",
+        )
+
         try:
             body = json.loads(raw) if raw else {}
         except json.JSONDecodeError:
             body = {"raw": raw}
-        return {"ok": False, "status": exc.code, "error": body}
+
+        return {
+            "ok": False,
+            "status": exc.code,
+            "error": body,
+        }
+
     except urllib.error.URLError as exc:
-        raise FactureError(f"No se pudo obtener el PDF desde Facture: {exc.reason}") from exc
+        raise FactureError(
+            "No se pudo obtener el PDF desde Facture: "
+            f"{exc.reason}"
+        ) from exc

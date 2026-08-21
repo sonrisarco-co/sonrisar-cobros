@@ -60,6 +60,22 @@
 
         </div>
 
+        {% if facture_modo == "produccion" %}
+        <div class="hp-facture-env hp-facture-env-prod">
+            <strong>⚠ FACTURE / DGI — PRODUCCIÓN</strong>
+            {% if facture_envio_habilitado %}
+                <span>Emisión real habilitada.</span>
+            {% else %}
+                <span>Emisión real deshabilitada por seguridad.</span>
+            {% endif %}
+        </div>
+        {% else %}
+        <div class="hp-facture-env hp-facture-env-sandbox">
+            <strong>🧪 FACTURE — SANDBOX</strong>
+            <span>Los comprobantes son de prueba.</span>
+        </div>
+        {% endif %}
+
 
         {% if messages %}
         <div class="hp-messages">
@@ -191,11 +207,22 @@
                         <form method="POST"
                               action="{% url 'pagos:facture_emitir_pago_sandbox' pago.id %}"
                               class="hp-cfe-form"
-                              onsubmit="return confirm('¿Emitir este eTicket de PRUEBA en el sandbox de Facture?');">
+                              onsubmit="return prepararEnvioCfe(this);">
                             {% csrf_token %}
+
+                            {% if facture_modo == "produccion" and not facture_envio_habilitado %}
+                            <button type="submit" class="hp-btn-cfe-test" disabled>
+                                🔒 Emisión CFE deshabilitada
+                            </button>
+                            {% elif facture_modo == "produccion" %}
+                            <button type="submit" class="hp-btn-cfe-test hp-btn-cfe-prod">
+                                🧾 Emitir CFE real
+                            </button>
+                            {% else %}
                             <button type="submit" class="hp-btn-cfe-test">
                                 🧪 Emitir CFE de prueba
                             </button>
+                            {% endif %}
                         </form>
                         {% endif %}
 
@@ -237,12 +264,23 @@
                         <form method="POST"
                               action="{% url 'pagos:facture_anular_pago_sandbox' pago.id %}"
                               class="hp-cfe-form"
-                              onsubmit="return confirm('¿ANULAR este eTicket de PRUEBA mediante una Nota de Crédito en el sandbox de Facture?');">
+                              onsubmit="return prepararAnulacionCfe(this);">
                             {% csrf_token %}
                             <input type="hidden" name="razon" value="Anulación total de eTicket">
+
+                            {% if facture_modo == "produccion" and not facture_envio_habilitado %}
+                            <button type="submit" class="hp-btn-cfe-cancel" disabled>
+                                🔒 Anulación CFE deshabilitada
+                            </button>
+                            {% elif facture_modo == "produccion" %}
+                            <button type="submit" class="hp-btn-cfe-cancel">
+                                ↩ Anular CFE real
+                            </button>
+                            {% else %}
                             <button type="submit" class="hp-btn-cfe-cancel">
                                 ↩ Anular CFE de prueba
                             </button>
+                            {% endif %}
                         </form>
                         {% endif %}
 
@@ -334,6 +372,44 @@
     </main>
 
 </div>
+
+<script>
+function prepararEnvioCfe(form) {
+    const esProduccion = "{{ facture_modo|escapejs }}" === "produccion";
+    const mensaje = esProduccion
+        ? "ATENCIÓN: se emitirá un eTicket REAL en DGI. ¿Confirmás la emisión?"
+        : "¿Emitir este eTicket de PRUEBA en el sandbox de Facture?";
+
+    if (!window.confirm(mensaje)) {
+        return false;
+    }
+
+    const boton = form.querySelector('button[type="submit"]');
+    if (boton) {
+        boton.disabled = true;
+        boton.textContent = "⏳ Emitiendo...";
+    }
+    return true;
+}
+
+function prepararAnulacionCfe(form) {
+    const esProduccion = "{{ facture_modo|escapejs }}" === "produccion";
+    const mensaje = esProduccion
+        ? "ATENCIÓN: se emitirá una Nota de Crédito REAL para anular este eTicket. ¿Confirmás?"
+        : "¿ANULAR este eTicket de PRUEBA mediante una Nota de Crédito en el sandbox de Facture?";
+
+    if (!window.confirm(mensaje)) {
+        return false;
+    }
+
+    const boton = form.querySelector('button[type="submit"]');
+    if (boton) {
+        boton.disabled = true;
+        boton.textContent = "⏳ Anulando...";
+    }
+    return true;
+}
+</script>
 
 <style>
 
@@ -830,6 +906,47 @@ body{
     font-weight:700;
 }
 
+
+.hp-facture-env{
+    position:relative;
+    z-index:3;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin:0 0 18px;
+    padding:11px 14px;
+    border-radius:12px;
+    font-size:12px;
+    font-weight:700;
+}
+.hp-facture-env-prod{
+    color:#991b1b;
+    background:#fef2f2;
+    border:1px solid #fecaca;
+}
+.hp-facture-env-sandbox{
+    color:#6544ad;
+    background:#f5f3ff;
+    border:1px solid #ddd6fe;
+}
+
+.hp-btn-cfe-prod{
+    border-style:solid;
+    border-color:#991b1b;
+    background:#fef2f2;
+    color:#991b1b;
+}
+.hp-btn-cfe-prod:hover{
+    background:#991b1b;
+    color:#fff;
+}
+.hp-btn-cfe-test:disabled,
+.hp-btn-cfe-cancel:disabled{
+    opacity:.55;
+    cursor:not-allowed;
+    transform:none !important;
+}
 
 .hp-messages{
     position:relative;

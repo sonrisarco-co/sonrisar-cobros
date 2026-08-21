@@ -311,7 +311,7 @@
         }
 
         /* =========================
-        PREPARACIÓN CFE
+        EMISIÓN CFE
         ========================== */
 
         .fiscal-box{
@@ -597,12 +597,17 @@
                             name="solicitar_cfe"
                             id="solicitar_cfe"
                         >
-                        Preparar comprobante electrónico (CFE)
+                        Emitir CFE al guardar
                     </label>
 
                     <p class="fiscal-help">
-                        Por ahora solo deja el pago marcado como pendiente.
-                        No se envía nada a DGI ni a Facture hasta activar el sandbox.
+                        {% if facture_modo == "produccion" and facture_envio_habilitado %}
+                            Al guardar el pago se emitirá el eTicket REAL en Facture / DGI.
+                        {% elif facture_modo == "produccion" %}
+                            Producción configurada, pero la emisión está deshabilitada.
+                        {% else %}
+                            Entorno de pruebas: al guardar se intentará emitir en sandbox.
+                        {% endif %}
                     </p>
 
                     <div class="fiscal-summary" id="fiscal_summary">
@@ -619,6 +624,7 @@
                 <button
                     type="submit"
                     class="btn"
+                    id="submit_pago"
                 >
                     Registrar pago
                 </button>
@@ -640,6 +646,8 @@
     const totalEl = document.getElementById('fiscal_total');
     const netoEl = document.getElementById('fiscal_neto');
     const ivaEl = document.getElementById('fiscal_iva');
+    const form = document.querySelector('form.form');
+    const submitBtn = document.getElementById('submit_pago');
 
     const money = new Intl.NumberFormat('es-UY', {
         style: 'currency',
@@ -672,6 +680,14 @@
         ivaEl.textContent = money.format(iva);
     }
 
+    function actualizarTextoBoton() {
+        if (!submitBtn || !cfeCheck) return;
+
+        submitBtn.textContent = cfeCheck.checked
+            ? 'Registrar pago y emitir CFE'
+            : 'Registrar pago';
+    }
+
     function aplicarDefaultCfePorMetodo() {
         if (!metodoSelect || !cfeCheck) return;
 
@@ -683,13 +699,29 @@
         cfeCheck.checked = (metodo === 'debito' || metodo === 'credito');
 
         actualizarResumenFiscal();
+        actualizarTextoBoton();
     }
 
     montoInput?.addEventListener('input', actualizarResumenFiscal);
-    cfeCheck?.addEventListener('change', actualizarResumenFiscal);
+    cfeCheck?.addEventListener('change', function () {
+        actualizarResumenFiscal();
+        actualizarTextoBoton();
+    });
     metodoSelect?.addEventListener('change', aplicarDefaultCfePorMetodo);
 
+    form?.addEventListener('submit', function () {
+        if (!submitBtn) return;
+
+        submitBtn.disabled = true;
+        submitBtn.style.opacity = '.65';
+        submitBtn.style.cursor = 'wait';
+        submitBtn.textContent = cfeCheck?.checked
+            ? 'Registrando y emitiendo...'
+            : 'Registrando...';
+    });
+
     aplicarDefaultCfePorMetodo();
+    actualizarTextoBoton();
 })();
 </script>
 

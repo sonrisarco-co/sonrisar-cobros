@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from .models import Pago
 from django.core.paginator import Paginator
 from django.db.models import Sum, Q
@@ -10,6 +11,7 @@ from pagos.models import Pago
 
 from itertools import groupby
 from django.utils.timezone import localtime
+from django.utils import timezone
 
 from collections import defaultdict
 import calendar
@@ -22,7 +24,7 @@ from django.conf import settings
 from django.contrib import messages
 
 from decimal import Decimal
-from urllib.parse import quote
+from urllib.parse import quote, urlencode, urlsplit, urlunsplit, parse_qsl
 from .models import (
     Gasto,
     DevolucionPaciente,
@@ -37,6 +39,98 @@ from .facture_service import (
     obtener_pdf_cfe_por_folio,
     FactureError,
 )
+
+
+def _agregar_params_url(url, **params):
+    """Agrega parámetros a una URL preservando los que ya existan."""
+    if not url:
+        return url
+
+    partes = urlsplit(url)
+    query = dict(parse_qsl(partes.query, keep_blank_values=True))
+
+    for clave, valor in params.items():
+        if valor not in (None, ""):
+            query[clave] = str(valor)
+
+    return urlunsplit((
+        partes.scheme,
+        partes.netloc,
+        partes.path,
+        urlencode(query),
+        partes.fragment,
+    ))
+
+
+def _emitir_cfe_y_guardar(pago):
+    """
+    Emite el eTicket y guarda el resultado fiscal en el pago.
+    El pago ya existe antes de llamar a Facture: si la emisión falla,
+    el cobro NO se pierde.
+    """
+    try:
+        resultado = emitir_pago(pago)
+    except FactureError as exc:
+        pago.cfe_estado = Pago.CFE_RECHAZADO
+        pago.cfe_error = str(exc)
+        pago.save(update_fields=["cfe_estado", "cfe_error"])
+        return False, str(exc)
+
+    if not resultado.get("ok"):
+        detalle = resultado.get("error", {})
+        pago.cfe_estado = Pago.CFE_RECHAZADO
+        pago.cfe_error = json.dumps(
+            detalle,
+            ensure_ascii=False,
+        )[:5000]
+        pago.save(update_fields=["cfe_estado", "cfe_error"])
+        return (
+            False,
+            f"Facture rechazó la emisión (HTTP {resultado.get('status')})."
+        )
+
+    data = resultado.get("data") or {}
+    cod_respuesta = str(data.get("CodRespuesta", "")).strip()
+
+    if cod_respuesta and cod_respuesta != "00":
+        pago.cfe_estado = Pago.CFE_RECHAZADO
+        pago.cfe_error = json.dumps(
+            data,
+            ensure_ascii=False,
+        )[:5000]
+        pago.save(update_fields=["cfe_estado", "cfe_error"])
+        return (
+            False,
+            f"Facture respondió {cod_respuesta}: "
+            f"{data.get('MensajeRespuesta', 'Error')}"
+        )
+
+    pago.cfe_estado = Pago.CFE_EMITIDO
+    pago.cfe_tipo = "eTicket"
+    pago.cfe_serie = str(data.get("Serie") or "")
+    pago.cfe_numero = str(data.get("Nro") or "")
+    pago.cfe_fecha_emision = timezone.localdate()
+    pago.facture_cfe_id = str(
+        data.get("_Id")
+        or data.get("IdComprobante")
+        or ""
+    )
+    pago.cfe_xml_firmado = str(data.get("XmlFirmado") or "")
+    pago.cfe_error = ""
+    pago.save(update_fields=[
+        "cfe_estado",
+        "cfe_tipo",
+        "cfe_serie",
+        "cfe_numero",
+        "cfe_fecha_emision",
+        "facture_cfe_id",
+        "cfe_xml_firmado",
+        "cfe_error",
+    ])
+
+    return True, (
+        f"{pago.cfe_tipo} {pago.cfe_serie} {pago.cfe_numero}".strip()
+    )
 
 
 def nuevo_pago(request):
@@ -60,32 +154,35 @@ def nuevo_pago(request):
         else:
             metodo = metodo_form
 
+        # La misma casilla histórica ahora significa:
+        # registrar el pago + emitir el CFE inmediatamente.
         solicitar_cfe = request.POST.get("solicitar_cfe") == "on"
         next_url = request.POST.get("next", "").strip()
 
         appointment_id = request.POST.get("appointment_id")
         patient_id = request.POST.get("patient_id")
-
         protesis_id = request.POST.get("protesis_id")
 
         try:
             appointment_id = int(appointment_id) if appointment_id else None
-        except:
+        except (TypeError, ValueError):
             appointment_id = None
 
         try:
             patient_id = int(patient_id) if patient_id else None
-        except:
+        except (TypeError, ValueError):
             patient_id = None
 
         try:
             protesis_id = int(protesis_id) if protesis_id else None
-        except:
+        except (TypeError, ValueError):
             protesis_id = None
 
         paciente = request.POST.get("paciente", "").strip()
 
-        Pago.objects.create(
+        # El pago se guarda PRIMERO. Así, aun si Facture tiene una caída
+        # o rechaza el CFE, el cobro queda registrado en Sonrisar Cobros.
+        pago = Pago.objects.create(
             monto=monto,
             paciente=paciente,
             concepto=concepto,
@@ -104,12 +201,59 @@ def nuevo_pago(request):
             tasa_iva_cfe=Decimal("10.00"),
         )
 
+        cfe_ok = None
+        cfe_mensaje = ""
+
+        if solicitar_cfe:
+            cfe_ok, cfe_mensaje = _emitir_cfe_y_guardar(pago)
+
         if next_url:
-            return redirect(next_url)
+            params_retorno = {
+                "cobro": "ok",
+                "pago_id": pago.id,
+            }
+
+            if solicitar_cfe and cfe_ok:
+                pdf_url = request.build_absolute_uri(
+                    reverse("pagos:facture_pdf_pago", args=[pago.id])
+                )
+                params_retorno.update({
+                    "cfe": "emitido",
+                    "cfe_serie": pago.cfe_serie,
+                    "cfe_numero": pago.cfe_numero,
+                    "cfe_pdf": pdf_url,
+                })
+            elif solicitar_cfe:
+                params_retorno.update({
+                    "cfe": "error",
+                    "cfe_mensaje": cfe_mensaje,
+                })
+            else:
+                params_retorno["cfe"] = "no"
+
+            return redirect(
+                _agregar_params_url(
+                    next_url,
+                    **params_retorno,
+                )
+            )
+
+        if solicitar_cfe and cfe_ok:
+            messages.success(
+                request,
+                f"Pago registrado y CFE emitido: {cfe_mensaje}."
+            )
+        elif solicitar_cfe:
+            messages.warning(
+                request,
+                "Pago registrado, pero el CFE no pudo emitirse. "
+                f"{cfe_mensaje}"
+            )
+        else:
+            messages.success(request, "Pago registrado correctamente.")
 
         return redirect("caja:tablero")
 
-    # 🔥 SIEMPRE RETORNAR ALGO EN GET
     initial = {
         "monto": request.GET.get("monto", ""),
         "paciente": request.GET.get("paciente", ""),
@@ -126,6 +270,12 @@ def nuevo_pago(request):
     return render(request, "pagos/nuevo.html", {
         "metodos": Pago.METODOS,
         "initial": initial,
+        "facture_modo": getattr(settings, "FACTURE_MODO", "sandbox"),
+        "facture_envio_habilitado": getattr(
+            settings,
+            "FACTURE_ENVIO_HABILITADO",
+            False,
+        ),
     })
 
 
@@ -185,6 +335,12 @@ def historial(request):
         "pagos_por_mes": pagos_por_mes,
         "page_obj": page_obj,
         "total_pagos": paginator.count,
+        "facture_modo": getattr(settings, "FACTURE_MODO", "sandbox"),
+        "facture_envio_habilitado": getattr(
+            settings,
+            "FACTURE_ENVIO_HABILITADO",
+            False,
+        ),
     })
 
 
@@ -1151,7 +1307,7 @@ def facture_test_conexion(request):
 def facture_emitir_pago_sandbox(request, pago_id):
     """
     Emite un eTicket desde un pago Pendiente CFE.
-    Solo POST y disponible localmente con DEBUG=True.
+    Solo acepta POST.
     Puede trabajar en sandbox o producción según FACTURE_MODO.
     """
     if request.method != "POST":
@@ -1160,81 +1316,134 @@ def facture_emitir_pago_sandbox(request, pago_id):
     if not settings.DEBUG:
         raise Http404
 
-    pago = get_object_or_404(Pago, id=pago_id)
-
-    if not pago.cfe_solicitado:
-        messages.error(request, "Este pago no está marcado para CFE.")
-        return redirect("pagos:historial")
-
-    if pago.cfe_estado == Pago.CFE_EMITIDO:
-        messages.warning(request, "Este pago ya tiene un CFE emitido.")
-        return redirect("pagos:historial")
-
-    if pago.cfe_estado != Pago.CFE_PENDIENTE:
-        messages.warning(
-            request,
-            f"El pago no está Pendiente CFE (estado actual: {pago.get_cfe_estado_display()})."
-        )
-        return redirect("pagos:historial")
-
     try:
-        resultado = emitir_pago(pago)
+        with transaction.atomic():
+            pago = (
+                Pago.objects
+                .select_for_update()
+                .get(id=pago_id)
+            )
+
+            if not pago.cfe_solicitado:
+                messages.error(
+                    request,
+                    "Este pago no está marcado para CFE."
+                )
+                return redirect("pagos:historial")
+
+            if pago.cfe_estado == Pago.CFE_EMITIDO:
+                messages.warning(
+                    request,
+                    "Este pago ya tiene un CFE emitido."
+                )
+                return redirect("pagos:historial")
+
+            if pago.cfe_estado != Pago.CFE_PENDIENTE:
+                messages.warning(
+                    request,
+                    f"El pago no está Pendiente CFE "
+                    f"(estado actual: {pago.get_cfe_estado_display()})."
+                )
+                return redirect("pagos:historial")
+
+            resultado = emitir_pago(pago)
+
+            if not resultado.get("ok"):
+                detalle = resultado.get("error", {})
+                pago.cfe_estado = Pago.CFE_RECHAZADO
+                pago.cfe_error = json.dumps(
+                    detalle,
+                    ensure_ascii=False,
+                )[:5000]
+                pago.save(
+                    update_fields=[
+                        "cfe_estado",
+                        "cfe_error",
+                    ]
+                )
+                messages.error(
+                    request,
+                    f"Facture rechazó la emisión "
+                    f"(HTTP {resultado.get('status')})."
+                )
+                return redirect("pagos:historial")
+
+            data = resultado.get("data") or {}
+
+            # Contrato documentado por Facture:
+            # _Id, CodRespuesta, MensajeRespuesta, TipoCfe, Serie, Nro, XmlFirmado.
+            cod_respuesta = str(data.get("CodRespuesta", "")).strip()
+
+            if cod_respuesta and cod_respuesta != "00":
+                pago.cfe_estado = Pago.CFE_RECHAZADO
+                pago.cfe_error = json.dumps(
+                    data,
+                    ensure_ascii=False,
+                )[:5000]
+                pago.save(
+                    update_fields=[
+                        "cfe_estado",
+                        "cfe_error",
+                    ]
+                )
+                messages.error(
+                    request,
+                    f"Facture respondió {cod_respuesta}: "
+                    f"{data.get('MensajeRespuesta', 'Error')}"
+                )
+                return redirect("pagos:historial")
+
+            pago.cfe_estado = Pago.CFE_EMITIDO
+            pago.cfe_tipo = "eTicket"
+            pago.cfe_serie = str(data.get("Serie") or "")
+            pago.cfe_numero = str(data.get("Nro") or "")
+            pago.cfe_fecha_emision = timezone.localdate()
+            pago.facture_cfe_id = str(
+                data.get("_Id")
+                or data.get("IdComprobante")
+                or ""
+            )
+            pago.cfe_xml_firmado = str(data.get("XmlFirmado") or "")
+            pago.cfe_error = ""
+            pago.save(
+                update_fields=[
+                    "cfe_estado",
+                    "cfe_tipo",
+                    "cfe_serie",
+                    "cfe_numero",
+                    "cfe_fecha_emision",
+                    "facture_cfe_id",
+                    "cfe_xml_firmado",
+                    "cfe_error",
+                ]
+            )
+
+    except Pago.DoesNotExist:
+        raise Http404
+
     except FactureError as exc:
-        pago.cfe_estado = Pago.CFE_RECHAZADO
-        pago.cfe_error = str(exc)
-        pago.save(update_fields=["cfe_estado", "cfe_error"])
-        messages.error(request, f"No se pudo emitir el CFE: {exc}")
-        return redirect("pagos:historial")
+        pago = Pago.objects.filter(id=pago_id).first()
 
-    if not resultado.get("ok"):
-        detalle = resultado.get("error", {})
-        pago.cfe_estado = Pago.CFE_RECHAZADO
-        pago.cfe_error = json.dumps(detalle, ensure_ascii=False)[:5000]
-        pago.save(update_fields=["cfe_estado", "cfe_error"])
+        if pago:
+            pago.cfe_estado = Pago.CFE_RECHAZADO
+            pago.cfe_error = str(exc)
+            pago.save(
+                update_fields=[
+                    "cfe_estado",
+                    "cfe_error",
+                ]
+            )
+
         messages.error(
             request,
-            f"Facture rechazó la emisión (HTTP {resultado.get('status')})."
+            f"No se pudo emitir el CFE: {exc}"
         )
         return redirect("pagos:historial")
-
-    data = resultado.get("data") or {}
-
-    # Contrato documentado por Facture:
-    # _Id, CodRespuesta, MensajeRespuesta, TipoCfe, Serie, Nro, XmlFirmado.
-    cod_respuesta = str(data.get("CodRespuesta", "")).strip()
-
-    if cod_respuesta and cod_respuesta != "00":
-        pago.cfe_estado = Pago.CFE_RECHAZADO
-        pago.cfe_error = json.dumps(data, ensure_ascii=False)[:5000]
-        pago.save(update_fields=["cfe_estado", "cfe_error"])
-        messages.error(
-            request,
-            f"Facture respondió {cod_respuesta}: {data.get('MensajeRespuesta', 'Error')}"
-        )
-        return redirect("pagos:historial")
-
-    pago.cfe_estado = Pago.CFE_EMITIDO
-    pago.cfe_tipo = "eTicket"
-    pago.cfe_serie = str(data.get("Serie") or "")
-    pago.cfe_numero = str(data.get("Nro") or "")
-    pago.cfe_fecha_emision = timezone.localdate()
-    pago.facture_cfe_id = str(data.get("_Id") or data.get("IdComprobante") or "")
-    pago.cfe_xml_firmado = str(data.get("XmlFirmado") or "")
-    pago.cfe_error = ""
-    pago.save(update_fields=[
-        "cfe_estado",
-        "cfe_tipo",
-        "cfe_serie",
-        "cfe_numero",
-        "cfe_fecha_emision",
-        "facture_cfe_id",
-        "cfe_xml_firmado",
-        "cfe_error",
-    ])
 
     messages.success(
         request,
-        f"CFE emitido: {pago.cfe_tipo} {pago.cfe_serie} {pago.cfe_numero}".strip()
+        f"CFE emitido: "
+        f"{pago.cfe_tipo} {pago.cfe_serie} {pago.cfe_numero}".strip()
     )
     return redirect("pagos:historial")
 

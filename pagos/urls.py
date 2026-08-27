@@ -15,6 +15,11 @@ urlpatterns = [
         views.nueva_devolucion,
         name="nueva_devolucion"
     ),
+    path(
+        "devoluciones/<int:devolucion_id>/reintegrar/",
+        views.reintegrar_devolucion_temporal,
+        name="reintegrar_devolucion_temporal"
+    ),
 
     # =====================================================
     # FACTURE / DGI
@@ -53,6 +58,17 @@ urlpatterns = [
         "facture/nc/xml/<int:pago_id>/",
         views.facture_xml_nota_credito_pago,
         name="facture_xml_nota_credito_pago"
+    ),
+
+    path(
+        "facture/nc/devolucion/pdf/<int:devolucion_id>/",
+        views.facture_pdf_nota_credito_devolucion,
+        name="facture_pdf_nota_credito_devolucion"
+    ),
+    path(
+        "facture/nc/devolucion/xml/<int:devolucion_id>/",
+        views.facture_xml_nota_credito_devolucion,
+        name="facture_xml_nota_credito_devolucion"
     ),
 
     # =====================================================

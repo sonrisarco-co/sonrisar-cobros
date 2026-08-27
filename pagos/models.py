@@ -166,6 +166,7 @@ class Gasto(models.Model):
         ("sueldos", "Sueldos"),
         ("mantenimiento", "Mantenimiento"),
         ("devolucion_paciente", "Devolución a paciente"),
+        ("entrega_temporal_paciente", "Entrega temporal a paciente"),
         ("otros", "Otros"),
     ]
 
@@ -215,6 +216,13 @@ class DevolucionPaciente(models.Model):
         ("tarjeta", "Tarjeta"),
     ]
 
+    TIPO_DEFINITIVA = "definitiva"
+    TIPO_TEMPORAL = "temporal"
+    TIPOS = [
+        (TIPO_DEFINITIVA, "Definitiva"),
+        (TIPO_TEMPORAL, "Temporal / pendiente de reintegro"),
+    ]
+
     pago_original = models.ForeignKey(
         Pago,
         on_delete=models.SET_NULL,
@@ -240,6 +248,69 @@ class DevolucionPaciente(models.Model):
     metodo = models.CharField(max_length=20, choices=METODOS)
     concepto = models.CharField(max_length=255, blank=True)
     fecha = models.DateTimeField(default=timezone.now, db_index=True)
+
+    # Tipo de devolución. Los registros históricos quedan como definitivos
+    # por defecto para conservar exactamente el comportamiento anterior.
+    tipo = models.CharField(
+        max_length=20,
+        choices=TIPOS,
+        default=TIPO_DEFINITIVA,
+        db_index=True,
+    )
+
+    # Solo se usa para devoluciones temporales. Mientras reintegrada=False,
+    # el dinero está pendiente de volver, pero NO reduce el total pagado
+    # odontológico del paciente.
+    reintegrada = models.BooleanField(default=False, db_index=True)
+    fecha_reintegro = models.DateTimeField(null=True, blank=True)
+
+    @property
+    def es_temporal(self):
+        return self.tipo == self.TIPO_TEMPORAL
+
+    @property
+    def pendiente_reintegro(self):
+        return self.es_temporal and not self.reintegrada
+
+    @property
+    def afecta_saldo_odontologico(self):
+        return self.tipo == self.TIPO_DEFINITIVA
+
+    # ==========================================
+    # NOTA DE CRÉDITO ELECTRÓNICA
+    # ==========================================
+    nc_solicitada = models.BooleanField(
+        default=False,
+        verbose_name="Emitir Nota de Crédito"
+    )
+
+    nc_cfe_id = models.CharField(
+        max_length=100,
+        blank=True
+    )
+
+    nc_serie = models.CharField(
+        max_length=10,
+        blank=True
+    )
+
+    nc_numero = models.CharField(
+        max_length=30,
+        blank=True
+    )
+
+    nc_fecha_emision = models.DateField(
+        null=True,
+        blank=True
+    )
+
+    nc_xml_firmado = models.TextField(
+        blank=True
+    )
+
+    nc_error = models.TextField(
+        blank=True
+    )
 
     class Meta:
         ordering = ["-fecha", "-id"]

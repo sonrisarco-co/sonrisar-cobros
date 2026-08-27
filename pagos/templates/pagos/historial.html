@@ -312,6 +312,108 @@
                         </div>
                         {% endif %}
 
+                        {% if pago.devoluciones_historial %}
+                        <div class="hp-dev-section">
+
+                            <div class="hp-dev-title">
+                                Devoluciones registradas
+                            </div>
+
+                            <div class="hp-dev-summary">
+                                Devoluciones definitivas:
+                                ${{ pago.total_devuelto_historial|floatformat:2 }}
+                                {% if pago.total_temporal_pendiente_historial %}
+                                    · Temporal pendiente: ${{ pago.total_temporal_pendiente_historial|floatformat:2 }}
+                                {% endif %}
+
+                                {% if pago.total_nc_devoluciones_historial %}
+                                    · Con Nota de Crédito:
+                                    ${{ pago.total_nc_devoluciones_historial|floatformat:2 }}
+                                {% endif %}
+                            </div>
+
+                            {% for devolucion in pago.devoluciones_historial %}
+                            <div class="hp-dev-box">
+
+                                <div class="hp-dev-top">
+                                    <span>{{ devolucion.fecha|date:"d/m/Y" }}</span>
+                                    <strong>- ${{ devolucion.monto|floatformat:2 }}</strong>
+                                </div>
+
+                                <div class="hp-dev-concept">
+                                    {{ devolucion.concepto }}
+                                </div>
+                                {% if devolucion.tipo == "temporal" %}
+                                    {% if devolucion.reintegrada %}
+                                        <div class="hp-dev-without-nc">Temporal · Reintegrada{% if devolucion.fecha_reintegro %} el {{ devolucion.fecha_reintegro|date:"d/m/Y H:i" }}{% endif %}</div>
+                                    {% else %}
+                                        <div class="hp-dev-nc-pending">Temporal · Pendiente de reintegro</div>
+                                        <form method="POST" action="{% url 'pagos:reintegrar_devolucion_temporal' devolucion.id %}" style="margin-top:8px;">
+                                            {% csrf_token %}
+                                            <label style="display:block;font-size:12px;margin-bottom:6px;"><input type="checkbox" name="afecta_caja"> Ingresar el reintegro a la Caja del día</label>
+                                            <button type="submit" class="hp-btn-dev-nc-pdf">Registrar reintegro</button>
+                                        </form>
+                                    {% endif %}
+                                {% endif %}
+
+                                {% if devolucion.nc_numero %}
+
+                                    <div class="hp-dev-nc-number">
+                                        Nota de Crédito
+                                        {{ devolucion.nc_serie }}
+                                        {{ devolucion.nc_numero }}
+                                    </div>
+
+                                    {% if devolucion.nc_fecha_emision %}
+                                    <div class="hp-dev-nc-date">
+                                        Emitida: {{ devolucion.nc_fecha_emision|date:"d/m/Y" }}
+                                    </div>
+                                    {% endif %}
+
+                                    <a href="{% url 'pagos:facture_pdf_nota_credito_devolucion' devolucion.id %}"
+                                       class="hp-btn-dev-nc-pdf"
+                                       target="_blank"
+                                       rel="noopener">
+                                        📄 Ver PDF Nota de Crédito
+                                    </a>
+
+                                    {% if devolucion.nc_xml_firmado %}
+                                    <a href="{% url 'pagos:facture_xml_nota_credito_devolucion' devolucion.id %}"
+                                       class="hp-btn-dev-nc-xml">
+                                        ⬇ Descargar XML Nota de Crédito
+                                    </a>
+                                    {% else %}
+                                    <div class="hp-xml-unavailable">
+                                        XML de Nota de Crédito no disponible
+                                    </div>
+                                    {% endif %}
+
+                                {% elif devolucion.nc_solicitada %}
+
+                                    <div class="hp-dev-nc-pending">
+                                        Nota de Crédito solicitada, pero no emitida
+                                    </div>
+
+                                    {% if devolucion.nc_error %}
+                                    <div class="hp-cfe-error">
+                                        {{ devolucion.nc_error|truncatechars:220 }}
+                                    </div>
+                                    {% endif %}
+
+                                {% else %}
+
+                                    <div class="hp-dev-without-nc">
+                                        Devolución sin Nota de Crédito
+                                    </div>
+
+                                {% endif %}
+
+                            </div>
+                            {% endfor %}
+
+                        </div>
+                        {% endif %}
+
                         <a href="{% url 'pagos:recibo' pago.id %}"
                            class="hp-btn-receipt"
                            target="_blank"
@@ -1114,6 +1216,144 @@ body{
     background:#475569;
     color:#fff;
 }
+
+/* =========================
+   DEVOLUCIONES / NC
+========================= */
+
+.hp-dev-section{
+    margin-top:12px;
+    padding-top:10px;
+    border-top:1px solid rgba(226,232,240,.65);
+}
+
+.hp-dev-title{
+    font-size:11px;
+    font-weight:800;
+    color:#475569;
+    text-transform:uppercase;
+    letter-spacing:.4px;
+}
+
+.hp-dev-summary{
+    margin-top:5px;
+    margin-bottom:8px;
+    font-size:10px;
+    font-weight:700;
+    color:#64748b;
+}
+
+.hp-dev-box{
+    margin-top:8px;
+    padding:9px;
+    border:1px solid rgba(194,65,12,.16);
+    border-radius:12px;
+    background:rgba(255,247,237,.65);
+}
+
+.hp-dev-top{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+}
+
+.hp-dev-top span{
+    font-size:10px;
+    color:#64748b;
+    font-weight:700;
+}
+
+.hp-dev-top strong{
+    font-size:12px;
+    color:#c2410c;
+}
+
+.hp-dev-concept{
+    margin-top:5px;
+    font-size:11px;
+    font-weight:700;
+    color:#334155;
+}
+
+.hp-dev-nc-number{
+    margin-top:8px;
+    padding:7px 9px;
+    border-radius:10px;
+    background:#f5f3ff;
+    color:#6544ad;
+    font-size:11px;
+    font-weight:800;
+    text-align:center;
+}
+
+.hp-dev-nc-date{
+    margin-top:5px;
+    text-align:center;
+    font-size:10px;
+    font-weight:700;
+    color:#64748b;
+}
+
+.hp-btn-dev-nc-pdf,
+.hp-btn-dev-nc-xml{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:100%;
+    margin-top:7px;
+    padding:8px 10px;
+    border-radius:11px;
+    text-decoration:none;
+    font-size:11px;
+    font-weight:800;
+    transition:.18s ease;
+}
+
+.hp-btn-dev-nc-pdf{
+    border:1px solid #7c5ac7;
+    background:rgba(124,90,199,.08);
+    color:#6544ad;
+}
+
+.hp-btn-dev-nc-pdf:hover{
+    background:#7c5ac7;
+    color:#fff;
+}
+
+.hp-btn-dev-nc-xml{
+    border:1px solid #475569;
+    background:rgba(71,85,105,.07);
+    color:#475569;
+}
+
+.hp-btn-dev-nc-xml:hover{
+    background:#475569;
+    color:#fff;
+}
+
+.hp-dev-without-nc{
+    margin-top:7px;
+    padding:7px 9px;
+    border-radius:10px;
+    background:#f8fafc;
+    color:#64748b;
+    font-size:10px;
+    font-weight:700;
+    text-align:center;
+}
+
+.hp-dev-nc-pending{
+    margin-top:7px;
+    padding:7px 9px;
+    border-radius:10px;
+    background:#fffbeb;
+    color:#92400e;
+    font-size:10px;
+    font-weight:800;
+    text-align:center;
+}
+
 
 /* =========================
    PAGINACION

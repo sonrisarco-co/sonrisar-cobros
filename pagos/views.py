@@ -2,11 +2,11 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from .models import Pago
 from django.core.paginator import Paginator
-from django.db.models import Sum, Q
+from django.db.models import Sum, Q, Prefetch
 from django.db import transaction
 from collections import OrderedDict
 import json
-from caja.models import CashSession
+from caja.models import CashSession, MovimientoCaja
 from pagos.models import Pago
 
 from itertools import groupby
@@ -22,6 +22,7 @@ from django.http import JsonResponse, Http404, HttpResponseNotAllowed, HttpRespo
 from django.conf import settings
 
 from django.contrib import messages
+from django.views.decorators.http import require_POST
 
 from decimal import Decimal
 from urllib.parse import quote, urlencode, urlsplit, urlunsplit, parse_qsl
@@ -36,6 +37,7 @@ from .facture_service import (
     probar_conexion,
     emitir_pago,
     emitir_nota_credito_pago,
+    emitir_nota_credito_devolucion,
     obtener_pdf_cfe_por_folio,
     FactureError,
 )
@@ -301,12 +303,60 @@ def historial(request):
 
     request.session.pop("pin_ok", None)
 
+    devoluciones_historial_qs = (
+        DevolucionPaciente.objects
+        .only(
+            "id",
+            "pago_original_id",
+            "fecha",
+            "monto",
+            "metodo",
+            "concepto",
+            "tipo",
+            "reintegrada",
+            "fecha_reintegro",
+            "nc_solicitada",
+            "nc_cfe_id",
+            "nc_serie",
+            "nc_numero",
+            "nc_fecha_emision",
+            "nc_xml_firmado",
+            "nc_error",
+        )
+        .order_by("fecha", "id")
+    )
+
     pagos_qs = (
         Pago.objects
         .only(
-            "id", "fecha", "monto", "metodo", "paciente", "concepto",
-            "cfe_solicitado", "cfe_estado", "tasa_iva_cfe",
-            "cfe_tipo", "cfe_serie", "cfe_numero", "cfe_error", "facture_cfe_id", "tipo_tarjeta", "cfe_xml_firmado", "nc_cfe_id", "nc_serie", "nc_numero", "nc_xml_firmado", "nc_error"
+            "id",
+            "fecha",
+            "monto",
+            "metodo",
+            "paciente",
+            "concepto",
+            "cfe_solicitado",
+            "cfe_estado",
+            "tasa_iva_cfe",
+            "cfe_tipo",
+            "cfe_serie",
+            "cfe_numero",
+            "cfe_error",
+            "facture_cfe_id",
+            "tipo_tarjeta",
+            "cfe_xml_firmado",
+            "nc_cfe_id",
+            "nc_serie",
+            "nc_numero",
+            "nc_xml_firmado",
+            "nc_error",
+        )
+        .prefetch_related(
+            Prefetch(
+                "devoluciones",
+                queryset=devoluciones_historial_qs,
+                to_attr="devoluciones_historial",
+            )
         )
         .order_by("-fecha", "-id")
     )
@@ -316,32 +366,77 @@ def historial(request):
     page_obj = paginator.get_page(page_number)
 
     meses_es = [
-        "", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-        "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+        "",
+        "Enero",
+        "Febrero",
+        "Marzo",
+        "Abril",
+        "Mayo",
+        "Junio",
+        "Julio",
+        "Agosto",
+        "Septiembre",
+        "Octubre",
+        "Noviembre",
+        "Diciembre",
     ]
 
     pagos_por_mes = OrderedDict()
 
     for pago in page_obj.object_list:
         fecha_local = localtime(pago.fecha)
-        mes_nombre = f"{meses_es[fecha_local.month]} {fecha_local.year}"
+        mes_nombre = (
+            f"{meses_es[fecha_local.month]} "
+            f"{fecha_local.year}"
+        )
 
         if mes_nombre not in pagos_por_mes:
             pagos_por_mes[mes_nombre] = []
 
+        # Datos útiles para el historial.
+        pago.total_devuelto_historial = sum(
+            (devolucion.monto or Decimal("0.00"))
+            for devolucion in pago.devoluciones_historial
+            if devolucion.afecta_saldo_odontologico
+        )
+
+        pago.total_temporal_pendiente_historial = sum(
+            (devolucion.monto or Decimal("0.00"))
+            for devolucion in pago.devoluciones_historial
+            if devolucion.pendiente_reintegro
+        )
+
+        pago.total_nc_devoluciones_historial = sum(
+            (
+                devolucion.monto
+                or Decimal("0.00")
+            )
+            for devolucion
+            in pago.devoluciones_historial
+            if devolucion.nc_numero
+        )
+
         pagos_por_mes[mes_nombre].append(pago)
 
-    return render(request, "pagos/historial.html", {
-        "pagos_por_mes": pagos_por_mes,
-        "page_obj": page_obj,
-        "total_pagos": paginator.count,
-        "facture_modo": getattr(settings, "FACTURE_MODO", "sandbox"),
-        "facture_envio_habilitado": getattr(
-            settings,
-            "FACTURE_ENVIO_HABILITADO",
-            False,
-        ),
-    })
+    return render(
+        request,
+        "pagos/historial.html",
+        {
+            "pagos_por_mes": pagos_por_mes,
+            "page_obj": page_obj,
+            "total_pagos": paginator.count,
+            "facture_modo": getattr(
+                settings,
+                "FACTURE_MODO",
+                "sandbox",
+            ),
+            "facture_envio_habilitado": getattr(
+                settings,
+                "FACTURE_ENVIO_HABILITADO",
+                False,
+            ),
+        },
+    )
 
 
 
@@ -383,9 +478,17 @@ def _devolucion_to_dict(devolucion):
         "patient_id": devolucion.patient_id,
         "protesis_id": devolucion.protesis_id,
         "pago_original_id": devolucion.pago_original_id,
+        "tipo": devolucion.tipo,
+        "tipo_display": devolucion.get_tipo_display(),
+        "reintegrada": devolucion.reintegrada,
+        "pendiente_reintegro": devolucion.pendiente_reintegro,
+        "fecha_reintegro": (
+            localtime(devolucion.fecha_reintegro).strftime("%d/%m/%Y %H:%M")
+            if devolucion.fecha_reintegro else None
+        ),
+        "afecta_saldo_odontologico": devolucion.afecta_saldo_odontologico,
         "tipo_movimiento": "devolucion",
     }
-
 
 def _to_int_or_none(value):
     try:
@@ -405,11 +508,7 @@ def api_pagos_por_paciente(request):
         try:
             patient_id_int = int(patient_id)
         except (TypeError, ValueError):
-            return JsonResponse({
-                "ok": False,
-                "error": "patient_id inválido."
-            }, status=400)
-
+            return JsonResponse({"ok": False, "error": "patient_id inválido."}, status=400)
         pagos_qs = pagos_qs.filter(patient_id=patient_id_int)
         devoluciones_qs = devoluciones_qs.filter(patient_id=patient_id_int)
     elif paciente:
@@ -425,7 +524,14 @@ def api_pagos_por_paciente(request):
     devoluciones = devoluciones_qs.order_by("-fecha")
 
     total_pagado_bruto = sum((pago.monto or 0) for pago in pagos)
-    total_devuelto = sum((dev.monto or 0) for dev in devoluciones)
+    total_devuelto = sum(
+        (dev.monto or 0) for dev in devoluciones
+        if dev.afecta_saldo_odontologico
+    )
+    total_temporal_pendiente = sum(
+        (dev.monto or 0) for dev in devoluciones
+        if dev.pendiente_reintegro
+    )
     total_pagado = total_pagado_bruto - total_devuelto
 
     data = [_pago_to_dict(pago) for pago in pagos[:50]]
@@ -440,37 +546,26 @@ def api_pagos_por_paciente(request):
         "cantidad_devoluciones": devoluciones.count(),
         "total_pagado_bruto": str(total_pagado_bruto),
         "total_devuelto": str(total_devuelto),
+        "total_temporal_pendiente": str(total_temporal_pendiente),
         "total_pagado": str(total_pagado),
         "tipo_pago": "sena" if tiene_sena else "pagado",
         "pagos": data,
         "devoluciones": devoluciones_data,
     })
 
-
 def api_resumen_pacientes(request):
-    """
-    API rápida para Sonrisar Pro.
-    Devuelve el total neto pagado por cada paciente: pagos - devoluciones.
-    """
+    """API rápida. Las devoluciones temporales NO reducen el pago clínico."""
     patient_ids_raw = request.GET.get("patient_ids", "").strip()
-
     if not patient_ids_raw:
-        return JsonResponse({
-            "ok": False,
-            "error": "Falta el parámetro patient_ids."
-        }, status=400)
+        return JsonResponse({"ok": False, "error": "Falta el parámetro patient_ids."}, status=400)
 
     patient_ids = []
     for item in patient_ids_raw.split(","):
         patient_id = _to_int_or_none(item.strip())
         if patient_id is not None and patient_id not in patient_ids:
             patient_ids.append(patient_id)
-
     if not patient_ids:
-        return JsonResponse({
-            "ok": False,
-            "error": "No se recibieron patient_ids válidos."
-        }, status=400)
+        return JsonResponse({"ok": False, "error": "No se recibieron patient_ids válidos."}, status=400)
 
     pagos = Pago.objects.filter(patient_id__in=patient_ids)
     devoluciones = DevolucionPaciente.objects.filter(patient_id__in=patient_ids)
@@ -481,8 +576,10 @@ def api_resumen_pacientes(request):
             "total_pagado": "0",
             "total_pagado_bruto": "0",
             "total_devuelto": "0",
+            "total_temporal_pendiente": "0",
             "cantidad_pagos": 0,
             "cantidad_devoluciones": 0,
+            "cantidad_temporales_pendientes": 0,
             "tipo_pago": "pagado",
         }
         for patient_id in patient_ids
@@ -502,33 +599,32 @@ def api_resumen_pacientes(request):
         datos = resumen.get(devolucion.patient_id)
         if not datos:
             continue
-        devuelto = Decimal(datos["total_devuelto"]) + (devolucion.monto or Decimal("0.00"))
-        datos["total_devuelto"] = str(devuelto)
         datos["cantidad_devoluciones"] += 1
+        if devolucion.afecta_saldo_odontologico:
+            datos["total_devuelto"] = str(
+                Decimal(datos["total_devuelto"]) + (devolucion.monto or Decimal("0.00"))
+            )
+        if devolucion.pendiente_reintegro:
+            datos["total_temporal_pendiente"] = str(
+                Decimal(datos["total_temporal_pendiente"]) + (devolucion.monto or Decimal("0.00"))
+            )
+            datos["cantidad_temporales_pendientes"] += 1
 
     for datos in resumen.values():
-        neto = Decimal(datos["total_pagado_bruto"]) - Decimal(datos["total_devuelto"])
-        datos["total_pagado"] = str(neto)
+        datos["total_pagado"] = str(
+            Decimal(datos["total_pagado_bruto"]) - Decimal(datos["total_devuelto"])
+        )
 
-    return JsonResponse({
-        "ok": True,
-        "pacientes": list(resumen.values()),
-    })
-
+    return JsonResponse({"ok": True, "pacientes": list(resumen.values())})
 
 def api_pago_por_cita(request):
     appointment_id = request.GET.get("appointment_id", "").strip()
     patient_id = request.GET.get("patient_id", "").strip()
-
     if not appointment_id:
-        return JsonResponse({
-            "ok": False,
-            "error": "Falta el parámetro appointment_id."
-        }, status=400)
+        return JsonResponse({"ok": False, "error": "Falta el parámetro appointment_id."}, status=400)
 
     pagos = Pago.objects.filter(appointment_id=appointment_id)
     devoluciones = DevolucionPaciente.objects.filter(appointment_id=appointment_id)
-
     if patient_id:
         patient_id_int = _to_int_or_none(patient_id)
         if patient_id_int is not None:
@@ -537,10 +633,10 @@ def api_pago_por_cita(request):
 
     pagos = pagos.order_by("-fecha")
     devoluciones = devoluciones.order_by("-fecha")
-
     data = []
     total_pagado_bruto = Decimal("0.00")
     total_devuelto = Decimal("0.00")
+    total_temporal_pendiente = Decimal("0.00")
     tipo_pago = "pagado"
 
     for pago in pagos:
@@ -551,7 +647,10 @@ def api_pago_por_cita(request):
 
     devoluciones_data = []
     for devolucion in devoluciones:
-        total_devuelto += devolucion.monto or Decimal("0.00")
+        if devolucion.afecta_saldo_odontologico:
+            total_devuelto += devolucion.monto or Decimal("0.00")
+        if devolucion.pendiente_reintegro:
+            total_temporal_pendiente += devolucion.monto or Decimal("0.00")
         devoluciones_data.append(_devolucion_to_dict(devolucion))
 
     return JsonResponse({
@@ -562,45 +661,38 @@ def api_pago_por_cita(request):
         "cantidad_devoluciones": len(devoluciones_data),
         "total_pagado_bruto": str(total_pagado_bruto),
         "total_devuelto": str(total_devuelto),
+        "total_temporal_pendiente": str(total_temporal_pendiente),
         "total_pagado": str(total_pagado_bruto - total_devuelto),
         "tipo_pago": tipo_pago,
         "pagos": data,
         "devoluciones": devoluciones_data,
     })
 
-
 def api_resumen_citas(request):
     appointment_ids_raw = request.GET.get("appointment_ids", "").strip()
-
     if not appointment_ids_raw:
-        return JsonResponse({
-            "ok": False,
-            "error": "Falta el parámetro appointment_ids."
-        }, status=400)
+        return JsonResponse({"ok": False, "error": "Falta el parámetro appointment_ids."}, status=400)
 
     appointment_ids = []
     for item in appointment_ids_raw.split(","):
         appointment_id = _to_int_or_none(item.strip())
         if appointment_id is not None and appointment_id not in appointment_ids:
             appointment_ids.append(appointment_id)
-
     if not appointment_ids:
-        return JsonResponse({
-            "ok": False,
-            "error": "No se recibieron appointment_ids válidos."
-        }, status=400)
+        return JsonResponse({"ok": False, "error": "No se recibieron appointment_ids válidos."}, status=400)
 
     pagos = Pago.objects.filter(appointment_id__in=appointment_ids).order_by("-fecha")
     devoluciones = DevolucionPaciente.objects.filter(appointment_id__in=appointment_ids).order_by("-fecha")
-
     resumen = {
         appointment_id: {
             "appointment_id": appointment_id,
             "total_pagado": "0",
             "total_pagado_bruto": "0",
             "total_devuelto": "0",
+            "total_temporal_pendiente": "0",
             "cantidad_pagos": 0,
             "cantidad_devoluciones": 0,
+            "cantidad_temporales_pendientes": 0,
             "tipo_pago": "pagado",
             "pagos": [],
             "devoluciones": [],
@@ -612,8 +704,9 @@ def api_resumen_citas(request):
         datos = resumen.get(pago.appointment_id)
         if not datos:
             continue
-        bruto = Decimal(datos["total_pagado_bruto"]) + (pago.monto or Decimal("0.00"))
-        datos["total_pagado_bruto"] = str(bruto)
+        datos["total_pagado_bruto"] = str(
+            Decimal(datos["total_pagado_bruto"]) + (pago.monto or Decimal("0.00"))
+        )
         datos["cantidad_pagos"] += 1
         datos["pagos"].append(_pago_to_dict(pago))
         if _es_sena(pago.concepto):
@@ -623,45 +716,44 @@ def api_resumen_citas(request):
         datos = resumen.get(devolucion.appointment_id)
         if not datos:
             continue
-        devuelto = Decimal(datos["total_devuelto"]) + (devolucion.monto or Decimal("0.00"))
-        datos["total_devuelto"] = str(devuelto)
         datos["cantidad_devoluciones"] += 1
+        if devolucion.afecta_saldo_odontologico:
+            datos["total_devuelto"] = str(
+                Decimal(datos["total_devuelto"]) + (devolucion.monto or Decimal("0.00"))
+            )
+        if devolucion.pendiente_reintegro:
+            datos["total_temporal_pendiente"] = str(
+                Decimal(datos["total_temporal_pendiente"]) + (devolucion.monto or Decimal("0.00"))
+            )
+            datos["cantidad_temporales_pendientes"] += 1
         datos["devoluciones"].append(_devolucion_to_dict(devolucion))
 
     for datos in resumen.values():
         datos["total_pagado"] = str(
             Decimal(datos["total_pagado_bruto"]) - Decimal(datos["total_devuelto"])
         )
-
-    return JsonResponse({
-        "ok": True,
-        "citas": list(resumen.values()),
-    })
-
+    return JsonResponse({"ok": True, "citas": list(resumen.values())})
 
 def api_pago_por_protesis(request):
     protesis_id = request.GET.get("protesis_id", "").strip()
-
     if not protesis_id:
-        return JsonResponse({
-            "ok": False,
-            "error": "Falta el parámetro protesis_id."
-        }, status=400)
+        return JsonResponse({"ok": False, "error": "Falta el parámetro protesis_id."}, status=400)
 
     pagos = Pago.objects.filter(protesis_id=protesis_id).order_by("-fecha")
     devoluciones = DevolucionPaciente.objects.filter(protesis_id=protesis_id).order_by("-fecha")
-
     total_pagado_bruto = Decimal("0.00")
     total_devuelto = Decimal("0.00")
+    total_temporal_pendiente = Decimal("0.00")
     data = []
     devoluciones_data = []
-
     for pago in pagos:
         total_pagado_bruto += pago.monto or Decimal("0.00")
         data.append(_pago_to_dict(pago))
-
     for devolucion in devoluciones:
-        total_devuelto += devolucion.monto or Decimal("0.00")
+        if devolucion.afecta_saldo_odontologico:
+            total_devuelto += devolucion.monto or Decimal("0.00")
+        if devolucion.pendiente_reintegro:
+            total_temporal_pendiente += devolucion.monto or Decimal("0.00")
         devoluciones_data.append(_devolucion_to_dict(devolucion))
 
     return JsonResponse({
@@ -671,10 +763,146 @@ def api_pago_por_protesis(request):
         "cantidad_devoluciones": len(devoluciones_data),
         "total_pagado_bruto": str(total_pagado_bruto),
         "total_devuelto": str(total_devuelto),
+        "total_temporal_pendiente": str(total_temporal_pendiente),
         "total_pagado": str(total_pagado_bruto - total_devuelto),
         "pagos": data,
         "devoluciones": devoluciones_data,
     })
+
+def _emitir_nc_devolucion_y_guardar(devolucion):
+    """
+    Emite la Nota de Crédito correspondiente a una devolución
+    y guarda el resultado fiscal sin borrar la devolución si
+    Facture/DGI rechaza la emisión.
+    """
+    pago = devolucion.pago_original
+
+    if not pago:
+        devolucion.nc_error = "La devolución no tiene un pago original asociado."
+        devolucion.save(update_fields=["nc_error"])
+        return False, devolucion.nc_error
+
+    if pago.cfe_estado != Pago.CFE_EMITIDO:
+        devolucion.nc_error = (
+            "El pago original no tiene un eTicket emitido disponible "
+            "para generar una Nota de Crédito."
+        )
+        devolucion.save(update_fields=["nc_error"])
+        return False, devolucion.nc_error
+
+    if not pago.cfe_serie or not pago.cfe_numero:
+        devolucion.nc_error = (
+            "El eTicket original no tiene serie o número para referenciarlo."
+        )
+        devolucion.save(update_fields=["nc_error"])
+        return False, devolucion.nc_error
+
+    if devolucion.nc_numero or devolucion.nc_cfe_id:
+        return False, "Esta devolución ya tiene una Nota de Crédito asociada."
+
+    # Seguridad adicional:
+    # si estamos en PRODUCCIÓN pero el envío real está deshabilitado,
+    # NO se llama a Facture y por lo tanto NO se envía nada a DGI.
+    facture_modo = getattr(settings, "FACTURE_MODO", "sandbox")
+    facture_envio_habilitado = getattr(
+        settings,
+        "FACTURE_ENVIO_HABILITADO",
+        False,
+    )
+
+    if (
+        facture_modo == "produccion"
+        and not facture_envio_habilitado
+    ):
+        devolucion.nc_error = (
+            "Emisión real de Nota de Crédito deshabilitada por seguridad. "
+            "No se envió ningún comprobante a Facture/DGI."
+        )
+        devolucion.save(update_fields=["nc_error"])
+        return False, devolucion.nc_error
+
+    try:
+        resultado = emitir_nota_credito_devolucion(
+            devolucion,
+            razon=devolucion.concepto or "Devolución a paciente",
+        )
+    except FactureError as exc:
+        devolucion.nc_error = str(exc)
+        devolucion.save(update_fields=["nc_error"])
+        return False, str(exc)
+
+    if not resultado.get("ok"):
+        detalle = resultado.get("error", {})
+        devolucion.nc_error = json.dumps(
+            detalle,
+            ensure_ascii=False,
+        )[:5000]
+        devolucion.save(update_fields=["nc_error"])
+
+        return (
+            False,
+            f"Facture rechazó la Nota de Crédito "
+            f"(HTTP {resultado.get('status')})."
+        )
+
+    data = resultado.get("data") or {}
+    cod_respuesta = str(data.get("CodRespuesta", "")).strip()
+
+    if cod_respuesta and cod_respuesta != "00":
+        devolucion.nc_error = json.dumps(
+            data,
+            ensure_ascii=False,
+        )[:5000]
+        devolucion.save(update_fields=["nc_error"])
+
+        return (
+            False,
+            f"Facture respondió {cod_respuesta}: "
+            f"{data.get('MensajeRespuesta', 'Error')}"
+        )
+
+    devolucion.nc_cfe_id = str(
+        data.get("_Id")
+        or data.get("IdComprobante")
+        or ""
+    )
+    devolucion.nc_serie = str(data.get("Serie") or "")
+    devolucion.nc_numero = str(data.get("Nro") or "")
+    devolucion.nc_fecha_emision = timezone.localdate()
+    devolucion.nc_xml_firmado = str(data.get("XmlFirmado") or "")
+    devolucion.nc_error = ""
+
+    devolucion.save(update_fields=[
+        "nc_cfe_id",
+        "nc_serie",
+        "nc_numero",
+        "nc_fecha_emision",
+        "nc_xml_firmado",
+        "nc_error",
+    ])
+
+    # Sumamos únicamente devoluciones que efectivamente tienen NC emitida.
+    total_acreditado = (
+        DevolucionPaciente.objects
+        .filter(
+            pago_original=pago,
+            nc_numero__gt="",
+        )
+        .aggregate(total=Sum("monto"))["total"]
+        or Decimal("0.00")
+    )
+
+    # Solo cuando las NC cubren todo el eTicket,
+    # el comprobante original queda totalmente anulado.
+    if total_acreditado >= pago.monto:
+        pago.cfe_estado = Pago.CFE_ANULADO
+        pago.save(update_fields=["cfe_estado"])
+
+    return True, (
+        f"Nota de Crédito "
+        f"{devolucion.nc_serie} {devolucion.nc_numero}".strip()
+    )
+
 
 
 def nueva_devolucion(request):
@@ -682,15 +910,30 @@ def nueva_devolucion(request):
 
     if request.method == "POST":
         afecta_caja = request.POST.get("afecta_caja") == "on"
+        solicitar_nc = request.POST.get("solicitar_nc") == "on"
+        tipo_devolucion = request.POST.get(
+            "tipo_devolucion", DevolucionPaciente.TIPO_DEFINITIVA
+        ).strip()
+        if tipo_devolucion not in {
+            DevolucionPaciente.TIPO_DEFINITIVA,
+            DevolucionPaciente.TIPO_TEMPORAL,
+        }:
+            tipo_devolucion = DevolucionPaciente.TIPO_DEFINITIVA
+        if tipo_devolucion == DevolucionPaciente.TIPO_TEMPORAL:
+            solicitar_nc = False
 
         if afecta_caja and caja.estado == CashSession.Status.CERRADA:
             messages.error(
                 request,
-                "La caja del día está cerrada. Puedes registrar la devolución, pero no descontarla de la caja actual."
+                "La caja del día está cerrada. Puedes registrar la devolución, "
+                "pero no descontarla de la caja actual."
             )
             return redirect("pagos:nueva_devolucion")
 
-        pago_original_id = _to_int_or_none(request.POST.get("pago_original_id"))
+        pago_original_id = _to_int_or_none(
+            request.POST.get("pago_original_id")
+        )
+
         pago_original = (
             Pago.objects.filter(id=pago_original_id).first()
             if pago_original_id is not None
@@ -698,196 +941,569 @@ def nueva_devolucion(request):
         )
 
         paciente = request.POST.get("paciente", "").strip()
-        patient_id = _to_int_or_none(request.POST.get("patient_id"))
-        appointment_id = _to_int_or_none(request.POST.get("appointment_id"))
-        protesis_id = _to_int_or_none(request.POST.get("protesis_id"))
+        patient_id = _to_int_or_none(
+            request.POST.get("patient_id")
+        )
+        appointment_id = _to_int_or_none(
+            request.POST.get("appointment_id")
+        )
+        protesis_id = _to_int_or_none(
+            request.POST.get("protesis_id")
+        )
         metodo = request.POST.get("metodo", "").strip()
         concepto = request.POST.get("concepto", "").strip()
         next_url = request.POST.get("next", "").strip()
 
         if pago_original:
             paciente = pago_original.paciente or paciente
-            patient_id = pago_original.patient_id or patient_id
-            appointment_id = pago_original.appointment_id or appointment_id
-            protesis_id = pago_original.protesis_id or protesis_id
+            patient_id = (
+                pago_original.patient_id
+                or patient_id
+            )
+            appointment_id = (
+                pago_original.appointment_id
+                or appointment_id
+            )
+            protesis_id = (
+                pago_original.protesis_id
+                or protesis_id
+            )
 
-        monto_texto = request.POST.get("monto", "").strip().replace(",", ".")
+        monto_texto = (
+            request.POST.get("monto", "")
+            .strip()
+            .replace(",", ".")
+        )
 
         try:
             monto = Decimal(monto_texto)
+
             if monto <= 0:
                 raise ValueError
+
         except (ValueError, ArithmeticError):
             monto = None
 
-        metodos_validos = {valor for valor, _ in DevolucionPaciente.METODOS}
+        metodos_validos = {
+            valor
+            for valor, _ in DevolucionPaciente.METODOS
+        }
 
         if not pago_original:
-            messages.error(request, "Selecciona el pago original que corresponde a la devolución.")
+            messages.error(
+                request,
+                "Selecciona el pago original que corresponde "
+                "a la devolución."
+            )
+
         elif not paciente:
-            messages.error(request, "Debes indicar el paciente de la devolución.")
+            messages.error(
+                request,
+                "Debes indicar el paciente de la devolución."
+            )
+
         elif monto is None:
-            messages.error(request, "El monto de la devolución debe ser mayor a cero.")
+            messages.error(
+                request,
+                "El monto de la devolución debe ser mayor a cero."
+            )
+
         elif metodo not in metodos_validos:
-            messages.error(request, "Selecciona un método de devolución válido.")
+            messages.error(
+                request,
+                "Selecciona un método de devolución válido."
+            )
+
+        elif solicitar_nc and (
+            pago_original.cfe_estado != Pago.CFE_EMITIDO
+        ):
+            messages.error(
+                request,
+                "Para emitir una Nota de Crédito, el pago original "
+                "debe tener un eTicket emitido."
+            )
+
+        elif solicitar_nc and (
+            not pago_original.cfe_serie
+            or not pago_original.cfe_numero
+        ):
+            messages.error(
+                request,
+                "El eTicket original no tiene serie o número "
+                "para poder emitir la Nota de Crédito."
+            )
+
+        elif (
+            solicitar_nc
+            and getattr(settings, "FACTURE_MODO", "sandbox") == "produccion"
+            and not getattr(
+                settings,
+                "FACTURE_ENVIO_HABILITADO",
+                False,
+            )
+        ):
+            messages.error(
+                request,
+                "La emisión real de Nota de Crédito está deshabilitada "
+                "por seguridad. No se registró la devolución y no se envió "
+                "nada a Facture/DGI."
+            )
+
         else:
             ya_devuelto = (
                 DevolucionPaciente.objects
                 .filter(pago_original=pago_original)
+                .filter(
+                    Q(tipo=DevolucionPaciente.TIPO_DEFINITIVA)
+                    | Q(tipo=DevolucionPaciente.TIPO_TEMPORAL, reintegrada=False)
+                )
                 .aggregate(total=Sum("monto"))["total"]
                 or Decimal("0.00")
             )
-            disponible = (pago_original.monto or Decimal("0.00")) - ya_devuelto
+
+            disponible = (
+                pago_original.monto
+                or Decimal("0.00")
+            ) - ya_devuelto
 
             if disponible <= 0:
                 messages.error(
                     request,
-                    "Ese pago ya fue devuelto completamente y no tiene saldo disponible para otra devolución."
+                    "Ese pago ya fue devuelto completamente "
+                    "y no tiene saldo disponible para otra devolución."
                 )
                 monto = None
+
             elif monto > disponible:
                 messages.error(
                     request,
-                    f"No puedes devolver ${monto:.2f}. De ese pago quedan ${disponible:.2f} disponibles para devolución."
+                    (
+                        f"No puedes devolver ${monto:.2f}. "
+                        f"De ese pago quedan ${disponible:.2f} "
+                        "disponibles para devolución."
+                    )
                 )
                 monto = None
 
             if monto is not None:
-                concepto_final = concepto or "Devolución de pago a paciente"
+                concepto_final = (
+                    concepto
+                    or "Devolución de pago a paciente"
+                )
 
+                # Primero registramos la devolución económica.
+                # Si Facture/DGI falla después, esta devolución
+                # no se pierde.
                 with transaction.atomic():
-                    caja_asignada = caja if afecta_caja else None
+                    caja_asignada = (
+                        caja if afecta_caja else None
+                    )
 
+                    es_temporal = tipo_devolucion == DevolucionPaciente.TIPO_TEMPORAL
                     gasto = Gasto.objects.create(
                         proveedor=paciente,
-                        categoria="devolucion_paciente",
-                        concepto=f"Devolución a {paciente}: {concepto_final}",
+                        categoria=("entrega_temporal_paciente" if es_temporal else "devolucion_paciente"),
+                        concepto=((f"Entrega temporal a {paciente}: " if es_temporal else f"Devolución a {paciente}: ") + concepto_final),
                         monto=monto,
                         metodo=metodo,
                         afecta_caja=afecta_caja,
                         caja=caja_asignada,
                     )
 
-                    DevolucionPaciente.objects.create(
-                        pago_original=pago_original,
-                        gasto=gasto,
-                        paciente=paciente,
-                        patient_id=patient_id,
-                        appointment_id=appointment_id,
-                        protesis_id=protesis_id,
-                        monto=monto,
-                        metodo=metodo,
-                        concepto=concepto_final,
+                    devolucion = (
+                        DevolucionPaciente.objects.create(
+                            pago_original=pago_original,
+                            gasto=gasto,
+                            paciente=paciente,
+                            patient_id=patient_id,
+                            appointment_id=appointment_id,
+                            protesis_id=protesis_id,
+                            monto=monto,
+                            metodo=metodo,
+                            concepto=concepto_final,
+                            tipo=tipo_devolucion,
+                            reintegrada=False,
+                            nc_solicitada=solicitar_nc,
+                        )
+                    )
+
+                # La emisión fiscal ocurre DESPUÉS
+                # de guardar la devolución.
+                nc_ok = None
+                nc_mensaje = ""
+
+                if solicitar_nc:
+                    nc_ok, nc_mensaje = (
+                        _emitir_nc_devolucion_y_guardar(
+                            devolucion
+                        )
                     )
 
                 detalle_caja = (
                     " Se descontó de la caja del día."
                     if afecta_caja
-                    else " No afectó la caja del día."
+                    else
+                    " No afectó la caja del día."
                 )
 
-                messages.success(
-                    request,
-                    f"Devolución de ${monto:.2f} registrada para {paciente}.{detalle_caja}"
-                )
+                if solicitar_nc and nc_ok:
+                    messages.success(
+                        request,
+                        (
+                            f"Devolución de ${monto:.2f} "
+                            f"registrada para {paciente}."
+                            f"{detalle_caja} "
+                            f"{nc_mensaje} emitida correctamente."
+                        )
+                    )
+
+                elif solicitar_nc:
+                    messages.warning(
+                        request,
+                        (
+                            f"Devolución de ${monto:.2f} "
+                            f"registrada para {paciente}."
+                            f"{detalle_caja} "
+                            "La Nota de Crédito no pudo emitirse: "
+                            f"{nc_mensaje}"
+                        )
+                    )
+
+                else:
+                    messages.success(
+                        request,
+                        (
+                            f"Devolución de ${monto:.2f} "
+                            f"registrada para {paciente}."
+                            f"{detalle_caja}"
+                        )
+                    )
 
                 if next_url:
                     return redirect(next_url)
+
                 return redirect("caja:tablero")
 
     if request.method == "POST":
         initial = {
-            "paciente": request.POST.get("paciente", ""),
-            "patient_id": request.POST.get("patient_id", ""),
-            "appointment_id": request.POST.get("appointment_id", ""),
-            "protesis_id": request.POST.get("protesis_id", ""),
-            "monto": request.POST.get("monto", ""),
-            "concepto": request.POST.get("concepto", ""),
-            "pago_original_id": request.POST.get("pago_original_id", ""),
-            "next": request.POST.get("next", ""),
-            "metodo": request.POST.get("metodo", ""),
-            "afecta_caja": request.POST.get("afecta_caja") == "on",
+            "paciente": request.POST.get(
+                "paciente",
+                ""
+            ),
+            "patient_id": request.POST.get(
+                "patient_id",
+                ""
+            ),
+            "appointment_id": request.POST.get(
+                "appointment_id",
+                ""
+            ),
+            "protesis_id": request.POST.get(
+                "protesis_id",
+                ""
+            ),
+            "monto": request.POST.get(
+                "monto",
+                ""
+            ),
+            "concepto": request.POST.get(
+                "concepto",
+                ""
+            ),
+            "pago_original_id": request.POST.get(
+                "pago_original_id",
+                ""
+            ),
+            "next": request.POST.get(
+                "next",
+                ""
+            ),
+            "metodo": request.POST.get(
+                "metodo",
+                ""
+            ),
+            "tipo_devolucion": request.POST.get(
+                "tipo_devolucion", DevolucionPaciente.TIPO_DEFINITIVA
+            ),
+            "afecta_caja": (
+                request.POST.get(
+                    "afecta_caja"
+                ) == "on"
+            ),
+            "solicitar_nc": (
+                request.POST.get(
+                    "solicitar_nc"
+                ) == "on"
+            ),
         }
-        busqueda_pago = request.POST.get("busqueda_pago", "").strip()
+
+        busqueda_pago = (
+            request.POST.get(
+                "busqueda_pago",
+                ""
+            ).strip()
+        )
+
     else:
         initial = {
-            "paciente": request.GET.get("paciente", ""),
-            "patient_id": request.GET.get("patient_id", ""),
-            "appointment_id": request.GET.get("appointment_id", ""),
-            "protesis_id": request.GET.get("protesis_id", ""),
-            "monto": request.GET.get("monto", ""),
-            "concepto": request.GET.get("concepto", ""),
-            "pago_original_id": request.GET.get("pago_id", ""),
-            "next": request.GET.get("next", ""),
+            "paciente": request.GET.get(
+                "paciente",
+                ""
+            ),
+            "patient_id": request.GET.get(
+                "patient_id",
+                ""
+            ),
+            "appointment_id": request.GET.get(
+                "appointment_id",
+                ""
+            ),
+            "protesis_id": request.GET.get(
+                "protesis_id",
+                ""
+            ),
+            "monto": request.GET.get(
+                "monto",
+                ""
+            ),
+            "concepto": request.GET.get(
+                "concepto",
+                ""
+            ),
+            "pago_original_id": request.GET.get(
+                "pago_id",
+                ""
+            ),
+            "next": request.GET.get(
+                "next",
+                ""
+            ),
             "metodo": "",
+            "tipo_devolucion": DevolucionPaciente.TIPO_DEFINITIVA,
             "afecta_caja": False,
+            "solicitar_nc": False,
         }
-        busqueda_pago = request.GET.get("buscar_pago", "").strip()
+
+        busqueda_pago = (
+            request.GET.get(
+                "buscar_pago",
+                ""
+            ).strip()
+        )
 
     pagos_qs = (
         Pago.objects
-        .annotate(total_devuelto_calc=Sum("devoluciones__monto"))
-        .only(
-            "id", "fecha", "paciente", "monto", "concepto",
-            "patient_id", "appointment_id", "protesis_id"
+        .annotate(
+            total_devuelto_calc=Sum(
+                "devoluciones__monto",
+                filter=(
+                    Q(devoluciones__tipo=DevolucionPaciente.TIPO_DEFINITIVA)
+                    | Q(devoluciones__tipo=DevolucionPaciente.TIPO_TEMPORAL, devoluciones__reintegrada=False)
+                ),
+            )
         )
-        .order_by("-fecha", "-id")
+        .only(
+            "id",
+            "fecha",
+            "paciente",
+            "monto",
+            "concepto",
+            "patient_id",
+            "appointment_id",
+            "protesis_id",
+            "cfe_solicitado",
+            "cfe_estado",
+            "cfe_tipo",
+            "cfe_serie",
+            "cfe_numero",
+        )
+        .order_by(
+            "-fecha",
+            "-id"
+        )
     )
 
     if busqueda_pago:
         filtro = (
-            Q(paciente__icontains=busqueda_pago)
-            | Q(concepto__icontains=busqueda_pago)
+            Q(
+                paciente__icontains=busqueda_pago
+            )
+            | Q(
+                concepto__icontains=busqueda_pago
+            )
         )
 
-        # También permite buscar un pago puntual escribiendo su ID como #302.
+        # También permite buscar por ID: #302
         texto_id = busqueda_pago.strip()
+
         if texto_id.startswith("#"):
             try:
-                filtro |= Q(id=int(texto_id[1:].strip()))
-            except (TypeError, ValueError):
+                filtro |= Q(
+                    id=int(
+                        texto_id[1:].strip()
+                    )
+                )
+
+            except (
+                TypeError,
+                ValueError,
+            ):
                 pass
 
-        texto_monto = busqueda_pago.replace("$", "").replace(".", "").replace(",", ".").strip()
+        texto_monto = (
+            busqueda_pago
+            .replace("$", "")
+            .replace(".", "")
+            .replace(",", ".")
+            .strip()
+        )
+
         try:
-            monto_buscado = Decimal(texto_monto)
-            filtro |= Q(monto=monto_buscado)
-        except (ValueError, ArithmeticError):
+            monto_buscado = Decimal(
+                texto_monto
+            )
+
+            filtro |= Q(
+                monto=monto_buscado
+            )
+
+        except (
+            ValueError,
+            ArithmeticError,
+        ):
             pass
 
-        pagos_qs = pagos_qs.filter(filtro)
+        pagos_qs = pagos_qs.filter(
+            filtro
+        )
 
-    # Con búsqueda mostramos más resultados del historial completo. Sin búsqueda,
-    # solo los últimos para mantener la pantalla liviana.
-    limite = 150 if busqueda_pago else 80
-    pagos_encontrados = list(pagos_qs[:limite])
+    limite = (
+        150
+        if busqueda_pago
+        else 80
+    )
 
-    pago_inicial_id = _to_int_or_none(initial.get("pago_original_id"))
-    if pago_inicial_id and not any(p.id == pago_inicial_id for p in pagos_encontrados):
+    pagos_encontrados = list(
+        pagos_qs[:limite]
+    )
+
+    pago_inicial_id = (
+        _to_int_or_none(
+            initial.get(
+                "pago_original_id"
+            )
+        )
+    )
+
+    if (
+        pago_inicial_id
+        and not any(
+            p.id == pago_inicial_id
+            for p in pagos_encontrados
+        )
+    ):
         pago_inicial = (
             Pago.objects
-            .filter(id=pago_inicial_id)
-            .annotate(total_devuelto_calc=Sum("devoluciones__monto"))
+            .filter(
+                id=pago_inicial_id
+            )
+            .annotate(
+                total_devuelto_calc=Sum(
+                    "devoluciones__monto"
+                )
+            )
             .first()
         )
+
         if pago_inicial:
-            pagos_encontrados.insert(0, pago_inicial)
+            pagos_encontrados.insert(
+                0,
+                pago_inicial
+            )
 
     for pago in pagos_encontrados:
-        pago.total_devuelto_mostrado = pago.total_devuelto_calc or Decimal("0.00")
-        pago.disponible_devolver = max(
-            (pago.monto or Decimal("0.00")) - pago.total_devuelto_mostrado,
-            Decimal("0.00")
+        pago.total_devuelto_mostrado = (
+            pago.total_devuelto_calc
+            or Decimal("0.00")
         )
 
-    return render(request, "pagos/nueva_devolucion.html", {
-        "caja": caja,
-        "metodos": DevolucionPaciente.METODOS,
-        "pagos_recientes": pagos_encontrados,
-        "initial": initial,
-        "busqueda_pago": busqueda_pago,
-        "cantidad_resultados": len(pagos_encontrados),
-    })
+        pago.disponible_devolver = max(
+            (
+                pago.monto
+                or Decimal("0.00")
+            )
+            - pago.total_devuelto_mostrado,
+            Decimal("0.00"),
+        )
+
+    return render(
+        request,
+        "pagos/nueva_devolucion.html",
+        {
+            "caja": caja,
+            "metodos": (
+                DevolucionPaciente.METODOS
+            ),
+            "tipos_devolucion": DevolucionPaciente.TIPOS,
+            "pagos_recientes": (
+                pagos_encontrados
+            ),
+            "initial": initial,
+            "busqueda_pago": (
+                busqueda_pago
+            ),
+            "cantidad_resultados": len(
+                pagos_encontrados
+            ),
+            "facture_modo": getattr(
+                settings,
+                "FACTURE_MODO",
+                "sandbox",
+            ),
+            "facture_envio_habilitado": getattr(
+                settings,
+                "FACTURE_ENVIO_HABILITADO",
+                False,
+            ),
+        },
+    )
+
+
+@require_POST
+def reintegrar_devolucion_temporal(request, devolucion_id):
+    devolucion = get_object_or_404(DevolucionPaciente, id=devolucion_id)
+    if not devolucion.es_temporal:
+        messages.error(request, "Solo las devoluciones temporales pueden reintegrarse.")
+        return redirect("pagos:historial")
+    if devolucion.reintegrada:
+        messages.info(request, "Esta entrega temporal ya figura como reintegrada.")
+        return redirect("pagos:historial")
+
+    afecta_caja = request.POST.get("afecta_caja") == "on"
+    caja = CashSession.obtener_caja_del_dia()
+    if afecta_caja and caja.estado == CashSession.Status.CERRADA:
+        messages.error(request, "La caja del día está cerrada. No se registró el reintegro.")
+        return redirect("pagos:historial")
+
+    with transaction.atomic():
+        devolucion.reintegrada = True
+        devolucion.fecha_reintegro = timezone.now()
+        devolucion.save(update_fields=["reintegrada", "fecha_reintegro"])
+        if afecta_caja:
+            MovimientoCaja.objects.create(
+                caja=caja,
+                tipo=MovimientoCaja.Tipo.ENTRADA,
+                categoria="Reintegro devolución temporal",
+                concepto=f"Reintegro de {devolucion.paciente}: {devolucion.concepto or 'devolución temporal'}",
+                monto=devolucion.monto,
+            )
+
+    messages.success(
+        request,
+        f"Reintegro de ${devolucion.monto:.2f} registrado para {devolucion.paciente}."
+        + (" Se agregó como entrada de caja." if afecta_caja else " No afectó la caja del día."),
+    )
+    return redirect("pagos:historial")
 
 
 def nuevo_gasto(request):
@@ -1476,6 +2092,30 @@ def facture_anular_pago_sandbox(request, pago_id):
         )
         return redirect("pagos:historial")
 
+    tiene_nc_por_devolucion = (
+        DevolucionPaciente.objects
+        .filter(pago_original=pago)
+        .filter(
+            Q(nc_numero__gt="")
+            | Q(nc_cfe_id__gt="")
+        )
+        .exists()
+    )
+
+    if tiene_nc_por_devolucion:
+        messages.warning(
+            request,
+            (
+                "Este eTicket ya tiene una o más "
+                "Notas de Crédito por devolución. "
+                "No se puede usar la anulación total "
+                "antigua porque podría acreditar "
+                "más dinero que el importe original."
+            ),
+        )
+        return redirect("pagos:historial")
+    
+
     if not pago.cfe_serie or not pago.cfe_numero:
         messages.error(
             request,
@@ -1689,3 +2329,119 @@ def facture_xml_nota_credito_pago(request, pago_id):
     )
     return response
 
+
+def facture_pdf_nota_credito_devolucion(
+    request,
+    devolucion_id,
+):
+    """
+    Muestra el PDF de la Nota de Crédito emitida
+    para una devolución a paciente.
+
+    No emite ningún comprobante nuevo.
+    """
+    devolucion = get_object_or_404(
+        DevolucionPaciente,
+        id=devolucion_id,
+    )
+
+    if (
+        not devolucion.nc_serie
+        or not devolucion.nc_numero
+    ):
+        messages.error(
+            request,
+            (
+                "Esta devolución todavía no tiene "
+                "una Nota de Crédito emitida."
+            ),
+        )
+        return redirect("pagos:historial")
+
+    try:
+        resultado = obtener_pdf_cfe_por_folio(
+            tipo_cfe=102,
+            serie=devolucion.nc_serie,
+            numero=devolucion.nc_numero,
+        )
+
+    except FactureError as exc:
+        messages.error(
+            request,
+            (
+                "No se pudo obtener el PDF de la "
+                f"Nota de Crédito: {exc}"
+            ),
+        )
+        return redirect("pagos:historial")
+
+    if not resultado.get("ok"):
+        detalle = resultado.get(
+            "error",
+            {},
+        )
+
+        messages.error(
+            request,
+            (
+                "Facture no pudo generar el PDF "
+                "de la Nota de Crédito "
+                f"(HTTP {resultado.get('status')}): "
+                f"{detalle}"
+            ),
+        )
+        return redirect("pagos:historial")
+
+    response = HttpResponse(
+        resultado["content"],
+        content_type="application/pdf",
+    )
+
+    response["Content-Disposition"] = (
+        f'inline; filename="'
+        f'NC_DEV_{devolucion.nc_serie}_'
+        f'{devolucion.nc_numero}.pdf"'
+    )
+
+    return response
+
+
+def facture_xml_nota_credito_devolucion(
+    request,
+    devolucion_id,
+):
+    """
+    Descarga el XML firmado de una Nota de Crédito
+    asociada a una devolución.
+
+    No realiza ninguna llamada de emisión.
+    """
+    devolucion = get_object_or_404(
+        DevolucionPaciente,
+        id=devolucion_id,
+    )
+
+    if not devolucion.nc_xml_firmado:
+        messages.warning(
+            request,
+            (
+                "Esta devolución todavía no tiene "
+                "XML de Nota de Crédito guardado."
+            ),
+        )
+        return redirect("pagos:historial")
+
+    response = HttpResponse(
+        devolucion.nc_xml_firmado,
+        content_type=(
+            "application/xml; charset=utf-8"
+        ),
+    )
+
+    response["Content-Disposition"] = (
+        f'attachment; filename="'
+        f'NC_DEV_{devolucion.nc_serie}_'
+        f'{devolucion.nc_numero}.xml"'
+    )
+
+    return response

@@ -453,6 +453,154 @@ def emitir_nota_credito_pago(
 
     return emitir_cfe(payload)
 
+# =========================================================
+# NOTA DE CRÉDITO POR DEVOLUCIÓN A PACIENTE - CFE 102
+# =========================================================
+
+def construir_payload_nota_credito_devolucion(
+    devolucion,
+    razon=None,
+):
+    """
+    Construye una Nota de Crédito de eTicket (CFE 102)
+    por el monto exacto de una devolución a paciente.
+
+    La Nota de Crédito referencia el eTicket del pago original.
+    Permite devoluciones parciales y múltiples devoluciones
+    sobre un mismo pago.
+    """
+    cfg = _validar_configuracion_basica()
+
+    pago = getattr(devolucion, "pago_original", None)
+
+    if not pago:
+        raise FactureError(
+            "La devolución no tiene un pago original asociado."
+        )
+
+    if not getattr(pago, "cfe_serie", ""):
+        raise FactureError(
+            "El pago original no tiene serie del eTicket."
+        )
+
+    if not getattr(pago, "cfe_numero", ""):
+        raise FactureError(
+            "El pago original no tiene número del eTicket."
+        )
+
+    try:
+        numero_original = int(pago.cfe_numero)
+    except (TypeError, ValueError) as exc:
+        raise FactureError(
+            f"Número de CFE original inválido: "
+            f"{pago.cfe_numero!r}"
+        ) from exc
+
+    if not getattr(devolucion, "monto", None):
+        raise FactureError(
+            "La devolución no tiene un monto válido."
+        )
+
+    if devolucion.monto <= 0:
+        raise FactureError(
+            "El monto de la devolución debe ser mayor a cero."
+        )
+
+    if devolucion.monto > pago.monto:
+        raise FactureError(
+            "La devolución no puede superar el monto del pago original."
+        )
+
+    monto = float(devolucion.monto)
+
+    fecha_emision_nc = timezone.localdate()
+
+    fecha_original = (
+        getattr(pago, "cfe_fecha_emision", None)
+        or pago.fecha.date()
+    )
+
+    razon_final = (
+        razon
+        or getattr(devolucion, "concepto", "")
+        or "Devolución a paciente"
+    ).strip()
+
+    identificador = (
+        f"sonrisar-cobros-"
+        f"{cfg['modo']}-"
+        f"nota-credito-devolucion-{devolucion.id}"
+    )
+
+    return {
+        "idEmpresa": cfg["empresa_id"],
+        "codComercio": cfg["cod_comercio"],
+        "codTerminal": cfg["cod_terminal"],
+        "uuid": str(
+            uuid.uuid5(
+                uuid.NAMESPACE_URL,
+                identificador,
+            )
+        ),
+        "origen": "Api",
+        "registrarComprobanteInterno": False,
+        "cfe": {
+            "idDoc": {
+                "tipoCfe": 102,
+                "fechaEmision": fecha_emision_nc.isoformat(),
+                "montoBruto": 1,
+                "formaPago": 1,
+            },
+            "detalles": [
+                {
+                    "numeroLineaDetalle": 1,
+                    "indicadorFacturacion": 2,
+                    "nombreItem": (
+                        razon_final
+                        or "Devolución de servicio odontológico"
+                    ),
+                    "cantidad": 1,
+                    "unidadMedida": "N/A",
+                    "precioUnitario": monto,
+                    "montoItem": monto,
+                }
+            ],
+            "referencias": [
+                {
+                    "numeroLineaReferencia": 1,
+                    "tipoDocumentoReferencia": 101,
+                    "serieFacturaReferencia": str(
+                        pago.cfe_serie
+                    ),
+                    "numeroFacturaReferencia": numero_original,
+                    "fechaFacturaReferencia": (
+                        fecha_original.isoformat()
+                    ),
+                    "tipoMonedaCfeReferencia": "UYU",
+                    "razonReferencia": razon_final,
+                }
+            ],
+            "complementoFiscal": {},
+        },
+    }
+
+
+def emitir_nota_credito_devolucion(
+    devolucion,
+    razon=None,
+):
+    """
+    Emite una Nota de Crédito CFE 102 por el monto
+    de una devolución a paciente.
+    """
+    payload = construir_payload_nota_credito_devolucion(
+        devolucion,
+        razon=razon,
+    )
+
+    return emitir_cfe(payload)
+
+
 
 # =========================================================
 # COMPATIBILIDAD TEMPORAL

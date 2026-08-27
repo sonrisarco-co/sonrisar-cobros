@@ -3,6 +3,7 @@ from decimal import Decimal, ROUND_HALF_UP
 from django.db import models
 from django.utils import timezone
 from caja.models import CashSession
+from django.conf import settings
 
 
 class Pago(models.Model):
@@ -442,3 +443,42 @@ class PagoCompraProveedor(models.Model):
 
     def __str__(self):
         return f"{self.compra.proveedor} - ${self.monto}"
+
+
+class SesionAcceso(models.Model):
+    MOTIVO_SALIDA = [
+        ("manual", "Salida registrada"),
+        ("nueva_sesion", "Cierre al iniciar una nueva sesión"),
+        ("expirada", "Sesión expirada"),
+    ]
+
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="sesiones_sonrisar_cobros",
+    )
+    ingreso = models.DateTimeField(default=timezone.now, db_index=True)
+    ultima_actividad = models.DateTimeField(default=timezone.now)
+    salida = models.DateTimeField(null=True, blank=True, db_index=True)
+    motivo_salida = models.CharField(
+        max_length=20,
+        choices=MOTIVO_SALIDA,
+        blank=True,
+    )
+    direccion_ip = models.GenericIPAddressField(null=True, blank=True)
+    navegador = models.CharField(max_length=255, blank=True)
+    clave_sesion = models.CharField(max_length=40, blank=True, db_index=True)
+
+    class Meta:
+        ordering = ["-ingreso", "-id"]
+        verbose_name = "sesión de acceso"
+        verbose_name_plural = "sesiones de acceso"
+
+    @property
+    def abierta(self):
+        return self.salida is None
+
+    def __str__(self):
+        nombre = self.usuario.get_username() if self.usuario else "Usuario eliminado"
+        return f"{nombre} - {self.ingreso:%d/%m/%Y %H:%M}"

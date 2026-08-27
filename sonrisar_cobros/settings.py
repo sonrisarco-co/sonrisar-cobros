@@ -118,6 +118,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'sonrisar_cobros.middleware.AccessControlMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -205,6 +206,13 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Acceso a Sonrisar Cobros
+LOGIN_URL = "acceso_login"
+LOGIN_REDIRECT_URL = "caja:tablero"
+LOGOUT_REDIRECT_URL = "acceso_login"
+SESSION_COOKIE_AGE = 8 * 60 * 60
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 ADMIN_PIN = os.getenv("ADMIN_PIN", "").strip()
 if not ADMIN_PIN:

@@ -11,6 +11,22 @@
 </head>
 <body>
 
+    {% if request.user.is_authenticated %}
+        <div class="access-bar">
+            <span>Sesión: <strong>{{ request.user.get_full_name|default:request.user.username }}</strong></span>
+            {% if request.user.is_staff %}<a href="{% url 'acceso_historial' %}">Ingresos y salidas</a>{% endif %}
+            <form method="post" action="{% url 'acceso_logout' %}">
+                {% csrf_token %}
+                <button type="submit">Cerrar sesión</button>
+            </form>
+        </div>
+        <style>
+            .access-bar{display:flex;justify-content:flex-end;align-items:center;gap:12px;padding:8px 18px;background:#eef9f8;color:#155e59;font:14px Arial,sans-serif;border-bottom:1px solid #cce9e6}
+            .access-bar a{color:#0f766e;font-weight:700;text-decoration:none}
+            .access-bar form{margin:0}.access-bar button{border:0;border-radius:8px;padding:7px 11px;background:#0f9f98;color:#fff;font-weight:700;cursor:pointer}
+        </style>
+    {% endif %}
+
     <main class="app-container">
         {% block content %}{% endblock %}
     </main>

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Ingresos y salidas | Sonrisar{% endblock %}
+{% block content %}
+<style>
+    .turnos{max-width:1100px;margin:28px auto;padding:0 15px;font-family:Arial,sans-serif}.turnos h1{color:#08766c}.turnos a{color:#08766c}.tabla{width:100%;border-collapse:collapse;background:#fff;box-shadow:0 6px 20px rgba(0,0,0,.06)}.tabla th,.tabla td{padding:11px;border-bottom:1px solid #e8eeee;text-align:left}.tabla th{background:#e8f6f4;color:#086b63}.abierta{color:#087443;font-weight:700}.cerrada{color:#64748b}
+</style>
+<div class="turnos">
+    <a href="{% url 'caja:tablero' %}">← Volver a Caja</a>
+    <h1>Ingresos y salidas</h1>
+    <table class="tabla">
+        <thead><tr><th>Usuario</th><th>Ingreso</th><th>Salida</th><th>Última actividad</th><th>Estado</th><th>Dirección IP</th></tr></thead>
+        <tbody>
+        {% for sesion in sesiones %}
+            <tr>
+                <td>{% if sesion.usuario %}{{ sesion.usuario.get_full_name|default:sesion.usuario.username }}{% else %}Usuario eliminado{% endif %}</td>
+                <td>{{ sesion.ingreso|date:"d/m/Y H:i" }}</td>
+                <td>{% if sesion.salida %}{{ sesion.salida|date:"d/m/Y H:i" }}{% else %}—{% endif %}</td>
+                <td>{{ sesion.ultima_actividad|date:"d/m/Y H:i" }}</td>
+                <td>{% if sesion.abierta %}<span class="abierta">Dentro del sistema</span>{% else %}<span class="cerrada">{{ sesion.get_motivo_salida_display }}</span>{% endif %}</td>
+                <td>{{ sesion.direccion_ip|default:"—" }}</td>
+            </tr>
+        {% empty %}<tr><td colspan="6">Todavía no hay accesos registrados.</td></tr>{% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

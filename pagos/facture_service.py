@@ -264,7 +264,7 @@ def construir_payload_eticket(pago):
         f"eticket-pago-{pago.id}"
     )
 
-    return {
+    payload = {
         "idEmpresa": cfg["empresa_id"],
         "codComercio": cfg["cod_comercio"],
         "codTerminal": cfg["cod_terminal"],
@@ -315,6 +315,17 @@ def construir_payload_eticket(pago):
             "complementoFiscal": {},
         },
     }
+
+    # El nombre del paciente se imprime como nombre del receptor.
+    # No inventar documentos ni usar patient_id como idCliente de Facture.
+    nombre_paciente = (pago.paciente or "").strip()
+    if nombre_paciente:
+        payload["cfe"]["receptor"] = {
+            "razonSocial": nombre_paciente,
+        }
+
+    return payload
+
 
 
 def emitir_pago(pago):

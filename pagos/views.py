@@ -1,3 +1,5 @@
+from datetime import datetime, time
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from .models import Pago
@@ -1512,9 +1514,37 @@ def nuevo_gasto(request):
 
     if request.method == "POST":
 
+        fecha_texto = request.POST.get("fecha", "").strip()
+        try:
+            fecha_gasto = datetime.strptime(fecha_texto, "%Y-%m-%d").date()
+        except ValueError:
+            messages.error(request, "Ingresa una fecha de gasto válida.")
+            return render(request, "pagos/nuevo_gasto.html", {
+                "metodos": Gasto.METODOS,
+                "categorias": Gasto.CATEGORIAS,
+                "fecha_hoy": timezone.localdate(),
+            })
+
+        if fecha_gasto > timezone.localdate():
+            messages.error(request, "La fecha del gasto no puede ser futura.")
+            return render(request, "pagos/nuevo_gasto.html", {
+                "metodos": Gasto.METODOS,
+                "categorias": Gasto.CATEGORIAS,
+                "fecha_hoy": timezone.localdate(),
+            })
+
         afecta_caja = (
             request.POST.get("afecta_caja") == "on"
         )
+
+        # Un gasto histórico se informa en su fecha real, pero jamás cambia
+        # una caja anterior. Esto protege cierres ya realizados.
+        if fecha_gasto != timezone.localdate() and afecta_caja:
+            afecta_caja = False
+            messages.info(
+                request,
+                "El gasto se registró con su fecha histórica y no modificó ninguna caja cerrada."
+            )
 
         # ==========================================
         # SI AFECTA CAJA Y ESTÁ CERRADA → BLOQUEAR
@@ -1542,6 +1572,10 @@ def nuevo_gasto(request):
             metodo=request.POST.get("metodo"),
             afecta_caja=afecta_caja,
             caja=caja_asignada,
+            fecha=timezone.make_aware(
+                datetime.combine(fecha_gasto, time.min),
+                timezone.get_current_timezone(),
+            ),
         )
 
         return redirect("caja:tablero")
@@ -1549,6 +1583,7 @@ def nuevo_gasto(request):
     return render(request, "pagos/nuevo_gasto.html", {
         "metodos": Gasto.METODOS,
         "categorias": Gasto.CATEGORIAS,
+        "fecha_hoy": timezone.localdate(),
     })
 
 

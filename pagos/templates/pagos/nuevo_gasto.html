@@ -585,6 +585,26 @@
 
                 <div class="group">
 
+                    <label>
+                        Fecha del gasto
+                    </label>
+
+                    <input
+                        type="date"
+                        name="fecha"
+                        value="{{ fecha_hoy|date:'Y-m-d' }}"
+                        class="control"
+                        required
+                    >
+
+                    <small>
+                        Puedes registrar gastos de meses anteriores. Los gastos históricos no modificarán cajas ya cerradas.
+                    </small>
+
+                </div>
+
+                <div class="group">
+
                     <label
                         style="
                             display:flex;
@@ -612,7 +632,7 @@
 
                     </label>
 
-                    <small>
+                    <small id="ayuda-afecta-caja">
                         Si lo desmarcas, el gasto quedará registrado pero no modificará la caja ni cierres anteriores.
                     </small>
 
@@ -657,6 +677,36 @@
     </main>
 
 </div>
+
+<script>
+    (function () {
+        const fecha = document.querySelector('input[name="fecha"]');
+        const afectaCaja = document.querySelector('input[name="afecta_caja"]');
+        const ayuda = document.getElementById('ayuda-afecta-caja');
+
+        function hoyLocal() {
+            const ahora = new Date();
+            const mes = String(ahora.getMonth() + 1).padStart(2, '0');
+            const dia = String(ahora.getDate()).padStart(2, '0');
+            return `${ahora.getFullYear()}-${mes}-${dia}`;
+        }
+
+        function actualizarCaja() {
+            const esHistorico = fecha.value && fecha.value < hoyLocal();
+            afectaCaja.disabled = esHistorico;
+
+            if (esHistorico) {
+                afectaCaja.checked = false;
+                ayuda.textContent = 'Los gastos de fechas anteriores se registran en su mes, pero no modifican cajas ya cerradas.';
+            } else {
+                ayuda.textContent = 'Si lo desmarcas, el gasto quedará registrado pero no modificará la caja ni cierres anteriores.';
+            }
+        }
+
+        fecha.addEventListener('change', actualizarCaja);
+        actualizarCaja();
+    })();
+</script>
 
 </body>
 </html>

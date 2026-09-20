@@ -195,8 +195,12 @@ class Gasto(models.Model):
         verbose_name="Afecta caja del día"
     )
 
+    # Fecha contable del gasto. Se conserva la hora para compatibilidad con
+    # reportes y cierres ya existentes, pero puede elegirse al registrarlo.
     fecha = models.DateTimeField(
-        auto_now_add=True
+        default=timezone.now,
+        db_index=True,
+        verbose_name="Fecha del gasto",
     )
 
     caja = models.ForeignKey(

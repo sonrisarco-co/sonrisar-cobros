@@ -29,7 +29,7 @@ def _validar_pin_reportes(request):
     Reutiliza el mismo PIN que ya usa caja/validar-pin/.
     Una vez validado, deja Reportes habilitado durante la sesión actual.
     """
-    if request.session.get("reportes_pin_ok"):
+    if request.session.get("finanzas_pin_ok"):
         return None
 
     full_path = request.get_full_path()
@@ -37,7 +37,7 @@ def _validar_pin_reportes(request):
 
     if permitido == full_path:
         request.session.pop("pin_ok", None)
-        request.session["reportes_pin_ok"] = True
+        request.session["finanzas_pin_ok"] = True
         return None
 
     return redirect(

@@ -96,10 +96,22 @@ def obtener_contexto_reporte(year, month):
 
     retiros_personales = movs_mes.filter(
         tipo="salida",
+        categoria="Retiro personal",
         afecta_resultado=False,
     ).aggregate(Sum("monto"))["monto__sum"] or 0
 
-    salidas_operativas = salidas - retiros_personales
+    retiros_resguardo = movs_mes.filter(
+        tipo="salida",
+        categoria="Retiro de resguardo",
+        afecta_resultado=False,
+    ).aggregate(Sum("monto"))["monto__sum"] or 0
+
+    retiros_no_operativos = movs_mes.filter(
+        tipo="salida",
+        afecta_resultado=False,
+    ).aggregate(Sum("monto"))["monto__sum"] or 0
+
+    salidas_operativas = salidas - retiros_no_operativos
     balance_mov = entradas - salidas
 
     resultado_real = (
@@ -123,6 +135,7 @@ def obtener_contexto_reporte(year, month):
         "salidas": salidas,
         "salidas_operativas": salidas_operativas,
         "retiros_personales": retiros_personales,
+        "retiros_resguardo": retiros_resguardo,
         "balance_mov": balance_mov,
         "total_gastos": total_gastos,
         "resultado_real": resultado_real,

@@ -94,7 +94,20 @@ def obtener_contexto_reporte(year, month):
         Sum("monto")
     )["monto__sum"] or 0
 
+    retiros_personales = movs_mes.filter(
+        tipo="salida",
+        afecta_resultado=False,
+    ).aggregate(Sum("monto"))["monto__sum"] or 0
+
+    salidas_operativas = salidas - retiros_personales
     balance_mov = entradas - salidas
+
+    resultado_real = (
+        total_pagado
+        + entradas
+        - total_gastos
+        - salidas_operativas
+    )
 
     contexto = {
         "mes_nombre": MESES_ES[month],
@@ -108,6 +121,8 @@ def obtener_contexto_reporte(year, month):
 
         "entradas": entradas,
         "salidas": salidas,
+        "salidas_operativas": salidas_operativas,
+        "retiros_personales": retiros_personales,
         "balance_mov": balance_mov,
         "total_gastos": total_gastos,
         "resultado_real": resultado_real,

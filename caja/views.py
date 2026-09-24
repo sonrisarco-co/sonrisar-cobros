@@ -282,7 +282,7 @@ def movimiento_nuevo(request):
                 categoria=categoria,
                 concepto=concepto,
                 monto=Decimal(monto),
-                afecta_resultado=(categoria != "Retiro personal"),
+                afecta_resultado=(categoria not in {"Retiro personal", "Retiro de resguardo"}),
             )
 
     return redirect("caja:tablero")

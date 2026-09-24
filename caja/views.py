@@ -98,6 +98,9 @@ def tablero(request):
 
     total_entradas = _sum_montos(entradas)
     total_salidas = _sum_montos(salidas)
+    retiros_personales = salidas.filter(afecta_resultado=False)
+    total_retiros_personales = _sum_montos(retiros_personales)
+    total_salidas_operativas = total_salidas - total_retiros_personales
 
     egresos_totales = total_gastos_efectivo + total_salidas
 
@@ -146,8 +149,10 @@ def tablero(request):
             total_pagos
             + total_entradas
             - total_gastos
-            - total_salidas
+            - total_salidas_operativas
         ),
+
+        "total_retiros_personales": total_retiros_personales,
 
         "total_calculado": saldo_esperado,
 
@@ -276,7 +281,8 @@ def movimiento_nuevo(request):
                 tipo=tipo,
                 categoria=categoria,
                 concepto=concepto,
-                monto=Decimal(monto)
+                monto=Decimal(monto),
+                afecta_resultado=(categoria != "Retiro personal"),
             )
 
     return redirect("caja:tablero")
@@ -568,6 +574,17 @@ def cerrar_caja(request):
         movimientos.filter(tipo="salida")
     )
 
+    total_retiros_personales = _sum_montos(
+        movimientos.filter(
+            tipo="salida",
+            afecta_resultado=False,
+        )
+    )
+
+    total_salidas_operativas = (
+        total_salidas - total_retiros_personales
+    )
+
     balance_movimientos = total_entradas - total_salidas
 
     efectivo = _sum_montos(
@@ -604,7 +621,7 @@ def cerrar_caja(request):
         total_pagos
         + total_entradas
         - total_gastos
-        - total_salidas
+        - total_salidas_operativas
     )
 
     if request.method == "POST":

@@ -121,6 +121,11 @@ class MovimientoCaja(models.Model):
         default="",
     )
 
+    afecta_resultado = models.BooleanField(
+        default=True,
+        help_text="Indica si el movimiento afecta el resultado mensual.",
+    )
+
     concepto = models.CharField(
         max_length=255,
     )

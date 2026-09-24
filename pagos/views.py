@@ -295,15 +295,17 @@ def recibo_pago(request, pago_id):
 
 def historial(request):
 
-    permitido = request.session.get("pin_ok")
-    full_path = request.get_full_path()
+    if not request.session.get("historial_pin_ok"):
+        permitido = request.session.get("pin_ok")
+        full_path = request.get_full_path()
 
-    if permitido != full_path:
-        return redirect(
-            f"/caja/validar-pin/?next={quote(full_path)}"
-        )
+        if permitido != full_path:
+            return redirect(
+                f"/caja/validar-pin/?next={quote(full_path)}"
+            )
 
-    request.session.pop("pin_ok", None)
+        request.session.pop("pin_ok", None)
+        request.session["historial_pin_ok"] = True
 
     devoluciones_historial_qs = (
         DevolucionPaciente.objects
@@ -1508,7 +1510,29 @@ def reintegrar_devolucion_temporal(request, devolucion_id):
     return redirect("pagos:historial")
 
 
+
+def _validar_pin_finanzas(request):
+    """Protege reportes y gastos con el PIN de caja por sesión."""
+    if request.session.get("finanzas_pin_ok"):
+        return None
+
+    full_path = request.get_full_path()
+    permitido = request.session.get("pin_ok")
+
+    if permitido == full_path:
+        request.session.pop("pin_ok", None)
+        request.session["finanzas_pin_ok"] = True
+        return None
+
+    return redirect(
+        f"/caja/validar-pin/?next={quote(full_path)}"
+    )
+
+
 def nuevo_gasto(request):
+    bloqueo = _validar_pin_finanzas(request)
+    if bloqueo:
+        return bloqueo
 
     caja = CashSession.obtener_caja_del_dia()
 
@@ -1588,6 +1612,10 @@ def nuevo_gasto(request):
 
 
 def lista_gastos(request):
+    bloqueo = _validar_pin_finanzas(request)
+    if bloqueo:
+        return bloqueo
+
     gastos = Gasto.objects.order_by("-fecha")
 
     total = sum(g.monto for g in gastos)

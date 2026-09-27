@@ -1084,6 +1084,25 @@ def movimientos_financieros(request):
         - total_egresos
     )
 
+    # Desglose de los mismos movimientos incluidos en los totales anteriores.
+    total_pagos = sum((pago.monto for pago in pagos), Decimal("0.00"))
+    entradas_manuales = total_ingresos - total_pagos
+    gastos_registrados = sum((gasto.monto for gasto in gastos), Decimal("0.00"))
+    retiros_personales = sum(
+        (mov.monto for mov in movs if mov.tipo == "salida" and mov.categoria == "Retiro personal"),
+        Decimal("0.00"),
+    )
+    retiros_resguardo = sum(
+        (mov.monto for mov in movs if mov.tipo == "salida" and mov.categoria == "Retiro de resguardo"),
+        Decimal("0.00"),
+    )
+    salidas_operativas = sum(
+        (mov.monto for mov in movs if mov.tipo == "salida" and mov.afecta_resultado
+         and mov.categoria not in ("Retiro personal", "Retiro de resguardo")),
+        Decimal("0.00"),
+    )
+    otras_salidas = total_egresos - gastos_registrados - retiros_personales - retiros_resguardo - salidas_operativas
+
     # ==========================================
     # NOMBRES MESES
     # ==========================================
@@ -1130,6 +1149,14 @@ def movimientos_financieros(request):
             "total_egresos": total_egresos,
 
             "balance": balance,
+
+            "total_pagos": total_pagos,
+            "entradas_manuales": entradas_manuales,
+            "gastos_registrados": gastos_registrados,
+            "salidas_operativas": salidas_operativas,
+            "retiros_personales": retiros_personales,
+            "retiros_resguardo": retiros_resguardo,
+            "otras_salidas": otras_salidas,
 
             "mes_actual": mes_nombre,
 

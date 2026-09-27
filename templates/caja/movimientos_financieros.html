@@ -329,6 +329,34 @@
                 0 4px 18px rgba(15,23,42,.04);
         }
 
+        .breakdown{
+            display:grid;
+            grid-template-columns:repeat(2,minmax(0,1fr));
+            gap:28px;
+            margin-bottom:22px;
+        }
+
+        .breakdown h2{
+            margin:0 0 12px;
+            color:#26ABA5;
+            font-size:18px;
+        }
+
+        .breakdown-row{
+            display:flex;
+            justify-content:space-between;
+            gap:16px;
+            padding:9px 0;
+            border-bottom:1px solid #eef2f6;
+        }
+
+        .breakdown-note{
+            color:#64748b;
+            font-size:13px;
+            line-height:1.5;
+            margin:16px 0 0;
+        }
+
         /* =========================
            WATERMARK
         ========================== */
@@ -489,6 +517,8 @@
         ========================== */
 
         @media(max-width:1100px){
+
+            .breakdown{grid-template-columns:1fr;}
 
             .layout{
 
@@ -781,7 +811,7 @@
             <div class="kpi">
 
                 <span>
-                    Total ingresos
+                    Entradas de dinero
                 </span>
 
                 <strong class="verde">
@@ -793,7 +823,7 @@
             <div class="kpi">
 
                 <span>
-                    Total egresos
+                    Salidas de dinero
                 </span>
 
                 <strong class="rojo">
@@ -805,7 +835,7 @@
             <div class="kpi">
 
                 <span>
-                    Balance general
+                    Balance neto de movimientos
                 </span>
 
                 <strong class="azul">
@@ -815,6 +845,25 @@
             </div>
 
         </div>
+
+        <section class="card" style="margin-bottom:22px;">
+            <div class="breakdown">
+                <div>
+                    <h2>Entradas</h2>
+                    <div class="breakdown-row"><span>Pagos de pacientes</span><strong>${{ total_pagos|floatformat:2 }}</strong></div>
+                    <div class="breakdown-row"><span>Entradas manuales</span><strong>${{ entradas_manuales|floatformat:2 }}</strong></div>
+                </div>
+                <div>
+                    <h2>Salidas</h2>
+                    <div class="breakdown-row"><span>Gastos registrados</span><strong>${{ gastos_registrados|floatformat:2 }}</strong></div>
+                    <div class="breakdown-row"><span>Salidas operativas de caja</span><strong>${{ salidas_operativas|floatformat:2 }}</strong></div>
+                    <div class="breakdown-row"><span>Retiros personales</span><strong>${{ retiros_personales|floatformat:2 }}</strong></div>
+                    <div class="breakdown-row"><span>Retiros de resguardo</span><strong>${{ retiros_resguardo|floatformat:2 }}</strong></div>
+                    {% if otras_salidas %}<div class="breakdown-row"><span>Otras salidas de caja</span><strong>${{ otras_salidas|floatformat:2 }}</strong></div>{% endif %}
+                </div>
+            </div>
+            <p class="breakdown-note">El balance neto suma todas las entradas y salidas del período. Incluye el dinero apartado como resguardo; no representa la ganancia del consultorio ni el saldo inicial de caja.</p>
+        </section>
 
         <!-- CARD -->
 

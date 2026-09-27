@@ -658,9 +658,16 @@
             </div>
 
             <div class="info-row">
-                <span>Entradas manuales</span>
-                <strong>${{ entradas|floatformat:2 }}</strong>
+                <span>Otras entradas manuales</span>
+                <strong>${{ entradas_resultado|floatformat:2 }}</strong>
             </div>
+
+            {% if entradas_desde_resguardo %}
+            <div class="info-row">
+                <span>Ingresos desde resguardo (traslado interno)</span>
+                <strong>${{ entradas_desde_resguardo|floatformat:2 }}</strong>
+            </div>
+            {% endif %}
 
             <div class="info-row">
                 <span>Salidas operativas</span>
@@ -701,7 +708,7 @@
                 <strong>${{ balance_mov|floatformat:2 }}</strong>
             </div>
 
-            <p class="muted">El resultado del consultorio incluye pagos y entradas manuales, y descuenta gastos operativos. Las entregas temporales y sus reintegros afectan el dinero disponible, pero no el resultado operativo. El resguardo solo cambia dónde se guarda el dinero.</p>
+            <p class="muted">El resultado del consultorio incluye pagos y otras entradas manuales, y descuenta gastos operativos. Los traslados desde resguardo no generan ingresos nuevos. Las entregas temporales y sus reintegros afectan el dinero disponible, pero no el resultado operativo. El resguardo solo cambia dónde se guarda el dinero.</p>
 
         </section>
 

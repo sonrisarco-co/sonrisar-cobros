@@ -8,6 +8,7 @@ import datetime as datetime_module
 
 from pagos.models import Pago, Gasto, DevolucionPaciente
 from caja.models import MovimientoCaja
+from caja.clasificacion import ingresos_desde_resguardo
 
 from .utils_pdf import generar_pdf_reporte
 
@@ -106,10 +107,15 @@ def obtener_contexto_reporte(year, month):
         Sum("monto")
     )["monto__sum"] or 0
 
+    entradas_desde_resguardo = ingresos_desde_resguardo(movs_mes).aggregate(
+        Sum("monto")
+    )["monto__sum"] or 0
+
     reintegros_temporales = movs_mes.filter(
         tipo="entrada",
         categoria="Reintegro devolución temporal",
     ).aggregate(Sum("monto"))["monto__sum"] or 0
+    entradas_resultado = entradas - reintegros_temporales - entradas_desde_resguardo
 
     salidas = movs_mes.filter(tipo="salida").aggregate(
         Sum("monto")
@@ -136,7 +142,7 @@ def obtener_contexto_reporte(year, month):
 
     resultado_consultorio = (
         total_pagado
-        + entradas - reintegros_temporales
+        + entradas_resultado
         - total_gastos
         - salidas_operativas
     )
@@ -156,6 +162,8 @@ def obtener_contexto_reporte(year, month):
         "ranking_pacientes": ranking_pacientes,
 
         "entradas": entradas,
+        "entradas_resultado": entradas_resultado,
+        "entradas_desde_resguardo": entradas_desde_resguardo,
         "reintegros_temporales": reintegros_temporales,
         "entregas_temporales": entregas_temporales,
         "pendientes_reintegro": pendientes_reintegro,

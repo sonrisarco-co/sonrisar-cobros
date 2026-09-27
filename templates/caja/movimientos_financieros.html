@@ -852,6 +852,7 @@
                     <h2>Entradas</h2>
                     <div class="breakdown-row"><span>Pagos de pacientes</span><strong>${{ total_pagos|floatformat:2 }}</strong></div>
                     <div class="breakdown-row"><span>Entradas manuales</span><strong>${{ entradas_manuales|floatformat:2 }}</strong></div>
+                    {% if entradas_desde_resguardo %}<div class="breakdown-row"><span>Ingresos desde resguardo</span><strong>${{ entradas_desde_resguardo|floatformat:2 }}</strong></div>{% endif %}
                 </div>
                 <div>
                     <h2>Salidas</h2>

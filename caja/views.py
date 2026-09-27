@@ -8,6 +8,7 @@ from django.db.models import Sum, Q
 from django.db.models.functions import TruncDate
 
 from .models import CashSession, MovimientoCaja, ArqueoCaja
+from .clasificacion import CATEGORIA_INGRESO_RESGUARDO, ingresos_desde_resguardo
 from pagos.models import Pago, Gasto, DevolucionPaciente
 
 from django.http import HttpResponse
@@ -262,7 +263,7 @@ def movimiento_nuevo(request):
         # DEFINIR TIPO AUTOMÁTICAMENTE
         # =====================================
 
-        if categoria == "Ingreso manual":
+        if categoria in {"Ingreso manual", CATEGORIA_INGRESO_RESGUARDO}:
 
             tipo = "entrada"
 
@@ -282,7 +283,7 @@ def movimiento_nuevo(request):
                 categoria=categoria,
                 concepto=concepto,
                 monto=Decimal(monto),
-                afecta_resultado=(categoria not in {"Retiro personal", "Retiro de resguardo"}),
+                afecta_resultado=(categoria not in {"Retiro personal", "Retiro de resguardo", CATEGORIA_INGRESO_RESGUARDO}),
             )
 
     return redirect("caja:tablero")
@@ -1019,6 +1020,9 @@ def movimientos_financieros(request):
         fecha__month=mes_actual,
         fecha__year=anio_actual
     )
+    ids_ingresos_resguardo = set(
+        ingresos_desde_resguardo(movs).values_list("id", flat=True)
+    )
 
     for mov in movs:
 
@@ -1033,7 +1037,7 @@ def movimientos_financieros(request):
             ),
 
             "categoria": (
-                mov.categoria
+                (CATEGORIA_INGRESO_RESGUARDO if mov.id in ids_ingresos_resguardo else mov.categoria)
                 or "Movimiento"
             ),
 
@@ -1095,6 +1099,11 @@ def movimientos_financieros(request):
     # Desglose de los mismos movimientos incluidos en los totales anteriores.
     total_pagos = sum((pago.monto for pago in pagos), Decimal("0.00"))
     entradas_manuales = total_ingresos - total_pagos
+    entradas_desde_resguardo = sum(
+        (mov.monto for mov in movs if mov.id in ids_ingresos_resguardo),
+        Decimal("0.00"),
+    )
+    entradas_manuales -= entradas_desde_resguardo
     entregas_temporales = sum(
         (gasto.monto for gasto in gastos if gasto.id in gastos_temporales_ids),
         Decimal("0.00"),
@@ -1167,6 +1176,7 @@ def movimientos_financieros(request):
 
             "total_pagos": total_pagos,
             "entradas_manuales": entradas_manuales,
+            "entradas_desde_resguardo": entradas_desde_resguardo,
             "gastos_registrados": gastos_registrados,
             "entregas_temporales": entregas_temporales,
             "salidas_operativas": salidas_operativas,

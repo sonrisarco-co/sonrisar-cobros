@@ -143,7 +143,9 @@ def generar_pdf_reporte(mes_nombre, year, datos):
 
     # MOVIMIENTOS
     y = titulo_seccion(c, y, "Movimientos de caja")
-    y = fila_tabla(c, y, "Entradas manuales", money(datos.get("entradas", 0)))
+    y = fila_tabla(c, y, "Otras entradas manuales", money(datos.get("entradas_resultado", 0)))
+    if datos.get("entradas_desde_resguardo", 0):
+        y = fila_tabla(c, y, "Ingresos desde resguardo", money(datos["entradas_desde_resguardo"]))
     y = fila_tabla(c, y, "Salidas operativas", money(datos.get("salidas_operativas", 0)), COLOR_ROJO)
     y = fila_tabla(c, y, "Retiros personales", money(datos.get("retiros_personales", 0)), COLOR_NARANJA)
     y = fila_tabla(c, y, "Retiros de resguardo", money(datos.get("retiros_resguardo", 0)), COLOR_NARANJA)

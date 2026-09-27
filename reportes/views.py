@@ -112,13 +112,13 @@ def obtener_contexto_reporte(year, month):
 
     balance_mov = entradas - salidas
 
-    resultado_real = (
+    resultado_consultorio = (
         total_pagado
         + entradas
         - total_gastos
         - salidas_operativas
-        - retiros_personales
     )
+    resultado_real = resultado_consultorio - retiros_personales
 
     contexto = {
         "mes_nombre": MESES_ES[month],
@@ -137,6 +137,7 @@ def obtener_contexto_reporte(year, month):
         "retiros_resguardo": retiros_resguardo,
         "balance_mov": balance_mov,
         "total_gastos": total_gastos,
+        "resultado_consultorio": resultado_consultorio,
         "resultado_real": resultado_real,
         "gastos_por_categoria": gastos_por_categoria,
     }

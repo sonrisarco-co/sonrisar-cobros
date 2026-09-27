@@ -15,7 +15,9 @@ COLOR_GRIS = colors.HexColor("#F4F8F8")
 
 def money(valor):
     try:
-        return f"${valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        signo = "-" if valor < 0 else ""
+        importe = f"{abs(valor):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        return f"{signo}${importe}"
     except:
         return f"${valor}"
 
@@ -101,7 +103,8 @@ def generar_pdf_reporte(mes_nombre, year, datos):
 
     total_pagado = datos.get("total_pagado", 0)
     total_gastos = datos.get("total_gastos", 0)
-    resultado_real = datos.get("resultado_real", total_pagado - total_gastos)
+    resultado_consultorio = datos.get("resultado_consultorio", 0)
+    resultado_real = datos.get("resultado_real", 0)
 
     # KPIS
     card_w = 165
@@ -110,8 +113,8 @@ def generar_pdf_reporte(mes_nombre, year, datos):
 
     kpis = [
         ("Ingresos por pagos", money(total_pagado), COLOR_TEXTO),
-        ("Gastos del mes", "-" + money(total_gastos), COLOR_ROJO),
-        ("Resultado real", money(resultado_real), COLOR_VERDE if resultado_real >= 0 else COLOR_ROJO),
+        ("Gastos registrados", "-" + money(total_gastos), COLOR_ROJO),
+        ("Resultado del consultorio", money(resultado_consultorio), COLOR_VERDE if resultado_consultorio >= 0 else COLOR_ROJO),
     ]
 
     for i, (label, valor, color_valor) in enumerate(kpis):
@@ -129,6 +132,11 @@ def generar_pdf_reporte(mes_nombre, year, datos):
         c.drawString(x + 12, y - 45, valor)
 
     y -= 95
+
+    y = fila_tabla(c, y, "Resultado del consultorio", money(resultado_consultorio), COLOR_VERDE if resultado_consultorio >= 0 else COLOR_ROJO)
+    y = fila_tabla(c, y, "Retiros personales", "-" + money(datos.get("retiros_personales", 0)), COLOR_NARANJA)
+    y = fila_tabla(c, y, "Disponible después de retiros personales", money(resultado_real), COLOR_VERDE if resultado_real >= 0 else COLOR_ROJO)
+    y -= 18
 
     # MOVIMIENTOS
     y = titulo_seccion(c, y, "Movimientos de caja")

@@ -614,7 +614,7 @@
             <div class="kpi">
 
                 <span>
-                    Gastos registrados
+                    Gastos del consultorio
                 </span>
 
                 <strong class="negative">
@@ -638,7 +638,7 @@
             <div class="kpi">
 
                 <span>
-                    Después de retiros personales
+                    Después de retiros y entregas
                 </span>
 
                 <strong class="{% if resultado_real < 0 %}negative{% else %}positive{% endif %}">
@@ -673,6 +673,25 @@
             </div>
 
             <div class="info-row">
+                <span>Entregas temporales a pacientes</span>
+                <strong>${{ entregas_temporales|floatformat:2 }}</strong>
+            </div>
+
+            {% if reintegros_temporales %}
+            <div class="info-row">
+                <span>Reintegros de entregas temporales</span>
+                <strong>${{ reintegros_temporales|floatformat:2 }}</strong>
+            </div>
+            {% endif %}
+
+            {% if pendientes_reintegro %}
+            <div class="info-row">
+                <span>Pendiente de reintegro de entregas de este mes</span>
+                <strong>${{ pendientes_reintegro|floatformat:2 }}</strong>
+            </div>
+            {% endif %}
+
+            <div class="info-row">
                 <span>Retiros de resguardo</span>
                 <strong>${{ retiros_resguardo|floatformat:2 }}</strong>
             </div>
@@ -682,7 +701,7 @@
                 <strong>${{ balance_mov|floatformat:2 }}</strong>
             </div>
 
-            <p class="muted">El resultado del consultorio incluye las entradas manuales y descuenta los gastos registrados y las salidas operativas. Los retiros personales reducen el disponible; el resguardo solo cambia dónde se guarda el dinero.</p>
+            <p class="muted">El resultado del consultorio incluye pagos y entradas manuales, y descuenta gastos operativos. Las entregas temporales y sus reintegros afectan el dinero disponible, pero no el resultado operativo. El resguardo solo cambia dónde se guarda el dinero.</p>
 
         </section>
 

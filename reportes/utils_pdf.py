@@ -113,7 +113,7 @@ def generar_pdf_reporte(mes_nombre, year, datos):
 
     kpis = [
         ("Ingresos por pagos", money(total_pagado), COLOR_TEXTO),
-        ("Gastos registrados", "-" + money(total_gastos), COLOR_ROJO),
+        ("Gastos del consultorio", "-" + money(total_gastos), COLOR_ROJO),
         ("Resultado del consultorio", money(resultado_consultorio), COLOR_VERDE if resultado_consultorio >= 0 else COLOR_ROJO),
     ]
 
@@ -135,7 +135,10 @@ def generar_pdf_reporte(mes_nombre, year, datos):
 
     y = fila_tabla(c, y, "Resultado del consultorio", money(resultado_consultorio), COLOR_VERDE if resultado_consultorio >= 0 else COLOR_ROJO)
     y = fila_tabla(c, y, "Retiros personales", "-" + money(datos.get("retiros_personales", 0)), COLOR_NARANJA)
-    y = fila_tabla(c, y, "Disponible después de retiros personales", money(resultado_real), COLOR_VERDE if resultado_real >= 0 else COLOR_ROJO)
+    y = fila_tabla(c, y, "Entregas temporales", "-" + money(datos.get("entregas_temporales", 0)), COLOR_NARANJA)
+    if datos.get("reintegros_temporales", 0):
+        y = fila_tabla(c, y, "Reintegros temporales", money(datos["reintegros_temporales"]), COLOR_VERDE)
+    y = fila_tabla(c, y, "Después de retiros y entregas", money(resultado_real), COLOR_VERDE if resultado_real >= 0 else COLOR_ROJO)
     y -= 18
 
     # MOVIMIENTOS
@@ -144,6 +147,8 @@ def generar_pdf_reporte(mes_nombre, year, datos):
     y = fila_tabla(c, y, "Salidas operativas", money(datos.get("salidas_operativas", 0)), COLOR_ROJO)
     y = fila_tabla(c, y, "Retiros personales", money(datos.get("retiros_personales", 0)), COLOR_NARANJA)
     y = fila_tabla(c, y, "Retiros de resguardo", money(datos.get("retiros_resguardo", 0)), COLOR_NARANJA)
+    if datos.get("pendientes_reintegro", 0):
+        y = fila_tabla(c, y, "Entregas del mes pendientes de reintegro", money(datos["pendientes_reintegro"]), COLOR_NARANJA)
     y = fila_tabla(c, y, "Balance de movimientos", money(datos.get("balance_mov", 0)))
     y -= 18
 

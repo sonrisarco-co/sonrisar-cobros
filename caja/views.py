@@ -8,7 +8,7 @@ from django.db.models import Sum, Q
 from django.db.models.functions import TruncDate
 
 from .models import CashSession, MovimientoCaja, ArqueoCaja
-from pagos.models import Pago, Gasto
+from pagos.models import Pago, Gasto, DevolucionPaciente
 
 from django.http import HttpResponse
 
@@ -978,6 +978,12 @@ def movimientos_financieros(request):
         fecha__year=anio_actual
     )
 
+    gastos_temporales_ids = set(DevolucionPaciente.objects.filter(
+        tipo=DevolucionPaciente.TIPO_TEMPORAL,
+        gasto__fecha__month=mes_actual,
+        gasto__fecha__year=anio_actual,
+    ).values_list("gasto_id", flat=True))
+
     for gasto in gastos:
 
         movimientos.append({
@@ -987,7 +993,9 @@ def movimientos_financieros(request):
             "tipo": "Egreso",
 
             "categoria": (
-                gasto.get_categoria_display()
+                "Entrega temporal a paciente"
+                if gasto.id in gastos_temporales_ids
+                else gasto.get_categoria_display()
             ),
 
             "concepto": gasto.concepto,
@@ -1087,7 +1095,14 @@ def movimientos_financieros(request):
     # Desglose de los mismos movimientos incluidos en los totales anteriores.
     total_pagos = sum((pago.monto for pago in pagos), Decimal("0.00"))
     entradas_manuales = total_ingresos - total_pagos
-    gastos_registrados = sum((gasto.monto for gasto in gastos), Decimal("0.00"))
+    entregas_temporales = sum(
+        (gasto.monto for gasto in gastos if gasto.id in gastos_temporales_ids),
+        Decimal("0.00"),
+    )
+    gastos_registrados = sum(
+        (gasto.monto for gasto in gastos if gasto.id not in gastos_temporales_ids),
+        Decimal("0.00"),
+    )
     retiros_personales = sum(
         (mov.monto for mov in movs if mov.tipo == "salida" and mov.categoria == "Retiro personal"),
         Decimal("0.00"),
@@ -1101,7 +1116,7 @@ def movimientos_financieros(request):
          and mov.categoria not in ("Retiro personal", "Retiro de resguardo")),
         Decimal("0.00"),
     )
-    otras_salidas = total_egresos - gastos_registrados - retiros_personales - retiros_resguardo - salidas_operativas
+    otras_salidas = total_egresos - gastos_registrados - entregas_temporales - retiros_personales - retiros_resguardo - salidas_operativas
 
     # ==========================================
     # NOMBRES MESES
@@ -1153,6 +1168,7 @@ def movimientos_financieros(request):
             "total_pagos": total_pagos,
             "entradas_manuales": entradas_manuales,
             "gastos_registrados": gastos_registrados,
+            "entregas_temporales": entregas_temporales,
             "salidas_operativas": salidas_operativas,
             "retiros_personales": retiros_personales,
             "retiros_resguardo": retiros_resguardo,

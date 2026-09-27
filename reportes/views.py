@@ -6,7 +6,7 @@ from urllib.parse import quote
 from datetime import datetime
 import datetime as datetime_module
 
-from pagos.models import Pago, Gasto
+from pagos.models import Pago, Gasto, DevolucionPaciente
 from caja.models import MovimientoCaja
 
 from .utils_pdf import generar_pdf_reporte
@@ -62,9 +62,26 @@ def obtener_contexto_reporte(year, month):
         fecha__month=month
     )
 
-    total_gastos = gastos_mes.aggregate(Sum("monto"))["monto__sum"] or 0
+    # Una entrega temporal es dinero por recuperar, aunque un registro antiguo
+    # conserve la categoría "devolucion_paciente" en Gasto.
+    gastos_temporales_ids = DevolucionPaciente.objects.filter(
+        tipo=DevolucionPaciente.TIPO_TEMPORAL,
+        gasto__fecha__year=year,
+        gasto__fecha__month=month,
+    ).values_list("gasto_id", flat=True)
+    gastos_operativos = gastos_mes.exclude(id__in=gastos_temporales_ids)
+    total_gastos = gastos_operativos.aggregate(Sum("monto"))["monto__sum"] or 0
+    entregas_temporales = gastos_mes.filter(
+        id__in=gastos_temporales_ids
+    ).aggregate(Sum("monto"))["monto__sum"] or 0
+    pendientes_reintegro = DevolucionPaciente.objects.filter(
+        tipo=DevolucionPaciente.TIPO_TEMPORAL,
+        reintegrada=False,
+        gasto__fecha__year=year,
+        gasto__fecha__month=month,
+    ).aggregate(Sum("monto"))["monto__sum"] or 0
 
-    gastos_por_categoria = gastos_mes.values("categoria").annotate(
+    gastos_por_categoria = gastos_operativos.values("categoria").annotate(
         total=Sum("monto")
     ).order_by("-total")
 
@@ -88,6 +105,11 @@ def obtener_contexto_reporte(year, month):
     entradas = movs_mes.filter(tipo="entrada").aggregate(
         Sum("monto")
     )["monto__sum"] or 0
+
+    reintegros_temporales = movs_mes.filter(
+        tipo="entrada",
+        categoria="Reintegro devolución temporal",
+    ).aggregate(Sum("monto"))["monto__sum"] or 0
 
     salidas = movs_mes.filter(tipo="salida").aggregate(
         Sum("monto")
@@ -114,11 +136,14 @@ def obtener_contexto_reporte(year, month):
 
     resultado_consultorio = (
         total_pagado
-        + entradas
+        + entradas - reintegros_temporales
         - total_gastos
         - salidas_operativas
     )
-    resultado_real = resultado_consultorio - retiros_personales
+    resultado_real = (
+        resultado_consultorio - retiros_personales
+        - entregas_temporales + reintegros_temporales
+    )
 
     contexto = {
         "mes_nombre": MESES_ES[month],
@@ -131,6 +156,9 @@ def obtener_contexto_reporte(year, month):
         "ranking_pacientes": ranking_pacientes,
 
         "entradas": entradas,
+        "reintegros_temporales": reintegros_temporales,
+        "entregas_temporales": entregas_temporales,
+        "pendientes_reintegro": pendientes_reintegro,
         "salidas": salidas,
         "salidas_operativas": salidas_operativas,
         "retiros_personales": retiros_personales,

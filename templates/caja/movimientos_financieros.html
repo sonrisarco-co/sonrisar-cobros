@@ -855,14 +855,15 @@
                 </div>
                 <div>
                     <h2>Salidas</h2>
-                    <div class="breakdown-row"><span>Gastos registrados</span><strong>${{ gastos_registrados|floatformat:2 }}</strong></div>
+                    <div class="breakdown-row"><span>Gastos del consultorio</span><strong>${{ gastos_registrados|floatformat:2 }}</strong></div>
+                    {% if entregas_temporales %}<div class="breakdown-row"><span>Entregas temporales a pacientes</span><strong>${{ entregas_temporales|floatformat:2 }}</strong></div>{% endif %}
                     <div class="breakdown-row"><span>Salidas operativas de caja</span><strong>${{ salidas_operativas|floatformat:2 }}</strong></div>
                     <div class="breakdown-row"><span>Retiros personales</span><strong>${{ retiros_personales|floatformat:2 }}</strong></div>
                     <div class="breakdown-row"><span>Retiros de resguardo</span><strong>${{ retiros_resguardo|floatformat:2 }}</strong></div>
                     {% if otras_salidas %}<div class="breakdown-row"><span>Otras salidas de caja</span><strong>${{ otras_salidas|floatformat:2 }}</strong></div>{% endif %}
                 </div>
             </div>
-            <p class="breakdown-note">El balance neto suma todas las entradas y salidas del período. Incluye el dinero apartado como resguardo; no representa la ganancia del consultorio ni el saldo inicial de caja.</p>
+            <p class="breakdown-note">El balance neto suma todas las entradas y salidas del período. Las entregas temporales se muestran aparte de los gastos del consultorio; el resguardo cambia dónde se guarda el dinero. Este balance no representa la ganancia ni el saldo inicial de caja.</p>
         </section>
 
         <!-- CARD -->

@@ -47,7 +47,7 @@ from django.contrib import admin
 from django.apps import apps
 from django.urls import path
 
-from .models import Pago, Gasto
+from .models import Pago, Gasto, JornadaSofia, LiquidacionSofia
 
 
 @admin.register(Pago)
@@ -125,3 +125,17 @@ class GastoAdmin(admin.ModelAdmin):
         "metodo",
         "fecha",
     )
+
+
+@admin.register(JornadaSofia)
+class JornadaSofiaAdmin(admin.ModelAdmin):
+    list_display = ("fecha", "hora_entrada", "hora_salida", "descanso_minutos")
+    list_filter = ("fecha",)
+    ordering = ("-fecha", "-hora_entrada")
+
+
+@admin.register(LiquidacionSofia)
+class LiquidacionSofiaAdmin(admin.ModelAdmin):
+    list_display = ("fecha_inicio", "fecha_fin", "horas_pagadas", "monto_pagado", "fecha_pago", "metodo", "gasto")
+    list_filter = ("metodo", "fecha_pago")
+    readonly_fields = ("fecha_inicio", "fecha_fin", "horas_pagadas", "monto_pagado", "fecha_pago", "metodo", "gasto")

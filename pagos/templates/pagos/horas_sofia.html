@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Horas de Sofía | Sonrisar Cobros{% endblock %}
+{% block extra_css %}
+<style>
+    .hs-wrap{max-width:1180px;margin:20px auto;padding:0 14px;color:#183230;font-family:Arial,sans-serif}
+    .hs-top{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px;flex-wrap:wrap}
+    .hs-title{margin:0;color:#174f4c;font-size:28px}.hs-sub{color:#64748b;margin:6px 0 0}
+    .hs-link{display:inline-flex;align-items:center;justify-content:center;padding:10px 15px;border-radius:10px;background:#eef8f7;color:#167d77;text-decoration:none;font-weight:700}
+    .hs-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    .hs-card{background:#fff;border:1px solid #dcebea;border-radius:16px;padding:20px;box-shadow:0 4px 15px rgba(20,70,67,.05);margin-bottom:16px}
+    .hs-card h2{font-size:18px;margin:0 0 16px;color:#176d68}
+    .hs-period{display:flex;align-items:end;gap:10px;flex-wrap:wrap}.hs-period select,.hs-form input,.hs-form select{width:100%;padding:10px 11px;border:1px solid #cbdedc;border-radius:9px;background:#fff;font-size:15px}
+    .hs-period label,.hs-form label{display:block;font-size:13px;color:#526b69;font-weight:700;margin-bottom:6px}.hs-period .field{flex:1;min-width:230px}
+    .hs-button{border:0;border-radius:9px;padding:11px 15px;background:#26aba5;color:white;font-weight:700;cursor:pointer;font-size:14px}.hs-button:hover{background:#168e88}.hs-button.danger{background:#fff;color:#bd3939;border:1px solid #efc6c6;padding:7px 10px}
+    .hs-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.hs-form .wide{grid-column:1/-1}
+    .hs-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.hs-stat{background:#f5fbfa;border:1px solid #e3f0ef;border-radius:12px;padding:14px}.hs-stat span{display:block;font-size:12px;color:#607572}.hs-stat strong{display:block;font-size:22px;margin-top:5px;color:#174f4c}
+    .hs-note{font-size:13px;line-height:1.5;color:#657b79;margin:13px 0 0}.hs-table-wrap{overflow:auto}.hs-table{width:100%;border-collapse:collapse;font-size:14px}.hs-table th,.hs-table td{text-align:left;padding:11px 9px;border-bottom:1px solid #e7eeee;white-space:nowrap}.hs-table th{background:#edf8f7;color:#28615e}.hs-empty{padding:18px;text-align:center;color:#64748b}
+    .hs-alert{padding:11px 13px;margin-bottom:10px;border-radius:9px;background:#f0f9ff;color:#175985}.hs-alert.success{background:#effaf4;color:#166534}.hs-alert.error{background:#fff1f1;color:#a72d2d}
+    .hs-paid{border-radius:10px;padding:13px;background:#effaf4;color:#166534;font-weight:700}.hs-pay-row{display:flex;align-items:center;gap:10px;margin:12px 0;color:#526b69;font-size:14px}.hs-pay-row input{width:17px;height:17px}
+    @media(max-width:760px){.hs-grid{grid-template-columns:1fr}.hs-stats{grid-template-columns:1fr}.hs-title{font-size:24px}.hs-card{padding:16px}}
+</style>
+{% endblock %}
+{% block content %}
+<div class="hs-wrap">
+    <header class="hs-top">
+        <div><h1 class="hs-title">Horas y sueldo de Sofía</h1><p class="hs-sub">Registra las jornadas y liquida cada quincena desde aquí.</p></div>
+        <a class="hs-link" href="{% url 'caja:tablero' %}">Volver a caja</a>
+    </header>
+
+    {% if messages %}{% for message in messages %}
+        <div class="hs-alert {% if message.tags %}{{ message.tags }}{% endif %}">{{ message }}</div>
+    {% endfor %}{% endif %}
+
+    <section class="hs-card">
+        <form method="get" class="hs-period">
+            <div class="field"><label for="periodo">Quincena</label>
+                <select id="periodo" aria-label="Seleccionar quincena">
+                    {% for q in quincenas %}
+                    <option value="{{ q.0|date:'Y-m-d' }}|{{ q.1|date:'Y-m-d' }}" {% if inicio == q.0 and fin == q.1 %}selected{% endif %}>
+                        {{ q.0|date:'F Y'|capfirst }} · {{ q.0|date:'d' }} al {{ q.1|date:'d' }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button class="hs-button" type="submit" id="ver-periodo">Ver quincena</button>
+        </form>
+        <script>
+        document.getElementById('ver-periodo').addEventListener('click', function(event){
+            event.preventDefault();
+            const [inicio, fin] = document.getElementById('periodo').value.split('|');
+            const url = new URL(window.location.href);
+            url.searchParams.set('inicio', inicio); url.searchParams.set('fin', fin);
+            window.location.href = url.toString();
+        });
+        </script>
+    </section>
+
+    <section class="hs-card">
+        <div class="hs-stats">
+            <div class="hs-stat"><span>Horas registradas</span><strong>{{ total_horas|floatformat:2 }}</strong></div>
+            <div class="hs-stat"><span>Pago calculado</span><strong>$ {{ sueldo_estimado|floatformat:2|intcomma }}</strong></div>
+            <div class="hs-stat"><span>Referencia quincenal</span><strong>62 h · $ 14.000</strong></div>
+        </div>
+        <p class="hs-note">El cálculo usa $14.000 ÷ 62 horas y redondea el total a centésimos. El descanso está incluido en las horas pagas: se registra como referencia, pero no se descuenta. Las horas solo se descuentan de caja cuando registras el pago. El gasto se fecha el día del pago.</p>
+    </section>
+
+    <div class="hs-grid">
+        <section class="hs-card">
+            <h2>Registrar jornada</h2>
+            {% if liquidacion %}
+                <div class="hs-paid">Esta quincena ya fue pagada. Sus jornadas quedaron cerradas.</div>
+            {% else %}
+                <form method="post" class="hs-form">
+                    {% csrf_token %}<input type="hidden" name="accion" value="agregar_jornada">
+                    <div class="hs-form-grid">
+                        {% for field in form %}
+                        <div class="{% if field.name == 'notas' %}wide{% endif %}">
+                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field }}
+                            {% for error in field.errors %}<small style="color:#b42318">{{ error }}</small>{% endfor %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% if form.non_field_errors %}<p style="color:#b42318">{{ form.non_field_errors }}</p>{% endif %}
+                    <p class="hs-note">La fecha debe estar dentro de la quincena seleccionada. Si hubo descanso, ingrésalo en minutos; ese tiempo cuenta como pago.</p>
+                    <button class="hs-button" type="submit">Guardar jornada</button>
+                </form>
+            {% endif %}
+        </section>
+
+        <section class="hs-card">
+            <h2>Liquidación</h2>
+            {% if liquidacion %}
+                <div class="hs-paid">Pagado el {{ liquidacion.fecha_pago|date:'d/m/Y' }} · $ {{ liquidacion.monto_pagado|floatformat:2|intcomma }} · {{ liquidacion.get_metodo_display }}</div>
+                {% if liquidacion.gasto %}<p class="hs-note">Gasto vinculado: {{ liquidacion.gasto.concepto }}.</p>{% endif %}
+            {% else %}
+                <p>Se liquidarán <strong>{{ total_horas|floatformat:2 }} horas</strong> por <strong>$ {{ sueldo_estimado|floatformat:2|intcomma }}</strong>.</p>
+                {% if jornadas %}
+                <form method="post">
+                    {% csrf_token %}<input type="hidden" name="accion" value="pagar_quincena">
+                    <label for="metodo-pago" style="display:block;font-size:13px;color:#526b69;font-weight:700;margin-bottom:6px">Método de pago</label>
+                    <select id="metodo-pago" name="metodo" required style="width:100%;padding:10px;border:1px solid #cbdedc;border-radius:9px">
+                        <option value="efectivo">Efectivo</option><option value="transferencia">Transferencia</option><option value="tarjeta">Tarjeta</option>
+                    </select>
+                    <label class="hs-pay-row"><input type="checkbox" name="afecta_caja" checked> Descontar de la caja abierta (marca solo si salió de esa caja)</label>
+                    <button class="hs-button" type="submit" onclick="return confirm('¿Registrar el pago de Sofía por $ {{ sueldo_estimado|floatformat:2 }}? Se creará un gasto de Sueldos.')">Registrar pago</button>
+                </form>
+                {% else %}<p class="hs-note">Registra las jornadas de Sofía para habilitar la liquidación.</p>{% endif %}
+            {% endif %}
+        </section>
+    </div>
+
+    <section class="hs-card">
+        <h2>Jornadas de la quincena</h2>
+        <div class="hs-table-wrap"><table class="hs-table">
+            <thead><tr><th>Fecha</th><th>Entrada</th><th>Salida</th><th>Descanso</th><th>Horas</th><th>Notas</th>{% if not liquidacion %}<th></th>{% endif %}</tr></thead>
+            <tbody>
+                {% for jornada in jornadas %}
+                <tr>
+                    <td>{{ jornada.fecha|date:'d/m/Y' }}</td><td>{{ jornada.hora_entrada|time:'H:i' }}</td><td>{{ jornada.hora_salida|time:'H:i' }}</td><td>{{ jornada.descanso_minutos }} min</td><td>{{ jornada.horas_trabajadas|floatformat:2 }}</td><td>{{ jornada.notas|default:'—' }}</td>
+                    {% if not liquidacion %}<td><form method="post" style="margin:0" onsubmit="return confirm('¿Eliminar esta jornada?')">{% csrf_token %}<input type="hidden" name="accion" value="eliminar_jornada"><input type="hidden" name="jornada_id" value="{{ jornada.id }}"><button class="hs-button danger" type="submit">Eliminar</button></form></td>{% endif %}
+                </tr>
+                {% empty %}<tr><td class="hs-empty" colspan="{% if liquidacion %}6{% else %}7{% endif %}">Todavía no hay jornadas en esta quincena.</td></tr>{% endfor %}
+            </tbody>
+        </table></div>
+    </section>
+</div>
+{% endblock %}

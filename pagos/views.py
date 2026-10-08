@@ -1,11 +1,11 @@
-from datetime import datetime, time
+from datetime import date, datetime, time
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from .models import Pago
 from django.core.paginator import Paginator
 from django.db.models import Sum, Q, Prefetch
-from django.db import transaction
+from django.db import transaction, IntegrityError
 from collections import OrderedDict
 import json
 from caja.models import CashSession, MovimientoCaja
@@ -26,14 +26,17 @@ from django.conf import settings
 from django.contrib import messages
 from django.views.decorators.http import require_POST
 
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 from urllib.parse import quote, urlencode, urlsplit, urlunsplit, parse_qsl
 from .models import (
     Gasto,
+    JornadaSofia,
+    LiquidacionSofia,
     DevolucionPaciente,
     CompraProveedor,
     PagoCompraProveedor
 )
+from .forms import JornadaSofiaForm
 
 from .facture_service import (
     probar_conexion,
@@ -1624,6 +1627,204 @@ def lista_gastos(request):
         "gastos": gastos,
         "total": total,
     })
+
+
+SOFIA_HORAS_REFERENCIA = Decimal("62")
+SOFIA_SUELDO_REFERENCIA = Decimal("14000.00")
+
+
+def _periodo_quincenal_actual(fecha):
+    ultimo_dia = calendar.monthrange(fecha.year, fecha.month)[1]
+    if fecha.day <= 15:
+        return fecha.replace(day=1), fecha.replace(day=15)
+    return fecha.replace(day=16), fecha.replace(day=ultimo_dia)
+
+
+def _es_quincena_estandar(inicio, fin):
+    if inicio.year != fin.year or inicio.month != fin.month:
+        return False
+    ultimo_dia = calendar.monthrange(inicio.year, inicio.month)[1]
+    return (
+        (inicio.day == 1 and fin.day == 15)
+        or (inicio.day == 16 and fin.day == ultimo_dia)
+    )
+
+
+def _jornada_en_periodo_liquidado(fecha):
+    return LiquidacionSofia.objects.filter(
+        fecha_inicio__lte=fecha,
+        fecha_fin__gte=fecha,
+    ).exists()
+
+
+def _calcular_horas_y_sueldo(jornadas):
+    minutos = sum(j.minutos_trabajados for j in jornadas)
+    horas = (Decimal(minutos) / Decimal("60")).quantize(
+        Decimal("0.01"), rounding=ROUND_HALF_UP
+    )
+    sueldo = (
+        Decimal(minutos) * SOFIA_SUELDO_REFERENCIA
+        / (SOFIA_HORAS_REFERENCIA * Decimal("60"))
+    ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    return horas, sueldo
+
+
+def _redireccion_horas(inicio, fin):
+    return redirect(
+        f"{reverse('pagos:horas_sofia')}?inicio={inicio.isoformat()}&fin={fin.isoformat()}"
+    )
+
+
+def horas_sofia(request):
+    bloqueo = _validar_pin_finanzas(request)
+    if bloqueo:
+        return bloqueo
+
+    hoy = timezone.localdate()
+    inicio_default, fin_default = _periodo_quincenal_actual(hoy)
+    try:
+        inicio = datetime.strptime(request.GET.get("inicio", ""), "%Y-%m-%d").date()
+        fin = datetime.strptime(request.GET.get("fin", ""), "%Y-%m-%d").date()
+    except (TypeError, ValueError):
+        inicio, fin = inicio_default, fin_default
+
+    if not _es_quincena_estandar(inicio, fin):
+        inicio, fin = inicio_default, fin_default
+
+    jornadas = list(JornadaSofia.objects.filter(
+        fecha__range=(inicio, fin)
+    ).order_by("fecha", "hora_entrada", "id"))
+    horas, sueldo = _calcular_horas_y_sueldo(jornadas)
+    liquidacion = LiquidacionSofia.objects.filter(
+        fecha_inicio=inicio,
+        fecha_fin=fin,
+    ).select_related("gasto").first()
+
+    if request.method == "POST":
+        accion = request.POST.get("accion", "")
+
+        if accion == "agregar_jornada":
+            form = JornadaSofiaForm(request.POST)
+            if form.is_valid():
+                fecha = form.cleaned_data["fecha"]
+                if not inicio <= fecha <= fin:
+                    form.add_error("fecha", "La fecha debe estar dentro de la quincena seleccionada.")
+                elif _jornada_en_periodo_liquidado(fecha):
+                    messages.error(request, "Esa quincena ya fue pagada y sus horas quedaron cerradas.")
+                else:
+                    form.save()
+                    messages.success(request, "Jornada de Sofía registrada.")
+                    return _redireccion_horas(inicio, fin)
+            return render(request, "pagos/horas_sofia.html", _contexto_horas_sofia(
+                inicio, fin, jornadas, horas, sueldo, liquidacion, form
+            ))
+
+        if accion == "eliminar_jornada":
+            jornada = get_object_or_404(JornadaSofia, pk=request.POST.get("jornada_id"))
+            if not inicio <= jornada.fecha <= fin:
+                messages.error(request, "La jornada no pertenece a la quincena seleccionada.")
+            elif _jornada_en_periodo_liquidado(jornada.fecha):
+                messages.error(request, "No se pueden cambiar horas de una quincena ya pagada.")
+            else:
+                jornada.delete()
+                messages.success(request, "Jornada eliminada.")
+            return _redireccion_horas(inicio, fin)
+
+        if accion == "pagar_quincena":
+            if liquidacion:
+                messages.error(request, "Esta quincena ya tiene una liquidación registrada.")
+                return _redireccion_horas(inicio, fin)
+            if not jornadas or horas <= 0:
+                messages.error(request, "Registra al menos una jornada antes de liquidar el sueldo.")
+                return _redireccion_horas(inicio, fin)
+            if LiquidacionSofia.objects.filter(
+                fecha_inicio__lte=fin,
+                fecha_fin__gte=inicio,
+            ).exists():
+                messages.error(request, "El período se superpone con otra quincena ya liquidada.")
+                return _redireccion_horas(inicio, fin)
+
+            metodo = request.POST.get("metodo", "")
+            metodos_validos = {clave for clave, _ in LiquidacionSofia.METODOS}
+            if metodo not in metodos_validos:
+                messages.error(request, "Selecciona un método de pago válido.")
+                return _redireccion_horas(inicio, fin)
+
+            afecta_caja = request.POST.get("afecta_caja") == "on"
+            caja = CashSession.obtener_caja_del_dia()
+            if afecta_caja and caja.estado == CashSession.Status.CERRADA:
+                messages.error(request, "La caja de hoy está cerrada. No se puede cargar el sueldo en esa caja.")
+                return _redireccion_horas(inicio, fin)
+
+            fecha_pago = timezone.localdate()
+            fecha_gasto = timezone.make_aware(
+                datetime.combine(fecha_pago, time.min),
+                timezone.get_current_timezone(),
+            )
+            concepto = f"Sueldo Sofía ({inicio:%d/%m/%Y} al {fin:%d/%m/%Y})"
+
+            try:
+                with transaction.atomic():
+                    liquidacion = LiquidacionSofia.objects.create(
+                        fecha_inicio=inicio,
+                        fecha_fin=fin,
+                        horas_pagadas=horas,
+                        monto_pagado=sueldo,
+                        fecha_pago=fecha_pago,
+                        metodo=metodo,
+                    )
+                    gasto = Gasto.objects.create(
+                        proveedor="Sofía",
+                        categoria="sueldos",
+                        concepto=concepto,
+                        monto=sueldo,
+                        metodo=metodo,
+                        afecta_caja=afecta_caja,
+                        caja=caja if afecta_caja else None,
+                        fecha=fecha_gasto,
+                    )
+                    liquidacion.gasto = gasto
+                    liquidacion.save(update_fields=["gasto"])
+            except IntegrityError:
+                messages.error(request, "Esta quincena ya se liquidó en otra solicitud.")
+                return _redireccion_horas(inicio, fin)
+
+            messages.success(request, f"Sueldo de Sofía registrado por ${sueldo:,.2f}.")
+            return _redireccion_horas(inicio, fin)
+
+    form = JornadaSofiaForm(initial={"fecha": min(max(hoy, inicio), fin)})
+    return render(request, "pagos/horas_sofia.html", _contexto_horas_sofia(
+        inicio, fin, jornadas, horas, sueldo, liquidacion, form
+    ))
+
+
+def _contexto_horas_sofia(inicio, fin, jornadas, horas, sueldo, liquidacion, form):
+    quincenas = []
+    for offset in range(-6, 7):
+        year, month = inicio.year, inicio.month + offset
+        while month < 1:
+            year -= 1
+            month += 12
+        while month > 12:
+            year += 1
+            month -= 12
+        ultimo_dia = calendar.monthrange(year, month)[1]
+        quincenas.extend([
+            (date(year, month, 1), date(year, month, 15)),
+            (date(year, month, 16), date(year, month, ultimo_dia)),
+        ])
+    return {
+        "inicio": inicio,
+        "fin": fin,
+        "jornadas": jornadas,
+        "total_horas": horas,
+        "sueldo_estimado": sueldo,
+        "liquidacion": liquidacion,
+        "form": form,
+        "quincenas": quincenas,
+        "horas_referencia": SOFIA_HORAS_REFERENCIA,
+        "sueldo_referencia": SOFIA_SUELDO_REFERENCIA,
+    }
 
 
 

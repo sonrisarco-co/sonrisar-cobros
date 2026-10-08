@@ -214,6 +214,81 @@ class Gasto(models.Model):
         return f"{self.concepto} - ${self.monto}"
 
 
+class JornadaSofia(models.Model):
+    """Horas trabajadas por Sofía, separadas de los egresos de caja."""
+
+    fecha = models.DateField(db_index=True)
+    hora_entrada = models.TimeField()
+    hora_salida = models.TimeField()
+    descanso_minutos = models.PositiveSmallIntegerField(default=0)
+    notas = models.CharField(max_length=200, blank=True)
+    creada = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-fecha", "-hora_entrada", "-id"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(hora_salida__gt=models.F("hora_entrada")),
+                name="jornada_sofia_salida_despues_entrada",
+            ),
+        ]
+
+    @property
+    def minutos_trabajados(self):
+        entrada = self.hora_entrada.hour * 60 + self.hora_entrada.minute
+        salida = self.hora_salida.hour * 60 + self.hora_salida.minute
+        # El descanso está incluido dentro de las 62 horas quincenales pagas.
+        # Se conserva el campo para registrarlo, pero no se resta del tiempo pago.
+        return max(0, salida - entrada)
+
+    @property
+    def horas_trabajadas(self):
+        return Decimal(self.minutos_trabajados) / Decimal("60")
+
+    def __str__(self):
+        return f"Sofía - {self.fecha:%d/%m/%Y}"
+
+
+class LiquidacionSofia(models.Model):
+    """Snapshot de horas e importe al pagar una quincena de Sofía."""
+
+    METODOS = [
+        ("efectivo", "Efectivo"),
+        ("transferencia", "Transferencia"),
+        ("tarjeta", "Tarjeta"),
+    ]
+
+    fecha_inicio = models.DateField()
+    fecha_fin = models.DateField()
+    horas_pagadas = models.DecimalField(max_digits=7, decimal_places=2)
+    monto_pagado = models.DecimalField(max_digits=10, decimal_places=2)
+    fecha_pago = models.DateField(default=timezone.localdate)
+    metodo = models.CharField(max_length=20, choices=METODOS)
+    gasto = models.OneToOneField(
+        Gasto,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="liquidacion_sofia",
+    )
+
+    class Meta:
+        ordering = ["-fecha_fin", "-id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["fecha_inicio", "fecha_fin"],
+                name="liquidacion_sofia_periodo_unico",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(fecha_fin__gte=models.F("fecha_inicio")),
+                name="liquidacion_sofia_periodo_valido",
+            ),
+        ]
+
+    def __str__(self):
+        return f"Sofía - {self.fecha_inicio:%d/%m/%Y} al {self.fecha_fin:%d/%m/%Y}"
+
+
 class DevolucionPaciente(models.Model):
     METODOS = [
         ("efectivo", "Efectivo"),

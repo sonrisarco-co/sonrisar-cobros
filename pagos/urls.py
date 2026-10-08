@@ -122,6 +122,11 @@ urlpatterns = [
         views.nuevo_gasto,
         name="nuevo_gasto"
     ),
+    path(
+        "horas-sofia/",
+        views.horas_sofia,
+        name="horas_sofia",
+    ),
 
     # =====================================================
     # COMPRAS A PROVEEDORES

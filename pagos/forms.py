@@ -1,5 +1,5 @@
 from django import forms
-from .models import Pago, JornadaSofia
+from .models import Pago, HoraExtraRecepcionista
 
 
 class PagoForm(forms.ModelForm):
@@ -37,43 +37,19 @@ class PagoForm(forms.ModelForm):
         }
 
 
-class JornadaSofiaForm(forms.ModelForm):
+class HoraExtraRecepcionistaForm(forms.ModelForm):
     class Meta:
-        model = JornadaSofia
-        fields = [
-            "fecha",
-            "hora_entrada",
-            "hora_salida",
-            "descanso_minutos",
-            "notas",
-        ]
-        labels = {
-            "fecha": "Fecha",
-            "hora_entrada": "Hora de entrada",
-            "hora_salida": "Hora de salida",
-            "descanso_minutos": "Descanso (minutos, incluido en el pago)",
-            "notas": "Notas",
-        }
+        model = HoraExtraRecepcionista
+        fields = ["fecha", "horas", "notas"]
+        labels = {"fecha": "Fecha", "horas": "Horas extra", "notas": "Notas"}
         widgets = {
             "fecha": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
-            "hora_entrada": forms.TimeInput(attrs={"type": "time", "class": "form-control"}),
-            "hora_salida": forms.TimeInput(attrs={"type": "time", "class": "form-control"}),
-            "descanso_minutos": forms.NumberInput(attrs={"min": "0", "step": "1", "class": "form-control"}),
+            "horas": forms.NumberInput(attrs={"min": "0.25", "step": "0.25", "class": "form-control", "placeholder": "Ej.: 1.5"}),
             "notas": forms.TextInput(attrs={"class": "form-control", "placeholder": "Opcional"}),
         }
 
-    def clean(self):
-        cleaned = super().clean()
-        entrada = cleaned.get("hora_entrada")
-        salida = cleaned.get("hora_salida")
-        descanso = cleaned.get("descanso_minutos") or 0
-        if entrada and salida and salida <= entrada:
-            self.add_error("hora_salida", "La salida debe ser posterior a la entrada.")
-        if entrada and salida:
-            minutos = (
-                salida.hour * 60 + salida.minute
-                - entrada.hour * 60 - entrada.minute
-            )
-            if descanso > minutos:
-                self.add_error("descanso_minutos", "El descanso no puede superar la duración de la jornada.")
-        return cleaned
+    def clean_horas(self):
+        horas = self.cleaned_data["horas"]
+        if horas <= 0:
+            raise forms.ValidationError("Ingresa una cantidad de horas mayor que cero.")
+        return horas

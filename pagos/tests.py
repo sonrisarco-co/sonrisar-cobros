@@ -1,47 +1,37 @@
 from datetime import date, time
 from decimal import Decimal
+from types import SimpleNamespace
 
 from django.test import SimpleTestCase
 
 from .models import JornadaSofia
-from .views import _calcular_horas_y_sueldo
+from .views import _monto_horas_extra
 
 
-class CalculoSueldoSofiaTests(SimpleTestCase):
-    def test_sesenta_y_dos_horas_corresponden_a_catorce_mil(self):
+class CalculoHorasExtraRecepcionistaTests(SimpleTestCase):
+    def setUp(self):
+        self.recepcionista = SimpleNamespace(valor_hora_extra=Decimal("250.00"))
+
+    def test_una_hora_extra_se_calcula_sobre_15000_por_60_horas(self):
+        valor_hora = Decimal("15000.00") / Decimal("60")
+        recepcionista = SimpleNamespace(valor_hora_extra=valor_hora)
+
+        self.assertEqual(_monto_horas_extra(recepcionista, Decimal("1.00")), Decimal("250.00"))
+
+    def test_admite_fracciones_de_hora_y_redondea_a_centimos(self):
+        self.assertEqual(_monto_horas_extra(self.recepcionista, Decimal("1.50")), Decimal("375.00"))
+        self.assertEqual(_monto_horas_extra(self.recepcionista, Decimal("0.25")), Decimal("62.50"))
+
+
+class ArchivoHistoricoSofiaTests(SimpleTestCase):
+    def test_jornada_historica_conserva_calculo_de_duracion(self):
         jornada = JornadaSofia(
-            fecha=date(2026, 10, 1),
-            hora_entrada=time(0, 0),
-            hora_salida=time(15, 30),
-            descanso_minutos=0,
-        )
-
-        horas, sueldo = _calcular_horas_y_sueldo([jornada] * 4)
-
-        self.assertEqual(horas, Decimal("62.00"))
-        self.assertEqual(sueldo, Decimal("14000.00"))
-
-    def test_incluye_el_descanso_en_las_horas_pagadas(self):
-        jornada = JornadaSofia(
-            fecha=date(2026, 10, 2),
-            hora_entrada=time(9, 0),
-            hora_salida=time(17, 0),
-            descanso_minutos=30,
-        )
-
-        horas, _ = _calcular_horas_y_sueldo([jornada])
-
-        self.assertEqual(horas, Decimal("8.00"))
-
-    def test_jornada_de_ocho_horas_se_paga_a_prorrata_incluyendo_descanso(self):
-        jornada = JornadaSofia(
-            fecha=date(2026, 10, 6),
-            hora_entrada=time(10, 0),
+            fecha=date(2025, 1, 1),
+            hora_entrada=time(11, 0),
             hora_salida=time(18, 0),
             descanso_minutos=60,
         )
 
-        horas, sueldo = _calcular_horas_y_sueldo([jornada])
-
-        self.assertEqual(horas, Decimal("8.00"))
-        self.assertEqual(sueldo, Decimal("1806.45"))
+        # La estructura histórica queda disponible sin aparecer como una
+        # jornada editable de la nueva liquidación de Geisha.
+        self.assertEqual(jornada.horas_trabajadas, Decimal("7"))

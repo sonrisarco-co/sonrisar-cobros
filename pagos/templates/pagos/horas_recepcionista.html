@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Sueldo de Geisha Labrada | Sonrisar Cobros{% endblock %}
+{% block extra_css %}
+<style>
+    .gr-wrap{max-width:1180px;margin:20px auto;padding:0 14px;color:#183230;font-family:Arial,sans-serif}
+    .gr-top{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px;flex-wrap:wrap}
+    .gr-title{margin:0;color:#174f4c;font-size:28px}.gr-sub{color:#647b79;margin:6px 0 0}
+    .gr-link{display:inline-flex;padding:10px 15px;border-radius:10px;background:#eef8f7;color:#167d77;text-decoration:none;font-weight:700}
+    .gr-card{background:#fff;border:1px solid #dcebea;border-radius:16px;padding:20px;box-shadow:0 4px 15px #1446430d;margin-bottom:16px}
+    .gr-card h2{font-size:18px;margin:0 0 15px;color:#176d68}
+    .gr-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    .gr-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.gr-stat{background:#f5fbfa;border:1px solid #e3f0ef;border-radius:12px;padding:14px}.gr-stat span{display:block;font-size:12px;color:#607572}.gr-stat strong{display:block;font-size:21px;margin-top:5px;color:#174f4c}
+    .gr-period{display:flex;align-items:end;gap:10px;flex-wrap:wrap}.gr-period .field{flex:1;min-width:230px}.gr-period label,.gr-form label{display:block;font-size:13px;color:#526b69;font-weight:700;margin-bottom:6px}.gr-period select,.gr-form input{width:100%;padding:10px;border:1px solid #cbdedc;border-radius:9px;background:#fff;font-size:15px}
+    .gr-button{border:0;border-radius:9px;padding:11px 15px;background:#26aba5;color:#fff;font-weight:700;cursor:pointer;font-size:14px}.gr-button:hover{background:#168e88}.gr-button.danger{background:#fff;color:#bd3939;border:1px solid #efc6c6;padding:7px 10px}
+    .gr-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.gr-form .wide{grid-column:1/-1}.gr-note{font-size:13px;line-height:1.5;color:#657b79;margin:12px 0}.gr-table-wrap{overflow:auto}.gr-table{width:100%;border-collapse:collapse;font-size:14px}.gr-table th,.gr-table td{text-align:left;padding:11px 9px;border-bottom:1px solid #e7eeee;white-space:nowrap}.gr-table th{background:#edf8f7;color:#28615e}.gr-empty{padding:18px;text-align:center;color:#64748b}
+    .gr-alert{padding:11px 13px;margin-bottom:10px;border-radius:9px;background:#f0f9ff;color:#175985}.gr-alert.success{background:#effaf4;color:#166534}.gr-alert.error{background:#fff1f1;color:#a72d2d}.gr-paid{border-radius:10px;padding:13px;background:#effaf4;color:#166534;font-weight:700}.gr-payrow{display:flex;align-items:center;gap:10px;margin:12px 0;color:#526b69;font-size:14px}.gr-payrow input{width:17px;height:17px}
+    .receipt{border:2px solid #cfe3e1}.receipt-head{display:flex;justify-content:space-between;gap:15px;align-items:start}.receipt-total{font-size:24px;font-weight:700;color:#174f4c}
+    @media(max-width:760px){.gr-grid{grid-template-columns:1fr}.gr-stats{grid-template-columns:1fr}.gr-title{font-size:24px}.gr-card{padding:16px}}
+    @media print{body *{visibility:hidden!important}.receipt,.receipt *{visibility:visible!important}.receipt{position:absolute;left:0;top:0;width:100%;box-shadow:none;border:0}.print-hide{display:none!important}}
+</style>
+{% endblock %}
+{% block content %}
+<div class="gr-wrap">
+    <header class="gr-top">
+        <div><h1 class="gr-title">Sueldo de {{ recepcionista.nombre }}</h1><p class="gr-sub">Horario: {{ recepcionista.horario }} · 6 horas diarias, lunes a viernes.</p></div>
+        <a class="gr-link print-hide" href="{% url 'caja:tablero' %}">Volver a caja</a>
+    </header>
+    {% if messages %}{% for message in messages %}<div class="gr-alert {% if message.tags %}{{ message.tags }}{% endif %}">{{ message }}</div>{% endfor %}{% endif %}
+
+    <section class="gr-card print-hide">
+        <form method="get" class="gr-period" id="periodo-form">
+            <div class="field"><label for="periodo">Quincena</label><select id="periodo">
+                {% for q in quincenas %}<option value="{{ q.0|date:'Y-m-d' }}|{{ q.1|date:'Y-m-d' }}" {% if inicio == q.0 and fin == q.1 %}selected{% endif %}>{{ q.0|date:'F Y'|capfirst }} · {{ q.0|date:'d' }} al {{ q.1|date:'d' }}</option>{% endfor %}
+            </select></div>
+            <button class="gr-button" type="submit">Ver quincena</button>
+        </form>
+        <script>document.getElementById('periodo-form').addEventListener('submit',function(e){e.preventDefault();const [i,f]=document.getElementById('periodo').value.split('|');const u=new URL(location.href);u.searchParams.set('inicio',i);u.searchParams.set('fin',f);location.href=u.toString();});</script>
+    </section>
+
+    <section class="gr-card receipt" id="recibo-mensual">
+        <div class="receipt-head"><div><h2>Resumen mensual de sueldo</h2><p>{{ inicio|date:'F Y'|capfirst }} · {{ recepcionista.nombre }}</p></div><button class="gr-button print-hide" onclick="window.print()" type="button">Imprimir recibo mensual</button></div>
+        <div class="gr-stats">
+            <div class="gr-stat"><span>Sueldo base mensual</span><strong>$ {{ sueldo_mensual|floatformat:2|intcomma }}</strong></div>
+            <div class="gr-stat"><span>Horas extra del mes · {{ horas_extra_mes|floatformat:2 }} h</span><strong>$ {{ monto_extra_mes|floatformat:2|intcomma }}</strong></div>
+            <div class="gr-stat"><span>Total mensual estimado</span><strong class="receipt-total">$ {{ total_mes_estimado|floatformat:2|intcomma }}</strong></div>
+        </div>
+        <p class="gr-note">Sueldo base: $15.000 por quincena. Horas extra: $250 por hora. Pagado este mes: $ {{ pagado_mes|floatformat:2|intcomma }} (incluye $ {{ extra_pagado_mes|floatformat:2|intcomma }} de extras).</p>
+        <div class="gr-table-wrap"><table class="gr-table"><thead><tr><th>Quincena</th><th>Base</th><th>Extras pagadas</th><th>Total pagado</th><th>Estado</th></tr></thead><tbody>
+            {% for l in liquidaciones_mes %}<tr><td>{{ l.fecha_inicio|date:'d/m' }} al {{ l.fecha_fin|date:'d/m/Y' }}</td><td>$ {{ l.sueldo_base|floatformat:2|intcomma }}</td><td>{{ l.horas_extra_pagadas|floatformat:2 }} h · $ {{ l.monto_horas_extra|floatformat:2|intcomma }}</td><td>$ {{ l.monto_pagado|floatformat:2|intcomma }}</td><td>Pagado {{ l.fecha_pago|date:'d/m/Y' }}</td></tr>{% empty %}<tr><td colspan="5" class="gr-empty">Todavía no hay pagos registrados para este mes.</td></tr>{% endfor %}
+        </tbody></table></div>
+    </section>
+
+    <section class="gr-card">
+        <div class="gr-stats">
+            <div class="gr-stat"><span>Sueldo fijo de esta quincena</span><strong>$ {{ sueldo_quincenal|floatformat:2|intcomma }}</strong></div>
+            <div class="gr-stat"><span>Horas extra registradas</span><strong>{{ total_horas_extra|floatformat:2 }} h</strong></div>
+            <div class="gr-stat"><span>Total a pagar en esta quincena</span><strong>$ {{ total_quincena|floatformat:2|intcomma }}</strong></div>
+        </div>
+        <p class="gr-note">El horario habitual es de lunes a viernes, de 11:00 a 14:00 y de 15:00 a 18:00. El sueldo base es fijo; registra aquí solo el tiempo que exceda ese horario. Las extras se calculan a $250 por hora.</p>
+    </section>
+
+    <div class="gr-grid print-hide">
+        <section class="gr-card"><h2>Registrar hora extra</h2>
+            {% if liquidacion %}<div class="gr-paid">Esta quincena ya fue pagada; las horas extra quedaron cerradas.</div>{% else %}
+            <form method="post" class="gr-form">{% csrf_token %}<input type="hidden" name="accion" value="agregar_hora_extra"><div class="gr-form-grid">
+                {% for field in form %}<div class="{% if field.name == 'notas' %}wide{% endif %}"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% for error in field.errors %}<small style="color:#b42318">{{ error }}</small>{% endfor %}</div>{% endfor %}
+            </div><p class="gr-note">Puedes ingresar fracciones de hora en incrementos de 15 minutos (por ejemplo, 1,5).</p><button class="gr-button" type="submit">Guardar hora extra</button></form>{% endif %}
+        </section>
+        <section class="gr-card"><h2>Pago quincenal</h2>
+            {% if liquidacion %}<div class="gr-paid">Pagado el {{ liquidacion.fecha_pago|date:'d/m/Y' }} · $ {{ liquidacion.monto_pagado|floatformat:2|intcomma }} · {{ liquidacion.get_metodo_display }}</div>{% if liquidacion.gasto %}<p class="gr-note">Gasto vinculado: {{ liquidacion.gasto.concepto }}.</p>{% endif %}
+            {% else %}<p>Base ${{ sueldo_quincenal|floatformat:2|intcomma }} + extras ${{ monto_horas_extra|floatformat:2|intcomma }} = <strong>${{ total_quincena|floatformat:2|intcomma }}</strong>.</p>
+            <form method="post">{% csrf_token %}<input type="hidden" name="accion" value="pagar_quincena"><label for="metodo-pago">Método de pago</label><select id="metodo-pago" name="metodo" required style="width:100%;padding:10px;border:1px solid #cbdedc;border-radius:9px"><option value="efectivo">Efectivo</option><option value="transferencia">Transferencia</option><option value="tarjeta">Tarjeta</option></select><label class="gr-payrow"><input type="checkbox" name="afecta_caja" checked> Descontar de la caja abierta (solo si el dinero salió de esa caja)</label><button class="gr-button" type="submit" onclick="return confirm('¿Registrar el pago de esta quincena por ${{ total_quincena|floatformat:2 }}?')">Registrar pago</button></form>{% endif %}
+        </section>
+    </div>
+
+    <section class="gr-card print-hide"><h2>Horas extra de la quincena</h2><div class="gr-table-wrap"><table class="gr-table"><thead><tr><th>Fecha</th><th>Horas</th><th>Importe</th><th>Notas</th>{% if not liquidacion %}<th></th>{% endif %}</tr></thead><tbody>
+        {% for extra in extras %}<tr><td>{{ extra.fecha|date:'d/m/Y' }}</td><td>{{ extra.horas|floatformat:2 }}</td><td>$ {{ extra.importe_extra|floatformat:2|intcomma }}</td><td>{{ extra.notas|default:'—' }}</td>{% if not liquidacion %}<td><form method="post" onsubmit="return confirm('¿Eliminar estas horas extra?')">{% csrf_token %}<input type="hidden" name="accion" value="eliminar_hora_extra"><input type="hidden" name="hora_extra_id" value="{{ extra.id }}"><button class="gr-button danger" type="submit">Eliminar</button></form></td>{% endif %}</tr>{% empty %}<tr><td class="gr-empty" colspan="{% if liquidacion %}4{% else %}5{% endif %}">No hay horas extra registradas en esta quincena.</td></tr>{% endfor %}
+    </tbody></table></div></section>
+</div>
+{% endblock %}

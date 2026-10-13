@@ -30,13 +30,14 @@ from decimal import Decimal, ROUND_HALF_UP
 from urllib.parse import quote, urlencode, urlsplit, urlunsplit, parse_qsl
 from .models import (
     Gasto,
-    JornadaSofia,
-    LiquidacionSofia,
+    Recepcionista,
+    HoraExtraRecepcionista,
+    LiquidacionRecepcionista,
     DevolucionPaciente,
     CompraProveedor,
     PagoCompraProveedor
 )
-from .forms import JornadaSofiaForm
+from .forms import HoraExtraRecepcionistaForm
 
 from .facture_service import (
     probar_conexion,
@@ -1629,8 +1630,9 @@ def lista_gastos(request):
     })
 
 
-SOFIA_HORAS_REFERENCIA = Decimal("62")
-SOFIA_SUELDO_REFERENCIA = Decimal("14000.00")
+RECEPCIONISTA_SUELDO_MENSUAL = Decimal("30000.00")
+RECEPCIONISTA_SUELDO_QUINCENAL = Decimal("15000.00")
+RECEPCIONISTA_VALOR_HORA_EXTRA = Decimal("250.00")
 
 
 def _periodo_quincenal_actual(fecha):
@@ -1644,38 +1646,30 @@ def _es_quincena_estandar(inicio, fin):
     if inicio.year != fin.year or inicio.month != fin.month:
         return False
     ultimo_dia = calendar.monthrange(inicio.year, inicio.month)[1]
-    return (
-        (inicio.day == 1 and fin.day == 15)
-        or (inicio.day == 16 and fin.day == ultimo_dia)
-    )
+    return (inicio.day == 1 and fin.day == 15) or (inicio.day == 16 and fin.day == ultimo_dia)
 
 
-def _jornada_en_periodo_liquidado(fecha):
-    return LiquidacionSofia.objects.filter(
-        fecha_inicio__lte=fecha,
-        fecha_fin__gte=fecha,
-    ).exists()
+def _horas_extra_periodo(recepcionista, inicio, fin):
+    return list(HoraExtraRecepcionista.objects.filter(
+        recepcionista=recepcionista, fecha__range=(inicio, fin)
+    ).order_by("fecha", "id"))
 
 
-def _calcular_horas_y_sueldo(jornadas):
-    minutos = sum(j.minutos_trabajados for j in jornadas)
-    horas = (Decimal(minutos) / Decimal("60")).quantize(
-        Decimal("0.01"), rounding=ROUND_HALF_UP
-    )
-    sueldo = (
-        Decimal(minutos) * SOFIA_SUELDO_REFERENCIA
-        / (SOFIA_HORAS_REFERENCIA * Decimal("60"))
-    ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-    return horas, sueldo
+def _total_horas_extra(registros):
+    return sum((registro.horas for registro in registros), Decimal("0.00")).quantize(Decimal("0.01"))
 
 
-def _redireccion_horas(inicio, fin):
+def _monto_horas_extra(recepcionista, horas):
+    return (horas * recepcionista.valor_hora_extra).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+
+def _redireccion_recepcionista(inicio, fin):
     return redirect(
-        f"{reverse('pagos:horas_sofia')}?inicio={inicio.isoformat()}&fin={fin.isoformat()}"
+        f"{reverse('pagos:horas_recepcionista')}?inicio={inicio.isoformat()}&fin={fin.isoformat()}"
     )
 
 
-def horas_sofia(request):
+def horas_recepcionista(request):
     bloqueo = _validar_pin_finanzas(request)
     if bloqueo:
         return bloqueo
@@ -1687,97 +1681,88 @@ def horas_sofia(request):
         fin = datetime.strptime(request.GET.get("fin", ""), "%Y-%m-%d").date()
     except (TypeError, ValueError):
         inicio, fin = inicio_default, fin_default
-
     if not _es_quincena_estandar(inicio, fin):
         inicio, fin = inicio_default, fin_default
 
-    jornadas = list(JornadaSofia.objects.filter(
-        fecha__range=(inicio, fin)
-    ).order_by("fecha", "hora_entrada", "id"))
-    horas, sueldo = _calcular_horas_y_sueldo(jornadas)
-    liquidacion = LiquidacionSofia.objects.filter(
-        fecha_inicio=inicio,
-        fecha_fin=fin,
+    recepcionista = get_object_or_404(Recepcionista, nombre="Geisha Labrada")
+    extras = _horas_extra_periodo(recepcionista, inicio, fin)
+    horas_extra = _total_horas_extra(extras)
+    monto_extra = _monto_horas_extra(recepcionista, horas_extra)
+    for extra in extras:
+        extra.importe_extra = _monto_horas_extra(recepcionista, extra.horas)
+    liquidacion = LiquidacionRecepcionista.objects.filter(
+        recepcionista=recepcionista, fecha_inicio=inicio, fecha_fin=fin
     ).select_related("gasto").first()
 
     if request.method == "POST":
         accion = request.POST.get("accion", "")
-
-        if accion == "agregar_jornada":
-            form = JornadaSofiaForm(request.POST)
+        if accion == "agregar_hora_extra":
+            form = HoraExtraRecepcionistaForm(request.POST)
             if form.is_valid():
                 fecha = form.cleaned_data["fecha"]
                 if not inicio <= fecha <= fin:
                     form.add_error("fecha", "La fecha debe estar dentro de la quincena seleccionada.")
-                elif _jornada_en_periodo_liquidado(fecha):
-                    messages.error(request, "Esa quincena ya fue pagada y sus horas quedaron cerradas.")
+                elif LiquidacionRecepcionista.objects.filter(
+                    recepcionista=recepcionista, fecha_inicio=inicio, fecha_fin=fin
+                ).exists():
+                    messages.error(request, "La quincena ya fue pagada; no se pueden modificar sus horas extra.")
                 else:
-                    form.save()
-                    messages.success(request, "Jornada de Sofía registrada.")
-                    return _redireccion_horas(inicio, fin)
-            return render(request, "pagos/horas_sofia.html", _contexto_horas_sofia(
-                inicio, fin, jornadas, horas, sueldo, liquidacion, form
-            ))
+                    extra = form.save(commit=False)
+                    extra.recepcionista = recepcionista
+                    extra.save()
+                    messages.success(request, "Hora extra registrada.")
+                    return _redireccion_recepcionista(inicio, fin)
+            contexto = _contexto_recepcionista(request, recepcionista, inicio, fin, extras, horas_extra, monto_extra, liquidacion, form)
+            return render(request, "pagos/horas_recepcionista.html", contexto)
 
-        if accion == "eliminar_jornada":
-            jornada = get_object_or_404(JornadaSofia, pk=request.POST.get("jornada_id"))
-            if not inicio <= jornada.fecha <= fin:
-                messages.error(request, "La jornada no pertenece a la quincena seleccionada.")
-            elif _jornada_en_periodo_liquidado(jornada.fecha):
-                messages.error(request, "No se pueden cambiar horas de una quincena ya pagada.")
+        if accion == "eliminar_hora_extra":
+            extra = get_object_or_404(HoraExtraRecepcionista, pk=request.POST.get("hora_extra_id"), recepcionista=recepcionista)
+            if not inicio <= extra.fecha <= fin:
+                messages.error(request, "La hora extra no pertenece a la quincena seleccionada.")
+            elif liquidacion:
+                messages.error(request, "No se pueden cambiar horas extra de una quincena ya pagada.")
             else:
-                jornada.delete()
-                messages.success(request, "Jornada eliminada.")
-            return _redireccion_horas(inicio, fin)
+                extra.delete()
+                messages.success(request, "Hora extra eliminada.")
+            return _redireccion_recepcionista(inicio, fin)
 
         if accion == "pagar_quincena":
             if liquidacion:
                 messages.error(request, "Esta quincena ya tiene una liquidación registrada.")
-                return _redireccion_horas(inicio, fin)
-            if not jornadas or horas <= 0:
-                messages.error(request, "Registra al menos una jornada antes de liquidar el sueldo.")
-                return _redireccion_horas(inicio, fin)
-            if LiquidacionSofia.objects.filter(
-                fecha_inicio__lte=fin,
-                fecha_fin__gte=inicio,
-            ).exists():
-                messages.error(request, "El período se superpone con otra quincena ya liquidada.")
-                return _redireccion_horas(inicio, fin)
-
+                return _redireccion_recepcionista(inicio, fin)
             metodo = request.POST.get("metodo", "")
-            metodos_validos = {clave for clave, _ in LiquidacionSofia.METODOS}
+            metodos_validos = {clave for clave, _ in LiquidacionRecepcionista.METODOS}
             if metodo not in metodos_validos:
                 messages.error(request, "Selecciona un método de pago válido.")
-                return _redireccion_horas(inicio, fin)
-
+                return _redireccion_recepcionista(inicio, fin)
             afecta_caja = request.POST.get("afecta_caja") == "on"
             caja = CashSession.obtener_caja_del_dia()
             if afecta_caja and caja.estado == CashSession.Status.CERRADA:
                 messages.error(request, "La caja de hoy está cerrada. No se puede cargar el sueldo en esa caja.")
-                return _redireccion_horas(inicio, fin)
+                return _redireccion_recepcionista(inicio, fin)
 
+            monto_total = recepcionista.sueldo_quincenal + monto_extra
             fecha_pago = timezone.localdate()
-            fecha_gasto = timezone.make_aware(
-                datetime.combine(fecha_pago, time.min),
-                timezone.get_current_timezone(),
-            )
-            concepto = f"Sueldo Sofía ({inicio:%d/%m/%Y} al {fin:%d/%m/%Y})"
-
+            fecha_gasto = timezone.make_aware(datetime.combine(fecha_pago, time.min), timezone.get_current_timezone())
+            concepto = f"Sueldo {recepcionista.nombre} ({inicio:%d/%m/%Y} al {fin:%d/%m/%Y})"
             try:
                 with transaction.atomic():
-                    liquidacion = LiquidacionSofia.objects.create(
+                    liquidacion = LiquidacionRecepcionista.objects.create(
+                        recepcionista=recepcionista,
                         fecha_inicio=inicio,
                         fecha_fin=fin,
-                        horas_pagadas=horas,
-                        monto_pagado=sueldo,
+                        sueldo_base=recepcionista.sueldo_quincenal,
+                        horas_extra_pagadas=horas_extra,
+                        monto_horas_extra=monto_extra,
+                        monto_pagado=monto_total,
                         fecha_pago=fecha_pago,
                         metodo=metodo,
                     )
                     gasto = Gasto.objects.create(
-                        proveedor="Sofía",
+                        proveedor=recepcionista.nombre,
                         categoria="sueldos",
                         concepto=concepto,
-                        monto=sueldo,
+                        monto=monto_total,
                         metodo=metodo,
                         afecta_caja=afecta_caja,
                         caja=caja if afecta_caja else None,
@@ -1787,18 +1772,17 @@ def horas_sofia(request):
                     liquidacion.save(update_fields=["gasto"])
             except IntegrityError:
                 messages.error(request, "Esta quincena ya se liquidó en otra solicitud.")
-                return _redireccion_horas(inicio, fin)
+                return _redireccion_recepcionista(inicio, fin)
+            messages.success(request, f"Liquidación de {recepcionista.nombre} registrada por ${monto_total:,.2f}.")
+            return _redireccion_recepcionista(inicio, fin)
 
-            messages.success(request, f"Sueldo de Sofía registrado por ${sueldo:,.2f}.")
-            return _redireccion_horas(inicio, fin)
-
-    form = JornadaSofiaForm(initial={"fecha": min(max(hoy, inicio), fin)})
-    return render(request, "pagos/horas_sofia.html", _contexto_horas_sofia(
-        inicio, fin, jornadas, horas, sueldo, liquidacion, form
+    form = HoraExtraRecepcionistaForm(initial={"fecha": min(max(hoy, inicio), fin)})
+    return render(request, "pagos/horas_recepcionista.html", _contexto_recepcionista(
+        request, recepcionista, inicio, fin, extras, horas_extra, monto_extra, liquidacion, form
     ))
 
 
-def _contexto_horas_sofia(inicio, fin, jornadas, horas, sueldo, liquidacion, form):
+def _contexto_recepcionista(request, recepcionista, inicio, fin, extras, horas_extra, monto_extra, liquidacion, form):
     quincenas = []
     for offset in range(-6, 7):
         year, month = inicio.year, inicio.month + offset
@@ -1809,23 +1793,34 @@ def _contexto_horas_sofia(inicio, fin, jornadas, horas, sueldo, liquidacion, for
             year += 1
             month -= 12
         ultimo_dia = calendar.monthrange(year, month)[1]
-        quincenas.extend([
-            (date(year, month, 1), date(year, month, 15)),
-            (date(year, month, 16), date(year, month, ultimo_dia)),
-        ])
-    return {
-        "inicio": inicio,
-        "fin": fin,
-        "jornadas": jornadas,
-        "total_horas": horas,
-        "sueldo_estimado": sueldo,
-        "liquidacion": liquidacion,
-        "form": form,
-        "quincenas": quincenas,
-        "horas_referencia": SOFIA_HORAS_REFERENCIA,
-        "sueldo_referencia": SOFIA_SUELDO_REFERENCIA,
-    }
+        quincenas.extend([(date(year, month, 1), date(year, month, 15)),
+                          (date(year, month, 16), date(year, month, ultimo_dia))])
 
+    mes_inicio = date(inicio.year, inicio.month, 1)
+    mes_fin = date(inicio.year, inicio.month, calendar.monthrange(inicio.year, inicio.month)[1])
+    extras_mes = list(HoraExtraRecepcionista.objects.filter(
+        recepcionista=recepcionista, fecha__range=(mes_inicio, mes_fin)
+    ))
+    horas_extra_mes = _total_horas_extra(extras_mes)
+    monto_extra_mes = _monto_horas_extra(recepcionista, horas_extra_mes)
+    total_mes_estimado = recepcionista.sueldo_mensual + monto_extra_mes
+    liquidaciones_mes = list(LiquidacionRecepcionista.objects.filter(
+        recepcionista=recepcionista, fecha_inicio__gte=mes_inicio, fecha_fin__lte=mes_fin
+    ).order_by("fecha_inicio"))
+    pagado_mes = sum((l.monto_pagado for l in liquidaciones_mes), Decimal("0.00"))
+    extra_pagado_mes = sum((l.monto_horas_extra for l in liquidaciones_mes), Decimal("0.00"))
+    return {
+        "recepcionista": recepcionista, "inicio": inicio, "fin": fin,
+        "extras": extras, "total_horas_extra": horas_extra, "monto_horas_extra": monto_extra,
+        "sueldo_quincenal": recepcionista.sueldo_quincenal,
+        "total_quincena": recepcionista.sueldo_quincenal + monto_extra,
+        "liquidacion": liquidacion, "form": form, "quincenas": quincenas,
+        "horas_extra_mes": horas_extra_mes, "monto_extra_mes": monto_extra_mes,
+        "liquidaciones_mes": liquidaciones_mes, "pagado_mes": pagado_mes,
+        "extra_pagado_mes": extra_pagado_mes,
+        "total_mes_estimado": total_mes_estimado,
+        "sueldo_mensual": recepcionista.sueldo_mensual,
+    }
 
 
 # =====================================================

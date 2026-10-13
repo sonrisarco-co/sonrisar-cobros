@@ -123,9 +123,9 @@ urlpatterns = [
         name="nuevo_gasto"
     ),
     path(
-        "horas-sofia/",
-        views.horas_sofia,
-        name="horas_sofia",
+        "horas-recepcionista/",
+        views.horas_recepcionista,
+        name="horas_recepcionista",
     ),
 
     # =====================================================

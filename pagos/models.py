@@ -289,6 +289,71 @@ class LiquidacionSofia(models.Model):
         return f"Sofía - {self.fecha_inicio:%d/%m/%Y} al {self.fecha_fin:%d/%m/%Y}"
 
 
+class Recepcionista(models.Model):
+    """Datos de sueldo de una recepcionista."""
+
+    nombre = models.CharField(max_length=120, unique=True)
+    sueldo_mensual = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("30000.00"))
+    sueldo_quincenal = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("15000.00"))
+    horas_diarias = models.DecimalField(max_digits=4, decimal_places=2, default=Decimal("6.00"))
+    valor_hora_extra = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal("250.00"))
+    horario = models.CharField(max_length=240, blank=True)
+    activa = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["nombre"]
+
+    def __str__(self):
+        return self.nombre
+
+
+class HoraExtraRecepcionista(models.Model):
+    recepcionista = models.ForeignKey(Recepcionista, on_delete=models.PROTECT, related_name="horas_extra")
+    fecha = models.DateField(db_index=True)
+    horas = models.DecimalField(max_digits=5, decimal_places=2)
+    notas = models.CharField(max_length=200, blank=True)
+    creada = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-fecha", "-id"]
+        constraints = [models.CheckConstraint(condition=models.Q(horas__gt=0), name="hora_extra_recepcionista_positiva")]
+
+    def __str__(self):
+        return f"{self.recepcionista} - {self.fecha:%d/%m/%Y} - {self.horas} h extra"
+
+
+class LiquidacionRecepcionista(models.Model):
+    METODOS = [
+        ("efectivo", "Efectivo"),
+        ("transferencia", "Transferencia"),
+        ("tarjeta", "Tarjeta"),
+    ]
+
+    recepcionista = models.ForeignKey(Recepcionista, on_delete=models.PROTECT, related_name="liquidaciones")
+    fecha_inicio = models.DateField()
+    fecha_fin = models.DateField()
+    sueldo_base = models.DecimalField(max_digits=10, decimal_places=2)
+    horas_extra_pagadas = models.DecimalField(max_digits=7, decimal_places=2, default=Decimal("0.00"))
+    monto_horas_extra = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
+    monto_pagado = models.DecimalField(max_digits=10, decimal_places=2)
+    fecha_pago = models.DateField(default=timezone.localdate)
+    metodo = models.CharField(max_length=20, choices=METODOS)
+    gasto = models.OneToOneField(
+        Gasto, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="liquidacion_recepcionista",
+    )
+
+    class Meta:
+        ordering = ["-fecha_fin", "-id"]
+        constraints = [
+            models.UniqueConstraint(fields=["recepcionista", "fecha_inicio", "fecha_fin"], name="liquidacion_recepcionista_periodo_unico"),
+            models.CheckConstraint(condition=models.Q(fecha_fin__gte=models.F("fecha_inicio")), name="liquidacion_recepcionista_periodo_valido"),
+        ]
+
+    def __str__(self):
+        return f"{self.recepcionista} - {self.fecha_inicio:%d/%m/%Y} al {self.fecha_fin:%d/%m/%Y}"
+
+
 class DevolucionPaciente(models.Model):
     METODOS = [
         ("efectivo", "Efectivo"),

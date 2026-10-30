@@ -35,3 +35,47 @@ class ArchivoHistoricoSofiaTests(SimpleTestCase):
         # La estructura histórica queda disponible sin aparecer como una
         # jornada editable de la nueva liquidación de Geisha.
         self.assertEqual(jornada.horas_trabajadas, Decimal("7"))
+
+from django.test import TestCase, RequestFactory
+from django.contrib.messages.storage.fallback import FallbackStorage
+from .models import Recepcionista, LiquidacionRecepcionista, Gasto
+from .views import _base_periodo, horas_recepcionista
+
+
+class PeriodosPersonalizadosTests(TestCase):
+    def setUp(self):
+        self.persona, _ = Recepcionista.objects.get_or_create(nombre="Geisha Labrada")
+        self.factory = RequestFactory()
+
+    def request(self, inicio, fin, pagar=False):
+        url = f"/pagos/horas-recepcionista/?inicio={inicio}&fin={fin}"
+        req = (self.factory.post(url, {"accion": "pagar_quincena", "metodo": "transferencia"})
+               if pagar else self.factory.get(url))
+        req.session = {"finanzas_pin_ok": True}
+        req._messages = FallbackStorage(req)
+        return horas_recepcionista(req)
+
+    def test_calculos_y_quincenas_historicas(self):
+        for inicio, fin, esperado in [(13, 16, "6000.00"), (19, 30, "15000.00"),
+                                     (1, 15, "15000.00"), (16, 31, "15000.00")]:
+            self.assertEqual(_base_periodo(self.persona, date(2026, 10, inicio), date(2026, 10, fin)), Decimal(esperado))
+
+    def test_paga_dos_periodos_y_no_duplica_gastos_por_solapamiento(self):
+        for inicio, fin in [("2026-10-13", "2026-10-16"), ("2026-10-19", "2026-10-30")]:
+            self.assertEqual(self.request(inicio, fin, True).status_code, 302)
+        self.assertEqual(LiquidacionRecepcionista.objects.count(), 2)
+        self.assertEqual(sum(Gasto.objects.values_list("monto", flat=True)), Decimal("21000"))
+        for inicio, fin in [("2026-10-13", "2026-10-16"), ("2026-10-16", "2026-10-31"),
+                            ("2026-10-12", "2026-10-14")]:
+            self.request(inicio, fin, True)
+        self.assertEqual(LiquidacionRecepcionista.objects.count(), 2)
+        self.assertEqual(Gasto.objects.count(), 2)
+
+    def test_render_y_fechas_invalidas_sin_pago(self):
+        response = self.request("2026-10-13", "2026-10-16")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Ver período personalizado", response.content.decode())
+        for inicio, fin in [("2026-10-30", "2026-10-13"), ("2026-10-13", "2026-11-16"),
+                            ("2026-10-17", "2026-10-18")]:
+            self.request(inicio, fin, True)
+        self.assertFalse(LiquidacionRecepcionista.objects.exists())

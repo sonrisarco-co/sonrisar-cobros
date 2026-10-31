@@ -1725,16 +1725,33 @@ def horas_recepcionista(request):
             form = HoraExtraRecepcionistaForm(request.POST)
             if form.is_valid():
                 fecha = form.cleaned_data["fecha"]
-                if not inicio <= fecha <= fin:
-                    form.add_error("fecha", "La fecha debe estar dentro de la quincena seleccionada.")
-                elif _pagos_superpuestos(recepcionista, fecha, fecha).exists():
-                    messages.error(request, "La quincena ya fue pagada; no se pueden modificar sus horas extra.")
+                por_rango = form.cleaned_data.get("modo") == "rango"
+                hasta = form.cleaned_data["hasta"] if por_rango else fecha
+                fechas = [fecha + timedelta(days=n) for n in range((hasta - fecha).days + 1)
+                          if not por_rango or (fecha + timedelta(days=n)).weekday() < 5]
+                if not inicio <= fecha <= hasta <= fin:
+                    form.add_error("fecha", "Todas las fechas deben estar dentro del período seleccionado.")
+                elif not fechas:
+                    form.add_error("hasta", "El rango debe incluir al menos un día de lunes a viernes.")
                 else:
-                    extra = form.save(commit=False)
-                    extra.recepcionista = recepcionista
-                    extra.save()
-                    messages.success(request, "Hora extra registrada.")
-                    return _redireccion_recepcionista(inicio, fin)
+                    with transaction.atomic():
+                        Recepcionista.objects.select_for_update().get(pk=recepcionista.pk)
+                        if any(_pagos_superpuestos(recepcionista, dia, dia).exists() for dia in fechas):
+                            form.add_error(None, "Hay fechas ya pagadas. No se guardó ninguna hora extra.")
+                        elif por_rango and HoraExtraRecepcionista.objects.filter(
+                            recepcionista=recepcionista, fecha__in=fechas
+                        ).exists():
+                            form.add_error(None, "Ya hay horas extra en alguna de esas fechas. Revisa el listado y elige solo días sin cargar; no se guardó ningún registro.")
+                        else:
+                            HoraExtraRecepcionista.objects.bulk_create([
+                                HoraExtraRecepcionista(
+                                    recepcionista=recepcionista, fecha=dia,
+                                    horas=form.cleaned_data["horas"], notas=form.cleaned_data["notas"]
+                                ) for dia in fechas
+                            ])
+                            total = form.cleaned_data["horas"] * len(fechas)
+                            messages.success(request, f"Horas extra registradas: {len(fechas)} día(s), {total} h en total.")
+                            return _redireccion_recepcionista(inicio, fin)
             contexto = _contexto_recepcionista(request, recepcionista, inicio, fin, extras, horas_extra, monto_extra, liquidacion, form)
             return render(request, "pagos/horas_recepcionista.html", contexto)
 

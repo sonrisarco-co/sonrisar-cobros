@@ -79,3 +79,45 @@ class PeriodosPersonalizadosTests(TestCase):
                             ("2026-10-17", "2026-10-18")]:
             self.request(inicio, fin, True)
         self.assertFalse(LiquidacionRecepcionista.objects.exists())
+
+from .models import HoraExtraRecepcionista
+
+
+class CargaExtrasRangoTests(TestCase):
+    def setUp(self):
+        self.persona, _ = Recepcionista.objects.get_or_create(nombre="Geisha Labrada")
+
+    def cargar(self, **datos):
+        req = RequestFactory().post(
+            '/pagos/horas-recepcionista/?inicio=2026-10-16&fin=2026-10-31',
+            dict(accion='agregar_hora_extra', **datos))
+        req.session = {'finanzas_pin_ok': True}
+        req._messages = FallbackStorage(req)
+        return horas_recepcionista(req)
+
+    def test_semana_y_reenvio_no_duplica(self):
+        datos = dict(modo='rango', fecha='2026-10-19', hasta='2026-10-25', horas='1', notas='Semana')
+        self.assertEqual(self.cargar(**datos).status_code, 302)
+        filas = HoraExtraRecepcionista.objects.all()
+        self.assertEqual(filas.count(), 5)
+        self.assertEqual(sum(f.horas for f in filas), Decimal('5'))
+        self.assertTrue(all(f.fecha.weekday() < 5 for f in filas))
+        self.assertEqual(self.cargar(**datos).status_code, 200)
+        self.assertEqual(filas.count(), 5)
+
+    def test_carga_diaria_sigue_disponible(self):
+        self.assertEqual(self.cargar(fecha='2026-10-20', horas='1.5').status_code, 302)
+        self.assertEqual(HoraExtraRecepcionista.objects.get().horas, Decimal('1.5'))
+
+    def test_rangos_invalidos_no_guardan_nada(self):
+        for fecha, hasta in [('2026-10-25', '2026-10-19'), ('2026-10-17', '2026-10-18'),
+                             ('2026-10-13', '2026-10-20'), ('2026-10-19', '')]:
+            self.cargar(modo='rango', fecha=fecha, hasta=hasta, horas='1')
+        self.assertFalse(HoraExtraRecepcionista.objects.exists())
+
+    def test_fecha_pagada_bloquea_todo_el_lote(self):
+        LiquidacionRecepcionista.objects.create(
+            recepcionista=self.persona, fecha_inicio=date(2026,10,21), fecha_fin=date(2026,10,21),
+            sueldo_base=1500, monto_pagado=1500, metodo='transferencia')
+        self.cargar(modo='rango', fecha='2026-10-19', hasta='2026-10-23', horas='1')
+        self.assertFalse(HoraExtraRecepcionista.objects.exists())

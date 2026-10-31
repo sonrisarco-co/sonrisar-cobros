@@ -38,10 +38,28 @@ class PagoForm(forms.ModelForm):
 
 
 class HoraExtraRecepcionistaForm(forms.ModelForm):
+    modo = forms.ChoiceField(
+        label="Forma de carga", choices=[("dia", "Un día"), ("rango", "Varios días · lunes a viernes")],
+        initial="dia", required=False,
+        widget=forms.Select(attrs={"class": "form-control"}))
+    hasta = forms.DateField(
+        label="Hasta (inclusive)", required=False,
+        widget=forms.DateInput(attrs={"type": "date", "class": "form-control"}))
+
+    def clean(self):
+        datos = super().clean()
+        if datos.get("modo") == "rango":
+            inicio, fin = datos.get("fecha"), datos.get("hasta")
+            if not fin:
+                self.add_error("hasta", "Selecciona la fecha final.")
+            elif inicio and (fin < inicio or (fin - inicio).days > 30):
+                self.add_error("hasta", "Elige un rango de hasta 31 días, posterior o igual al inicio.")
+        return datos
+
     class Meta:
         model = HoraExtraRecepcionista
-        fields = ["fecha", "horas", "notas"]
-        labels = {"fecha": "Fecha", "horas": "Horas extra", "notas": "Notas"}
+        fields = ["modo", "fecha", "hasta", "horas", "notas"]
+        labels = {"fecha": "Fecha", "horas": "Horas extra por día", "notas": "Notas"}
         widgets = {
             "fecha": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
             "horas": forms.NumberInput(attrs={"min": "0.25", "step": "0.25", "class": "form-control", "placeholder": "Ej.: 1.5"}),

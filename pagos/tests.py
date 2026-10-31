@@ -134,6 +134,10 @@ class PagosSeparadosExtrasTests(TestCase):
             recepcionista=self.persona, fecha=date(2026,10,20), horas=Decimal('2'))
 
     def ejecutar(self, accion, **datos):
+        if accion in {'pagar_extras', 'marcar_extras_pagadas'} and 'extras_ids' not in datos:
+            datos['extras_ids'] = list(HoraExtraRecepcionista.objects.filter(
+                recepcionista=self.persona, pago_extras__isnull=True,
+                liquidacion_historica__isnull=True, pagada_previamente=False).values_list('pk', flat=True))
         req = RequestFactory().post('/pagos/horas-recepcionista/?inicio=2026-10-19&fin=2026-10-30',
                                     dict(accion=accion, metodo=datos.pop('metodo', 'transferencia'), **datos))
         req.session = {'finanzas_pin_ok': True}
@@ -199,3 +203,39 @@ class PagosSeparadosExtrasTests(TestCase):
         self.assertFalse(PagoExtrasRecepcionista.objects.exists())
         historica.refresh_from_db()
         self.assertEqual(historica.monto_pagado, Decimal('15500'))
+
+
+class SeleccionExtrasTests(TestCase):
+    setUp = PagosSeparadosExtrasTests.setUp
+    ejecutar = PagosSeparadosExtrasTests.ejecutar
+
+    def test_marcar_pago_previo_no_genera_gasto_y_resto_sigue_pendiente(self):
+        otra = HoraExtraRecepcionista.objects.create(recepcionista=self.persona, fecha=date(2026,10,23), horas=1)
+        self.ejecutar('marcar_extras_pagadas', extras_ids=[self.extra.pk], afecta_caja='on')
+        self.extra.refresh_from_db(); otra.refresh_from_db()
+        self.assertTrue(self.extra.pagada_previamente)
+        self.assertFalse(otra.pagada_previamente)
+        self.assertFalse(Gasto.objects.exists())
+        self.assertFalse(PagoExtrasRecepcionista.objects.exists())
+        self.ejecutar('pagar_extras', extras_ids=[otra.pk])
+        self.assertEqual(PagoExtrasRecepcionista.objects.get().monto_pagado, Decimal('250'))
+        self.ejecutar('eliminar_hora_extra', hora_extra_id=self.extra.pk)
+        self.assertTrue(HoraExtraRecepcionista.objects.filter(pk=self.extra.pk).exists())
+
+    def test_pagar_solo_seleccionadas_y_rechazar_seleccion_obsoleta(self):
+        otra = HoraExtraRecepcionista.objects.create(recepcionista=self.persona, fecha=date(2026,10,23), horas=1)
+        self.ejecutar('pagar_extras', extras_ids=[self.extra.pk])
+        self.assertEqual(PagoExtrasRecepcionista.objects.get().monto_pagado, Decimal('500'))
+        self.ejecutar('marcar_extras_pagadas', extras_ids=[self.extra.pk, otra.pk])
+        otra.refresh_from_db()
+        self.assertFalse(otra.pagada_previamente)
+        self.assertIsNone(otra.pago_extras_id)
+        self.assertEqual(Gasto.objects.count(), 1)
+
+    def test_vacia_o_fuera_del_periodo_no_modifica_nada(self):
+        fuera = HoraExtraRecepcionista.objects.create(recepcionista=self.persona, fecha=date(2026,10,13), horas=1)
+        for seleccion in [[], [fuera.pk], ['invalido']]:
+            self.ejecutar('marcar_extras_pagadas', extras_ids=seleccion)
+            self.ejecutar('pagar_extras', extras_ids=seleccion)
+        self.assertFalse(HoraExtraRecepcionista.objects.filter(pagada_previamente=True).exists())
+        self.assertFalse(Gasto.objects.exists())

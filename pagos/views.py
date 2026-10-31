@@ -1671,7 +1671,7 @@ def _pagos_superpuestos(recepcionista, inicio, fin):
 def _extras_pagadas(recepcionista, inicio, fin):
     return HoraExtraRecepcionista.objects.filter(
         recepcionista=recepcionista, fecha__range=(inicio, fin)
-    ).filter(Q(pago_extras__isnull=False) | Q(liquidacion_historica__isnull=False))
+    ).filter(Q(pago_extras__isnull=False) | Q(liquidacion_historica__isnull=False) | Q(pagada_previamente=True))
 
 
 def _horas_extra_periodo(recepcionista, inicio, fin):
@@ -1768,26 +1768,37 @@ def horas_recepcionista(request):
                 extra = get_object_or_404(HoraExtraRecepcionista, pk=request.POST.get("hora_extra_id"), recepcionista=recepcionista)
                 if not inicio <= extra.fecha <= fin:
                     messages.error(request, "La hora extra no pertenece a la quincena seleccionada.")
-                elif extra.pago_extras_id or extra.liquidacion_historica_id:
+                elif extra.pago_extras_id or extra.liquidacion_historica_id or extra.pagada_previamente:
                     messages.error(request, "No se pueden cambiar horas extra de un período ya pagado.")
                 else:
                     extra.delete()
                     messages.success(request, "Hora extra eliminada.")
             return _redireccion_recepcionista(inicio, fin)
 
-        if accion == "pagar_extras":
+        if accion in {"pagar_extras", "marcar_extras_pagadas"}:
             metodo = request.POST.get("metodo", "")
-            if metodo not in dict(Gasto.METODOS):
+            if accion == "pagar_extras" and metodo not in dict(Gasto.METODOS):
                 messages.error(request, "Selecciona un método de pago válido.")
                 return _redireccion_recepcionista(inicio, fin)
             afecta_caja = request.POST.get("afecta_caja") == "on"
             with transaction.atomic():
                 Recepcionista.objects.select_for_update().get(pk=recepcionista.pk)
+                try:
+                    seleccion = {int(valor) for valor in request.POST.getlist("extras_ids")}
+                except (TypeError, ValueError):
+                    seleccion = set()
+                if not seleccion:
+                    messages.error(request, "Selecciona las horas extra en el listado antes de continuar.")
+                    return _redireccion_recepcionista(inicio, fin)
                 pendientes = list(HoraExtraRecepcionista.objects.select_for_update().filter(
-                    recepcionista=recepcionista, fecha__range=(inicio, fin),
-                    pago_extras__isnull=True, liquidacion_historica__isnull=True))
-                if not pendientes:
-                    messages.error(request, "No hay horas extra pendientes de pago en este período.")
+                    pk__in=seleccion, recepcionista=recepcionista, fecha__range=(inicio, fin),
+                    pago_extras__isnull=True, liquidacion_historica__isnull=True, pagada_previamente=False))
+                if len(pendientes) != len(seleccion):
+                    messages.error(request, "La selección incluye horas ya pagadas o fuera del período. No se modificó ningún registro.")
+                    return _redireccion_recepcionista(inicio, fin)
+                if accion == "marcar_extras_pagadas":
+                    HoraExtraRecepcionista.objects.filter(pk__in=seleccion).update(pagada_previamente=True)
+                    messages.success(request, f"Se marcaron {len(pendientes)} registro(s) como ya pagados, sin generar gastos ni movimientos de caja.")
                     return _redireccion_recepcionista(inicio, fin)
                 caja = CashSession.obtener_caja_del_dia() if afecta_caja else None
                 if caja and caja.estado == CashSession.Status.CERRADA:
@@ -1800,7 +1811,7 @@ def horas_recepcionista(request):
                     concepto=f"Horas extra {recepcionista.nombre} ({inicio:%d/%m/%Y} al {fin:%d/%m/%Y})",
                     monto=monto, metodo=metodo, afecta_caja=afecta_caja, caja=caja)
                 pago = PagoExtrasRecepcionista.objects.create(
-                    recepcionista=recepcionista, fecha_inicio=inicio, fecha_fin=fin,
+                    recepcionista=recepcionista, fecha_inicio=min(e.fecha for e in pendientes), fecha_fin=max(e.fecha for e in pendientes),
                     horas_pagadas=horas, monto_pagado=monto, metodo=metodo, gasto=gasto)
                 HoraExtraRecepcionista.objects.filter(pk__in=[e.pk for e in pendientes]).update(pago_extras=pago)
             messages.success(request, f"Pago de horas extra registrado por ${monto:,.2f}.")
@@ -1895,7 +1906,7 @@ def _contexto_recepcionista(request, recepcionista, inicio, fin, extras, horas_e
     ).order_by("fecha_inicio"))
     pagado_mes = sum((l.monto_pagado for l in liquidaciones_mes), Decimal("0.00"))
     extra_pagado_mes = sum((l.monto_horas_extra for l in liquidaciones_mes), Decimal("0.00"))
-    pendientes = [e for e in extras if not e.pago_extras_id and not e.liquidacion_historica_id]
+    pendientes = [e for e in extras if not e.pago_extras_id and not e.liquidacion_historica_id and not e.pagada_previamente]
     horas_pendientes = _total_horas_extra(pendientes)
     pagos_extras_mes = list(PagoExtrasRecepcionista.objects.filter(
         recepcionista=recepcionista, fecha_inicio__gte=mes_inicio, fecha_fin__lte=mes_fin))
@@ -1903,6 +1914,7 @@ def _contexto_recepcionista(request, recepcionista, inicio, fin, extras, horas_e
     pagado_mes += total_extras_pagado
     extra_pagado_mes += total_extras_pagado
     return {
+        "monto_marcado_previo": _monto_horas_extra(recepcionista, _total_horas_extra([e for e in extras if e.pagada_previamente])),
         "horas_pendientes": horas_pendientes,
         "monto_extras_pendientes": _monto_horas_extra(recepcionista, horas_pendientes),
         "pagos_extras_mes": pagos_extras_mes,

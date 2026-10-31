@@ -322,6 +322,8 @@ class PagoExtrasRecepcionista(models.Model):
 
 
 class HoraExtraRecepcionista(models.Model):
+    pagada_previamente = models.BooleanField(default=False)
+
     recepcionista = models.ForeignKey(Recepcionista, on_delete=models.PROTECT, related_name="horas_extra")
     pago_extras = models.ForeignKey(PagoExtrasRecepcionista, on_delete=models.PROTECT, null=True, blank=True)
     liquidacion_historica = models.ForeignKey("LiquidacionRecepcionista", on_delete=models.PROTECT, null=True, blank=True)

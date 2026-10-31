@@ -40,29 +40,30 @@
             <div class="field"><label for="fin-personalizado">Hasta (inclusive)</label><input id="fin-personalizado" type="date" name="fin" value="{{ fin|date:'Y-m-d' }}" required></div>
             <button class="gr-button" type="submit">Ver período personalizado</button>
         </form>
-        <p class="gr-note">Fechas dentro del mismo mes. Los períodos personalizados se calculan por jornadas de lunes a viernes: sueldo quincenal dividido entre 10 por los días seleccionados. Las quincenas del 1 al 15 y del 16 a fin de mes conservan su base fija. Para pagar días separados, registra cada período por separado.</p>
+        <p class="gr-note">El sueldo líquido de un mes completo es fijo: $ {{ sueldo_mensual|floatformat:2|intcomma }}, tanto en febrero como en meses de 30 o 31 días. Cada mitad del mes es el 50 %. Para el primer mes incompleto, elige el período desde el ingreso hasta fin de mes e ingresa expresamente el importe y su explicación. No se calcula por jornadas de lunes a viernes.</p>
         <script>document.getElementById('periodo-form').addEventListener('submit',function(e){e.preventDefault();const [i,f]=document.getElementById('periodo').value.split('|');const u=new URL(location.href);u.searchParams.set('inicio',i);u.searchParams.set('fin',f);location.href=u.toString();});</script>
     </section>
 
     <section class="gr-card receipt" id="recibo-mensual">
-        <div class="receipt-head"><div><h2>Resumen mensual de sueldo</h2><p>{{ inicio|date:'F Y'|capfirst }} · {{ recepcionista.nombre }}</p></div><button class="gr-button print-hide" onclick="window.print()" type="button">Imprimir recibo mensual</button></div>
+        <div class="receipt-head"><div><h2>Resumen mensual de sueldo</h2><p>{{ inicio|date:'F Y'|capfirst }} · {{ recepcionista.nombre }}</p></div><button class="gr-button print-hide" onclick="window.print()" type="button">Imprimir resumen de pagos</button></div>
         <div class="gr-stats">
             <div class="gr-stat"><span>Sueldo base mensual</span><strong>$ {{ sueldo_mensual|floatformat:2|intcomma }}</strong></div>
             <div class="gr-stat"><span>Horas extra del mes · {{ horas_extra_mes|floatformat:2 }} h</span><strong>$ {{ monto_extra_mes|floatformat:2|intcomma }}</strong></div>
-            <div class="gr-stat"><span>Total mensual estimado</span><strong class="receipt-total">$ {{ total_mes_estimado|floatformat:2|intcomma }}</strong></div>
+            <div class="gr-stat"><span>Referencia mes completo + extras</span><strong class="receipt-total">$ {{ total_mes_estimado|floatformat:2|intcomma }}</strong></div>
         </div>
-        <p class="gr-note">Sueldo base: $15.000 por quincena. Horas extra: $250 por hora. Pagado este mes: $ {{ pagado_mes|floatformat:2|intcomma }} (incluye $ {{ extra_pagado_mes|floatformat:2|intcomma }} de extras).</p>
+        <p class="gr-note">Mes completo: $ {{ sueldo_mensual|floatformat:2|intcomma }} líquidos. Base ya registrada para este mes: $ {{ base_pagada_mes|floatformat:2|intcomma }}. Las extras se pagan aparte. Pagado este mes: $ {{ pagado_mes|floatformat:2|intcomma }} (incluye $ {{ extra_pagado_mes|floatformat:2|intcomma }} de extras).</p>
+        <p class="gr-note">La referencia de mes completo no es una deuda ni el importe de un primer mes incompleto. Este resumen controla pagos y no sustituye el recibo de sueldo laboral.</p>
         <div class="gr-table-wrap"><table class="gr-table"><thead><tr><th>Período</th><th>Base</th><th>Extras pagadas</th><th>Total pagado</th><th>Estado</th></tr></thead><tbody>
-            {% for l in liquidaciones_mes %}<tr><td>{{ l.fecha_inicio|date:'d/m' }} al {{ l.fecha_fin|date:'d/m/Y' }}</td><td>$ {{ l.sueldo_base|floatformat:2|intcomma }}</td><td>{{ l.horas_extra_pagadas|floatformat:2 }} h · $ {{ l.monto_horas_extra|floatformat:2|intcomma }}</td><td>$ {{ l.monto_pagado|floatformat:2|intcomma }}</td><td>Pagado {{ l.fecha_pago|date:'d/m/Y' }}</td></tr>{% empty %}<tr><td colspan="5" class="gr-empty">Todavía no hay pagos de sueldo base registrados para este mes.</td></tr>{% endfor %}
+            {% for l in liquidaciones_mes %}<tr><td>{{ l.fecha_inicio|date:'d/m' }} al {{ l.fecha_fin|date:'d/m/Y' }}{% if l.detalle_pago %}<br>{{ l.detalle_pago }}{% endif %}</td><td>$ {{ l.sueldo_base|floatformat:2|intcomma }}</td><td>{{ l.horas_extra_pagadas|floatformat:2 }} h · $ {{ l.monto_horas_extra|floatformat:2|intcomma }}</td><td>$ {{ l.monto_pagado|floatformat:2|intcomma }}</td><td>Pagado {{ l.fecha_pago|date:'d/m/Y' }}</td></tr>{% empty %}<tr><td colspan="5" class="gr-empty">Todavía no hay pagos de sueldo base registrados para este mes.</td></tr>{% endfor %}
             {% for pago in pagos_extras_mes %}<tr><td>Horas extra · {{ pago.fecha_inicio|date:'d/m' }} al {{ pago.fecha_fin|date:'d/m/Y' }}</td><td>—</td><td>{{ pago.horas_pagadas|floatformat:2 }} h · $ {{ pago.monto_pagado|floatformat:2|intcomma }}</td><td>$ {{ pago.monto_pagado|floatformat:2|intcomma }}</td><td>Pagado {{ pago.fecha_pago|date:'d/m/Y' }} · {{ pago.get_metodo_display }}</td></tr>{% endfor %}
         </tbody></table></div>
     </section>
 
     <section class="gr-card">
         <div class="gr-stats">
-            <div class="gr-stat"><span>Sueldo base del período</span><strong>$ {{ sueldo_quincenal|floatformat:2|intcomma }}</strong></div>
+            <div class="gr-stat"><span>Sueldo base del período</span><strong>{% if importe_personalizado %}Importe a ingresar{% else %}$ {{ sueldo_quincenal|floatformat:2|intcomma }}{% endif %}</strong></div>
             <div class="gr-stat"><span>Horas extra registradas</span><strong>{{ total_horas_extra|floatformat:2 }} h</strong></div>
-            <div class="gr-stat"><span>Total del período</span><strong>$ {{ total_quincena|floatformat:2|intcomma }}</strong></div>
+            <div class="gr-stat"><span>Total del período</span><strong>{% if importe_personalizado %}Importe a ingresar{% else %}$ {{ total_quincena|floatformat:2|intcomma }}{% endif %}</strong></div>
         </div>
         <p class="gr-note">El horario habitual es de lunes a viernes, de 11:00 a 14:00 y de 15:00 a 18:00. Registra aquí solo el tiempo que exceda ese horario. Las extras se calculan a $250 por hora.</p>
     </section>
@@ -85,8 +86,8 @@
         </script>
         <section class="gr-card"><h2>Pago del período</h2>
             {% if liquidacion %}<div class="gr-paid">Pagado el {{ liquidacion.fecha_pago|date:'d/m/Y' }} · $ {{ liquidacion.monto_pagado|floatformat:2|intcomma }} · {{ liquidacion.get_metodo_display }}</div>{% if liquidacion.gasto %}<p class="gr-note">Gasto vinculado: {{ liquidacion.gasto.concepto }}.</p>{% endif %}
-            {% elif superpuesto %}<div class="gr-alert error">Este período incluye días ya pagados. Revisa el historial mensual y elige solo fechas pendientes.</div>{% else %}<p>Sueldo base: <strong>${{ sueldo_quincenal|floatformat:2|intcomma }}</strong>. Las horas extra se pagan por separado.</p>
-            <form method="post">{% csrf_token %}<input type="hidden" name="accion" value="pagar_quincena"><label for="metodo-pago">Método de pago</label><select id="metodo-pago" name="metodo" required style="width:100%;padding:10px;border:1px solid #cbdedc;border-radius:9px"><option value="efectivo">Efectivo</option><option value="transferencia">Transferencia</option><option value="tarjeta">Tarjeta</option></select><label class="gr-payrow"><input type="checkbox" name="afecta_caja" checked> Descontar de la caja abierta (solo si el dinero salió de esa caja)</label><button class="gr-button" type="submit" onclick="return confirm('¿Registrar el pago del período seleccionado por ${{ total_quincena|floatformat:2 }}?')">Registrar pago</button></form>{% endif %}
+            {% elif superpuesto %}<div class="gr-alert error">Este período incluye días ya pagados. Revisa el historial mensual y elige solo fechas pendientes.</div>{% else %}{% if importe_personalizado %}<p class="gr-alert">Período personalizado: ingresa el importe líquido y el detalle del pago. No hay un proporcional automático. Guardar este pago no liquida otros días del mes.</p>{% else %}<p>Importe fijo: <strong>${{ sueldo_quincenal|floatformat:2|intcomma }}</strong>{% if mes_completo %} por el mes completo{% else %} por la mitad del sueldo mensual{% endif %}. Las horas extra se pagan por separado.</p>{% endif %}
+            <form method="post">{% csrf_token %}<input type="hidden" name="accion" value="pagar_quincena"><div class="gr-form">{% for campo in pago_sueldo_form %}<p><label for="{{ campo.id_for_label }}">{{ campo.label }}</label>{{ campo }}</p>{% endfor %}</div><label for="metodo-pago">Método de pago</label><select id="metodo-pago" name="metodo" required style="width:100%;padding:10px;border:1px solid #cbdedc;border-radius:9px"><option value="efectivo">Efectivo</option><option value="transferencia">Transferencia</option><option value="tarjeta">Tarjeta</option></select><label class="gr-payrow"><input type="checkbox" name="afecta_caja" checked> Descontar de la caja abierta (solo si el dinero salió de esa caja)</label><button class="gr-button" type="submit" onclick="return confirm('¿Registrar el importe líquido indicado para el período seleccionado? Las horas extra se pagan aparte.')">Registrar pago</button></form>{% endif %}
         </section>
     </div>
 

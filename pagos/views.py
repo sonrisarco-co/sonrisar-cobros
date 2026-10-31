@@ -38,7 +38,7 @@ from .models import (
     CompraProveedor,
     PagoCompraProveedor
 )
-from .forms import HoraExtraRecepcionistaForm
+from .forms import HoraExtraRecepcionistaForm, PagoSueldoRecepcionistaForm
 
 from .facture_service import (
     probar_conexion,
@@ -1656,11 +1656,12 @@ def _dias_laborables(inicio, fin):
 
 
 def _base_periodo(recepcionista, inicio, fin):
+    if inicio.day == 1 and fin.day == calendar.monthrange(inicio.year, inicio.month)[1]:
+        return recepcionista.sueldo_mensual
     if _es_quincena_estandar(inicio, fin):
-        return recepcionista.sueldo_quincenal
-    # Una quincena habitual comprende diez jornadas de lunes a viernes.
-    return (recepcionista.sueldo_quincenal * Decimal(_dias_laborables(inicio, fin))
-            / Decimal("10")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        return recepcionista.sueldo_mensual / Decimal("2")
+    # Un período personalizado requiere importe explícito; no se calcula por jornadas.
+    return None
 
 
 def _pagos_superpuestos(recepcionista, inicio, fin):
@@ -1826,13 +1827,25 @@ def horas_recepcionista(request):
             if metodo not in metodos_validos:
                 messages.error(request, "Selecciona un método de pago válido.")
                 return _redireccion_recepcionista(inicio, fin)
+            pago_form = PagoSueldoRecepcionistaForm(request.POST)
+            if not pago_form.is_valid():
+                messages.error(request, "Ingresa un importe líquido válido, mayor que cero y con hasta dos decimales.")
+                return _redireccion_recepcionista(inicio, fin)
+            sueldo_base = pago_form.cleaned_data["monto_sueldo"]
+            detalle_pago = pago_form.cleaned_data["detalle_sueldo"]
+            base_fija = _base_periodo(recepcionista, inicio, fin)
+            if base_fija is not None and sueldo_base != base_fija:
+                messages.error(request, "El importe de un mes completo o de su mitad es fijo. Para un pago proporcional, selecciona las fechas correspondientes en período personalizado.")
+                return _redireccion_recepcionista(inicio, fin)
+            if base_fija is None and not detalle_pago:
+                messages.error(request, "Describe el pago personalizado y su importe. El sistema no calcula el proporcional automáticamente.")
+                return _redireccion_recepcionista(inicio, fin)
             afecta_caja = request.POST.get("afecta_caja") == "on"
             caja = CashSession.obtener_caja_del_dia()
             if afecta_caja and caja.estado == CashSession.Status.CERRADA:
                 messages.error(request, "La caja de hoy está cerrada. No se puede cargar el sueldo en esa caja.")
                 return _redireccion_recepcionista(inicio, fin)
 
-            sueldo_base = _base_periodo(recepcionista, inicio, fin)
             monto_total = sueldo_base
             fecha_pago = timezone.localdate()
             fecha_gasto = timezone.make_aware(datetime.combine(fecha_pago, time.min), timezone.get_current_timezone())
@@ -1844,11 +1857,19 @@ def horas_recepcionista(request):
                     if _pagos_superpuestos(recepcionista, inicio, fin).exists():
                         messages.error(request, "Estas fechas incluyen días ya pagados. Revisa el historial y selecciona solo días pendientes.")
                         return _redireccion_recepcionista(inicio, fin)
+                    base_pagada_mes = LiquidacionRecepcionista.objects.filter(
+                        recepcionista=recepcionista,
+                        fecha_inicio__year=inicio.year, fecha_inicio__month=inicio.month,
+                    ).aggregate(total=Sum("sueldo_base"))["total"] or Decimal("0.00")
+                    if base_pagada_mes + sueldo_base > recepcionista.sueldo_mensual:
+                        messages.error(request, "Este pago superaría el sueldo mensual líquido, sin contar las extras. Revisa los pagos anteriores del mes.")
+                        return _redireccion_recepcionista(inicio, fin)
                     liquidacion = LiquidacionRecepcionista.objects.create(
                         recepcionista=recepcionista,
                         fecha_inicio=inicio,
                         fecha_fin=fin,
                         sueldo_base=sueldo_base,
+                        detalle_pago=detalle_pago,
                         horas_extra_pagadas=Decimal("0.00"),
                         monto_horas_extra=Decimal("0.00"),
                         monto_pagado=monto_total,
@@ -1913,7 +1934,16 @@ def _contexto_recepcionista(request, recepcionista, inicio, fin, extras, horas_e
     total_extras_pagado = sum((p.monto_pagado for p in pagos_extras_mes), Decimal("0.00"))
     pagado_mes += total_extras_pagado
     extra_pagado_mes += total_extras_pagado
+    base_sugerida = liquidacion.sueldo_base if liquidacion else _base_periodo(recepcionista, inicio, fin)
+    pago_form = PagoSueldoRecepcionistaForm(initial={"monto_sueldo": base_sugerida})
+    if base_sugerida is not None:
+        pago_form.fields["monto_sueldo"].widget.attrs["readonly"] = True
+    mes_completo = inicio.day == 1 and fin == mes_fin
     return {
+        "pago_sueldo_form": pago_form,
+        "importe_personalizado": base_sugerida is None,
+        "mes_completo": mes_completo,
+        "base_pagada_mes": sum((l.sueldo_base for l in liquidaciones_mes), Decimal("0.00")),
         "monto_marcado_previo": _monto_horas_extra(recepcionista, _total_horas_extra([e for e in extras if e.pagada_previamente])),
         "horas_pendientes": horas_pendientes,
         "monto_extras_pendientes": _monto_horas_extra(recepcionista, horas_pendientes),

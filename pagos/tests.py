@@ -49,22 +49,25 @@ class PeriodosPersonalizadosTests(TestCase):
 
     def request(self, inicio, fin, pagar=False):
         url = f"/pagos/horas-recepcionista/?inicio={inicio}&fin={fin}"
-        req = (self.factory.post(url, {"accion": "pagar_quincena", "metodo": "transferencia"})
+        req = (self.factory.post(url, {"accion": "pagar_quincena", "metodo": "transferencia", "monto_sueldo": "1000", "detalle_sueldo": "Importe explícito de prueba"})
                if pagar else self.factory.get(url))
         req.session = {"finanzas_pin_ok": True}
         req._messages = FallbackStorage(req)
         return horas_recepcionista(req)
 
     def test_calculos_y_quincenas_historicas(self):
-        for inicio, fin, esperado in [(13, 16, "6000.00"), (19, 30, "15000.00"),
-                                     (1, 15, "15000.00"), (16, 31, "15000.00")]:
-            self.assertEqual(_base_periodo(self.persona, date(2026, 10, inicio), date(2026, 10, fin)), Decimal(esperado))
+        self.assertIsNone(_base_periodo(self.persona, date(2026,10,13), date(2026,10,31)))
+        self.assertIsNone(_base_periodo(self.persona, date(2026,10,19), date(2026,10,30)))
+        for mes, ultimo in [(2,28),(4,30),(10,31)]:
+            self.assertEqual(_base_periodo(self.persona, date(2026,mes,1), date(2026,mes,ultimo)), Decimal("30000"))
+            self.assertEqual(_base_periodo(self.persona, date(2026,mes,1), date(2026,mes,15)), Decimal("15000"))
+            self.assertEqual(_base_periodo(self.persona, date(2026,mes,16), date(2026,mes,ultimo)), Decimal("15000"))
 
     def test_paga_dos_periodos_y_no_duplica_gastos_por_solapamiento(self):
         for inicio, fin in [("2026-10-13", "2026-10-16"), ("2026-10-19", "2026-10-30")]:
             self.assertEqual(self.request(inicio, fin, True).status_code, 302)
         self.assertEqual(LiquidacionRecepcionista.objects.count(), 2)
-        self.assertEqual(sum(Gasto.objects.values_list("monto", flat=True)), Decimal("21000"))
+        self.assertEqual(sum(Gasto.objects.values_list("monto", flat=True)), Decimal("2000"))
         for inicio, fin in [("2026-10-13", "2026-10-16"), ("2026-10-16", "2026-10-31"),
                             ("2026-10-12", "2026-10-14")]:
             self.request(inicio, fin, True)
@@ -134,6 +137,9 @@ class PagosSeparadosExtrasTests(TestCase):
             recepcionista=self.persona, fecha=date(2026,10,20), horas=Decimal('2'))
 
     def ejecutar(self, accion, **datos):
+        if accion == 'pagar_quincena':
+            datos.setdefault('monto_sueldo', '15000')
+            datos.setdefault('detalle_sueldo', 'Pago personalizado de prueba')
         if accion in {'pagar_extras', 'marcar_extras_pagadas'} and 'extras_ids' not in datos:
             datos['extras_ids'] = list(HoraExtraRecepcionista.objects.filter(
                 recepcionista=self.persona, pago_extras__isnull=True,
@@ -239,3 +245,50 @@ class SeleccionExtrasTests(TestCase):
             self.ejecutar('pagar_extras', extras_ids=seleccion)
         self.assertFalse(HoraExtraRecepcionista.objects.filter(pagada_previamente=True).exists())
         self.assertFalse(Gasto.objects.exists())
+
+
+class SueldoMensualFijoTests(TestCase):
+    def setUp(self):
+        self.persona, _ = Recepcionista.objects.get_or_create(nombre='Geisha Labrada')
+
+    def pagar(self, inicio, fin, monto=None, detalle=''):
+        datos = {'accion':'pagar_quincena','metodo':'transferencia','detalle_sueldo':detalle}
+        if monto is not None:
+            datos['monto_sueldo']=monto
+        req=RequestFactory().post(f'/pagos/horas-recepcionista/?inicio={inicio}&fin={fin}', datos)
+        req.session={'finanzas_pin_ok':True}; req._messages=FallbackStorage(req)
+        return horas_recepcionista(req)
+
+    def test_dos_mitades_suman_30000_en_febrero_y_octubre(self):
+        for mes, ultimo in [(2,28),(10,31)]:
+            self.pagar(f'2026-{mes:02d}-01',f'2026-{mes:02d}-15','15000')
+            self.pagar(f'2026-{mes:02d}-16',f'2026-{mes:02d}-{ultimo}','15000')
+            total=sum(LiquidacionRecepcionista.objects.filter(fecha_inicio__month=mes).values_list('sueldo_base',flat=True))
+            self.assertEqual(total, Decimal('30000'))
+
+    def test_personalizado_exige_monto_y_explicacion(self):
+        for monto, detalle in [(None,''), ('NaN','Prueba'), ('Infinity','Prueba'),
+                               ('0','Prueba'), ('-1','Prueba'), ('1200.001','Prueba'), ('1200','')]:
+            self.pagar('2026-10-13','2026-10-31',monto,detalle)
+        self.assertFalse(LiquidacionRecepcionista.objects.exists())
+        self.pagar('2026-10-13','2026-10-31','1234.50','Importe de prueba, no es cálculo legal')
+        pago=LiquidacionRecepcionista.objects.get()
+        self.assertEqual(pago.monto_pagado, Decimal('1234.50'))
+        self.assertEqual(pago.detalle_pago,'Importe de prueba, no es cálculo legal')
+        self.assertEqual(pago.gasto.monto,pago.monto_pagado)
+
+    def test_no_permite_agregar_dia_31_a_la_mitad_ni_superar_base_mensual(self):
+        self.pagar('2026-10-16','2026-10-31','16000')
+        self.assertFalse(Gasto.objects.exists())
+        self.pagar('2026-10-13','2026-10-15','20000','Importe de prueba')
+        self.pagar('2026-10-16','2026-10-31','15000')
+        self.assertEqual(Gasto.objects.count(),1)
+        self.assertEqual(sum(Gasto.objects.values_list('monto',flat=True)),Decimal('20000'))
+
+    def test_personalizado_no_muestra_importe_inventado(self):
+        req=RequestFactory().get('/pagos/horas-recepcionista/?inicio=2026-10-13&fin=2026-10-31')
+        req.session={'finanzas_pin_ok':True}
+        response=horas_recepcionista(req)
+        self.assertContains(response,'Importe a ingresar')
+        self.assertContains(response,'No hay un proporcional automático')
+        self.assertNotContains(response,'dividido entre 10')

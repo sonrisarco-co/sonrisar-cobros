@@ -341,6 +341,8 @@ class HoraExtraRecepcionista(models.Model):
 
 
 class LiquidacionRecepcionista(models.Model):
+    detalle_pago = models.CharField(max_length=240, blank=True)
+
     METODOS = [
         ("efectivo", "Efectivo"),
         ("transferencia", "Transferencia"),

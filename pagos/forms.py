@@ -71,3 +71,12 @@ class HoraExtraRecepcionistaForm(forms.ModelForm):
         if horas <= 0:
             raise forms.ValidationError("Ingresa una cantidad de horas mayor que cero.")
         return horas
+
+
+class PagoSueldoRecepcionistaForm(forms.Form):
+    monto_sueldo = forms.DecimalField(
+        label="Importe líquido a pagar", max_digits=10, decimal_places=2,
+        min_value=0.01, widget=forms.NumberInput(attrs={"min": "0.01", "step": "0.01"}))
+    detalle_sueldo = forms.CharField(
+        label="Detalle del pago", max_length=240, required=False,
+        widget=forms.TextInput(attrs={"placeholder": "Ej.: sueldo proporcional de octubre"}))

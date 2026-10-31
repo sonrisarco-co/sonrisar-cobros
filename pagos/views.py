@@ -32,6 +32,7 @@ from .models import (
     Gasto,
     Recepcionista,
     HoraExtraRecepcionista,
+    PagoExtrasRecepcionista,
     LiquidacionRecepcionista,
     DevolucionPaciente,
     CompraProveedor,
@@ -1667,6 +1668,12 @@ def _pagos_superpuestos(recepcionista, inicio, fin):
         recepcionista=recepcionista, fecha_inicio__lte=fin, fecha_fin__gte=inicio)
 
 
+def _extras_pagadas(recepcionista, inicio, fin):
+    return HoraExtraRecepcionista.objects.filter(
+        recepcionista=recepcionista, fecha__range=(inicio, fin)
+    ).filter(Q(pago_extras__isnull=False) | Q(liquidacion_historica__isnull=False))
+
+
 def _horas_extra_periodo(recepcionista, inicio, fin):
     return list(HoraExtraRecepcionista.objects.filter(
         recepcionista=recepcionista, fecha__range=(inicio, fin)
@@ -1725,28 +1732,78 @@ def horas_recepcionista(request):
             form = HoraExtraRecepcionistaForm(request.POST)
             if form.is_valid():
                 fecha = form.cleaned_data["fecha"]
-                if not inicio <= fecha <= fin:
-                    form.add_error("fecha", "La fecha debe estar dentro de la quincena seleccionada.")
-                elif _pagos_superpuestos(recepcionista, fecha, fecha).exists():
-                    messages.error(request, "La quincena ya fue pagada; no se pueden modificar sus horas extra.")
+                por_rango = form.cleaned_data.get("modo") == "rango"
+                hasta = form.cleaned_data["hasta"] if por_rango else fecha
+                fechas = [fecha + timedelta(days=n) for n in range((hasta - fecha).days + 1)
+                          if not por_rango or (fecha + timedelta(days=n)).weekday() < 5]
+                if not inicio <= fecha <= hasta <= fin:
+                    form.add_error("fecha", "Todas las fechas deben estar dentro del período seleccionado.")
+                elif not fechas:
+                    form.add_error("hasta", "El rango debe incluir al menos un día de lunes a viernes.")
                 else:
-                    extra = form.save(commit=False)
-                    extra.recepcionista = recepcionista
-                    extra.save()
-                    messages.success(request, "Hora extra registrada.")
-                    return _redireccion_recepcionista(inicio, fin)
+                    with transaction.atomic():
+                        Recepcionista.objects.select_for_update().get(pk=recepcionista.pk)
+                        if any(_extras_pagadas(recepcionista, dia, dia).exists() for dia in fechas):
+                            form.add_error(None, "Hay fechas ya pagadas. No se guardó ninguna hora extra.")
+                        elif por_rango and HoraExtraRecepcionista.objects.filter(
+                            recepcionista=recepcionista, fecha__in=fechas
+                        ).exists():
+                            form.add_error(None, "Ya hay horas extra en alguna de esas fechas. Revisa el listado y elige solo días sin cargar; no se guardó ningún registro.")
+                        else:
+                            HoraExtraRecepcionista.objects.bulk_create([
+                                HoraExtraRecepcionista(
+                                    recepcionista=recepcionista, fecha=dia,
+                                    horas=form.cleaned_data["horas"], notas=form.cleaned_data["notas"]
+                                ) for dia in fechas
+                            ])
+                            total = form.cleaned_data["horas"] * len(fechas)
+                            messages.success(request, f"Horas extra registradas: {len(fechas)} día(s), {total} h en total.")
+                            return _redireccion_recepcionista(inicio, fin)
             contexto = _contexto_recepcionista(request, recepcionista, inicio, fin, extras, horas_extra, monto_extra, liquidacion, form)
             return render(request, "pagos/horas_recepcionista.html", contexto)
 
         if accion == "eliminar_hora_extra":
-            extra = get_object_or_404(HoraExtraRecepcionista, pk=request.POST.get("hora_extra_id"), recepcionista=recepcionista)
-            if not inicio <= extra.fecha <= fin:
-                messages.error(request, "La hora extra no pertenece a la quincena seleccionada.")
-            elif _pagos_superpuestos(recepcionista, extra.fecha, extra.fecha).exists():
-                messages.error(request, "No se pueden cambiar horas extra de un período ya pagado.")
-            else:
-                extra.delete()
-                messages.success(request, "Hora extra eliminada.")
+            with transaction.atomic():
+                Recepcionista.objects.select_for_update().get(pk=recepcionista.pk)
+                extra = get_object_or_404(HoraExtraRecepcionista, pk=request.POST.get("hora_extra_id"), recepcionista=recepcionista)
+                if not inicio <= extra.fecha <= fin:
+                    messages.error(request, "La hora extra no pertenece a la quincena seleccionada.")
+                elif extra.pago_extras_id or extra.liquidacion_historica_id:
+                    messages.error(request, "No se pueden cambiar horas extra de un período ya pagado.")
+                else:
+                    extra.delete()
+                    messages.success(request, "Hora extra eliminada.")
+            return _redireccion_recepcionista(inicio, fin)
+
+        if accion == "pagar_extras":
+            metodo = request.POST.get("metodo", "")
+            if metodo not in dict(Gasto.METODOS):
+                messages.error(request, "Selecciona un método de pago válido.")
+                return _redireccion_recepcionista(inicio, fin)
+            afecta_caja = request.POST.get("afecta_caja") == "on"
+            with transaction.atomic():
+                Recepcionista.objects.select_for_update().get(pk=recepcionista.pk)
+                pendientes = list(HoraExtraRecepcionista.objects.select_for_update().filter(
+                    recepcionista=recepcionista, fecha__range=(inicio, fin),
+                    pago_extras__isnull=True, liquidacion_historica__isnull=True))
+                if not pendientes:
+                    messages.error(request, "No hay horas extra pendientes de pago en este período.")
+                    return _redireccion_recepcionista(inicio, fin)
+                caja = CashSession.obtener_caja_del_dia() if afecta_caja else None
+                if caja and caja.estado == CashSession.Status.CERRADA:
+                    messages.error(request, "La caja está cerrada. No se registró el pago.")
+                    return _redireccion_recepcionista(inicio, fin)
+                horas = _total_horas_extra(pendientes)
+                monto = _monto_horas_extra(recepcionista, horas)
+                gasto = Gasto.objects.create(
+                    proveedor=recepcionista.nombre, categoria="sueldos",
+                    concepto=f"Horas extra {recepcionista.nombre} ({inicio:%d/%m/%Y} al {fin:%d/%m/%Y})",
+                    monto=monto, metodo=metodo, afecta_caja=afecta_caja, caja=caja)
+                pago = PagoExtrasRecepcionista.objects.create(
+                    recepcionista=recepcionista, fecha_inicio=inicio, fecha_fin=fin,
+                    horas_pagadas=horas, monto_pagado=monto, metodo=metodo, gasto=gasto)
+                HoraExtraRecepcionista.objects.filter(pk__in=[e.pk for e in pendientes]).update(pago_extras=pago)
+            messages.success(request, f"Pago de horas extra registrado por ${monto:,.2f}.")
             return _redireccion_recepcionista(inicio, fin)
 
         if accion == "pagar_quincena":
@@ -1765,7 +1822,7 @@ def horas_recepcionista(request):
                 return _redireccion_recepcionista(inicio, fin)
 
             sueldo_base = _base_periodo(recepcionista, inicio, fin)
-            monto_total = sueldo_base + monto_extra
+            monto_total = sueldo_base
             fecha_pago = timezone.localdate()
             fecha_gasto = timezone.make_aware(datetime.combine(fecha_pago, time.min), timezone.get_current_timezone())
             concepto = f"Sueldo {recepcionista.nombre} ({inicio:%d/%m/%Y} al {fin:%d/%m/%Y})"
@@ -1781,8 +1838,8 @@ def horas_recepcionista(request):
                         fecha_inicio=inicio,
                         fecha_fin=fin,
                         sueldo_base=sueldo_base,
-                        horas_extra_pagadas=horas_extra,
-                        monto_horas_extra=monto_extra,
+                        horas_extra_pagadas=Decimal("0.00"),
+                        monto_horas_extra=Decimal("0.00"),
                         monto_pagado=monto_total,
                         fecha_pago=fecha_pago,
                         metodo=metodo,
@@ -1838,11 +1895,21 @@ def _contexto_recepcionista(request, recepcionista, inicio, fin, extras, horas_e
     ).order_by("fecha_inicio"))
     pagado_mes = sum((l.monto_pagado for l in liquidaciones_mes), Decimal("0.00"))
     extra_pagado_mes = sum((l.monto_horas_extra for l in liquidaciones_mes), Decimal("0.00"))
+    pendientes = [e for e in extras if not e.pago_extras_id and not e.liquidacion_historica_id]
+    horas_pendientes = _total_horas_extra(pendientes)
+    pagos_extras_mes = list(PagoExtrasRecepcionista.objects.filter(
+        recepcionista=recepcionista, fecha_inicio__gte=mes_inicio, fecha_fin__lte=mes_fin))
+    total_extras_pagado = sum((p.monto_pagado for p in pagos_extras_mes), Decimal("0.00"))
+    pagado_mes += total_extras_pagado
+    extra_pagado_mes += total_extras_pagado
     return {
+        "horas_pendientes": horas_pendientes,
+        "monto_extras_pendientes": _monto_horas_extra(recepcionista, horas_pendientes),
+        "pagos_extras_mes": pagos_extras_mes,
         "recepcionista": recepcionista, "inicio": inicio, "fin": fin,
         "extras": extras, "total_horas_extra": horas_extra, "monto_horas_extra": monto_extra,
         "sueldo_quincenal": liquidacion.sueldo_base if liquidacion else _base_periodo(recepcionista, inicio, fin),
-        "total_quincena": liquidacion.monto_pagado if liquidacion else _base_periodo(recepcionista, inicio, fin) + monto_extra,
+        "total_quincena": liquidacion.sueldo_base if liquidacion else _base_periodo(recepcionista, inicio, fin),
         "dias_laborables": _dias_laborables(inicio, fin),
         "personalizado": not _es_quincena_estandar(inicio, fin),
         "superpuesto": _pagos_superpuestos(recepcionista, inicio, fin).exists() and not liquidacion,

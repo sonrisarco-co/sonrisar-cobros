@@ -31,6 +31,7 @@
     <section class="gr-card print-hide">
         <form method="get" class="gr-period" id="periodo-form">
             <div class="field"><label for="periodo">Quincena</label><select id="periodo">
+                {% if personalizado %}<option value="{{ inicio|date:'Y-m-d' }}|{{ fin|date:'Y-m-d' }}" selected>Período seleccionado · {{ inicio|date:'d/m/Y' }} al {{ fin|date:'d/m/Y' }}</option>{% endif %}
                 {% for q in quincenas %}<option value="{{ q.0|date:'Y-m-d' }}|{{ q.1|date:'Y-m-d' }}" {% if inicio == q.0 and fin == q.1 %}selected{% endif %}>{{ q.0|date:'F Y'|capfirst }} · {{ q.0|date:'d' }} al {{ q.1|date:'d' }}</option>{% endfor %}
             </select></div>
             <button class="gr-button" type="submit">Ver quincena</button>
@@ -40,7 +41,8 @@
             <div class="field"><label for="fin-personalizado">Hasta (inclusive)</label><input id="fin-personalizado" type="date" name="fin" value="{{ fin|date:'Y-m-d' }}" required></div>
             <button class="gr-button" type="submit">Ver período personalizado</button>
         </form>
-        <p class="gr-note">El sueldo líquido de un mes completo es fijo: $ {{ sueldo_mensual|floatformat:2|intcomma }}, tanto en febrero como en meses de 30 o 31 días. Cada mitad del mes es el 50 %. Para el primer mes incompleto, elige el período desde el ingreso hasta fin de mes e ingresa expresamente el importe y su explicación. No se calcula por jornadas de lunes a viernes.</p>
+        <p class="gr-note">El sueldo líquido de un mes completo es fijo: $ {{ sueldo_mensual|floatformat:2|intcomma }}, tanto en febrero como en meses de 30 o 31 días. Cada mitad del mes es el 50 %. Para el ingreso de Geisha el 13/10/2026, el acceso «Primer sueldo de octubre» calcula los 3 días del 13 al 15 más la segunda quincena completa. Otros períodos personalizados requieren importe y explicación. No se calcula por jornadas de lunes a viernes.</p>
+        <p><a class="gr-link" href="{% url 'pagos:horas_recepcionista' %}?inicio=2026-10-13&amp;fin=2026-10-31">Primer sueldo de octubre · ingreso 13/10</a></p>
         <script>document.getElementById('periodo-form').addEventListener('submit',function(e){e.preventDefault();const [i,f]=document.getElementById('periodo').value.split('|');const u=new URL(location.href);u.searchParams.set('inicio',i);u.searchParams.set('fin',f);location.href=u.toString();});</script>
     </section>
 
@@ -68,6 +70,13 @@
         <p class="gr-note">El horario habitual es de lunes a viernes, de 11:00 a 14:00 y de 15:00 a 18:00. Registra aquí solo el tiempo que exceda ese horario. Las extras se calculan a $250 por hora.</p>
     </section>
 
+    {% if primer_pago %}<section class="gr-card">
+        <h2>Primer sueldo de octubre · ingreso 13/10/2026</h2>
+        <p>Del 13 al 15: 3 días × (sueldo mensual ÷ 30) = <strong>$ {{ primer_pago.primera|floatformat:2|intcomma }}</strong>.</p>
+        {% if primer_pago.segunda %}<p>Del 16 al 31: segunda quincena completa = <strong>$ {{ primer_pago.segunda|floatformat:2|intcomma }}</strong>.</p>{% endif %}
+        <p><strong>Total de sueldo líquido: $ {{ primer_pago.total|floatformat:2|intcomma }}</strong>. Horas extra aparte.</p>
+        <p class="gr-note">Criterio de pago elegido para este ingreso. El día 31 no agrega dinero a la segunda quincena. Este pago cubre las fechas seleccionadas; no registres otra vez esos mismos días.</p>
+    </section>{% endif %}
     <p class="gr-note">Período seleccionado: <strong>{{ inicio|date:'d/m/Y' }} al {{ fin|date:'d/m/Y' }}</strong>{% if personalizado %} · {{ dias_laborables }} jornadas de lunes a viernes.{% endif %}</p>
     <div class="gr-grid print-hide">
         <section class="gr-card"><h2>Registrar hora extra</h2>
@@ -86,7 +95,7 @@
         </script>
         <section class="gr-card"><h2>Pago del período</h2>
             {% if liquidacion %}<div class="gr-paid">Pagado el {{ liquidacion.fecha_pago|date:'d/m/Y' }} · $ {{ liquidacion.monto_pagado|floatformat:2|intcomma }} · {{ liquidacion.get_metodo_display }}</div>{% if liquidacion.gasto %}<p class="gr-note">Gasto vinculado: {{ liquidacion.gasto.concepto }}.</p>{% endif %}
-            {% elif superpuesto %}<div class="gr-alert error">Este período incluye días ya pagados. Revisa el historial mensual y elige solo fechas pendientes.</div>{% else %}{% if importe_personalizado %}<p class="gr-alert">Período personalizado: ingresa el importe líquido y el detalle del pago. No hay un proporcional automático. Guardar este pago no liquida otros días del mes.</p>{% else %}<p>Importe fijo: <strong>${{ sueldo_quincenal|floatformat:2|intcomma }}</strong>{% if mes_completo %} por el mes completo{% else %} por la mitad del sueldo mensual{% endif %}. Las horas extra se pagan por separado.</p>{% endif %}
+            {% elif superpuesto %}<div class="gr-alert error">Este período incluye días ya pagados. Revisa el historial mensual y elige solo fechas pendientes.</div>{% else %}{% if importe_personalizado %}<p class="gr-alert">Período personalizado: ingresa el importe líquido y el detalle del pago. No hay un proporcional automático. Guardar este pago no liquida otros días del mes.</p>{% else %}<p>Importe fijo: <strong>${{ sueldo_quincenal|floatformat:2|intcomma }}</strong>{% if mes_completo %} por el mes completo{% elif primer_pago %} según el desglose del primer sueldo{% else %} por la mitad del sueldo mensual{% endif %}. Las horas extra se pagan por separado.</p>{% endif %}
             <form method="post">{% csrf_token %}<input type="hidden" name="accion" value="pagar_quincena"><div class="gr-form">{% for campo in pago_sueldo_form %}<p><label for="{{ campo.id_for_label }}">{{ campo.label }}</label>{{ campo }}</p>{% endfor %}</div><label for="metodo-pago">Método de pago</label><select id="metodo-pago" name="metodo" required style="width:100%;padding:10px;border:1px solid #cbdedc;border-radius:9px"><option value="efectivo">Efectivo</option><option value="transferencia">Transferencia</option><option value="tarjeta">Tarjeta</option></select><label class="gr-payrow"><input type="checkbox" name="afecta_caja" checked> Descontar de la caja abierta (solo si el dinero salió de esa caja)</label><button class="gr-button" type="submit" onclick="return confirm('¿Registrar el importe líquido indicado para el período seleccionado? Las horas extra se pagan aparte.')">Registrar pago</button></form>{% endif %}
         </section>
     </div>

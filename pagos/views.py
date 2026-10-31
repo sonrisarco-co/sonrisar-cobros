@@ -1655,7 +1655,25 @@ def _dias_laborables(inicio, fin):
                for n in range((fin - inicio).days + 1))
 
 
+def _primer_pago_geisha(recepcionista, inicio, fin):
+    # Criterio elegido por Andrés para el ingreso de Geisha el 13/10/2026.
+    # No se aplica a otros ingresos ni a períodos personalizados generales.
+    if inicio != date(2026, 10, 13) or fin not in (date(2026, 10, 15), date(2026, 10, 31)):
+        return None
+    dias_primera = 3
+    monto_primera = (recepcionista.sueldo_mensual / Decimal("30") * dias_primera).quantize(Decimal("0.01"))
+    monto_segunda = (recepcionista.sueldo_mensual / Decimal("2")).quantize(Decimal("0.01")) if fin.day == 31 else Decimal("0.00")
+    detalle = f"Ingreso 13/10/2026: 3 días (13 al 15) a base mensual / 30: ${monto_primera:.2f}"
+    if monto_segunda:
+        detalle += f" + segunda quincena (16 al 31): ${monto_segunda:.2f}"
+    return {"primera": monto_primera, "segunda": monto_segunda,
+            "total": monto_primera + monto_segunda, "detalle": detalle}
+
+
 def _base_periodo(recepcionista, inicio, fin):
+    primer_pago = _primer_pago_geisha(recepcionista, inicio, fin)
+    if primer_pago:
+        return primer_pago["total"]
     if inicio.day == 1 and fin.day == calendar.monthrange(inicio.year, inicio.month)[1]:
         return recepcionista.sueldo_mensual
     if _es_quincena_estandar(inicio, fin):
@@ -1833,9 +1851,12 @@ def horas_recepcionista(request):
                 return _redireccion_recepcionista(inicio, fin)
             sueldo_base = pago_form.cleaned_data["monto_sueldo"]
             detalle_pago = pago_form.cleaned_data["detalle_sueldo"]
+            primer_pago = _primer_pago_geisha(recepcionista, inicio, fin)
+            if primer_pago:
+                detalle_pago = primer_pago["detalle"]
             base_fija = _base_periodo(recepcionista, inicio, fin)
             if base_fija is not None and sueldo_base != base_fija:
-                messages.error(request, "El importe de un mes completo o de su mitad es fijo. Para un pago proporcional, selecciona las fechas correspondientes en período personalizado.")
+                messages.error(request, "El importe no coincide con el cálculo mostrado para este período. Actualiza la página y revisa las fechas.")
                 return _redireccion_recepcionista(inicio, fin)
             if base_fija is None and not detalle_pago:
                 messages.error(request, "Describe el pago personalizado y su importe. El sistema no calcula el proporcional automáticamente.")
@@ -1935,11 +1956,16 @@ def _contexto_recepcionista(request, recepcionista, inicio, fin, extras, horas_e
     pagado_mes += total_extras_pagado
     extra_pagado_mes += total_extras_pagado
     base_sugerida = liquidacion.sueldo_base if liquidacion else _base_periodo(recepcionista, inicio, fin)
-    pago_form = PagoSueldoRecepcionistaForm(initial={"monto_sueldo": base_sugerida})
+    primer_pago = _primer_pago_geisha(recepcionista, inicio, fin)
+    pago_form = PagoSueldoRecepcionistaForm(initial={
+        "monto_sueldo": base_sugerida,
+        "detalle_sueldo": primer_pago["detalle"] if primer_pago else "",
+    })
     if base_sugerida is not None:
         pago_form.fields["monto_sueldo"].widget.attrs["readonly"] = True
     mes_completo = inicio.day == 1 and fin == mes_fin
     return {
+        "primer_pago": primer_pago,
         "pago_sueldo_form": pago_form,
         "importe_personalizado": base_sugerida is None,
         "mes_completo": mes_completo,

@@ -307,8 +307,24 @@ class Recepcionista(models.Model):
         return self.nombre
 
 
+class PagoExtrasRecepcionista(models.Model):
+    recepcionista = models.ForeignKey(Recepcionista, on_delete=models.PROTECT)
+    fecha_inicio = models.DateField()
+    fecha_fin = models.DateField()
+    horas_pagadas = models.DecimalField(max_digits=7, decimal_places=2)
+    monto_pagado = models.DecimalField(max_digits=10, decimal_places=2)
+    fecha_pago = models.DateField(default=timezone.localdate)
+    metodo = models.CharField(max_length=20, choices=Gasto.METODOS)
+    gasto = models.OneToOneField(Gasto, on_delete=models.PROTECT, related_name="pago_extras_recepcionista")
+
+    class Meta:
+        ordering = ["-fecha_pago", "-id"]
+
+
 class HoraExtraRecepcionista(models.Model):
     recepcionista = models.ForeignKey(Recepcionista, on_delete=models.PROTECT, related_name="horas_extra")
+    pago_extras = models.ForeignKey(PagoExtrasRecepcionista, on_delete=models.PROTECT, null=True, blank=True)
+    liquidacion_historica = models.ForeignKey("LiquidacionRecepcionista", on_delete=models.PROTECT, null=True, blank=True)
     fecha = models.DateField(db_index=True)
     horas = models.DecimalField(max_digits=5, decimal_places=2)
     notas = models.CharField(max_length=200, blank=True)

@@ -53,7 +53,8 @@
         </div>
         <p class="gr-note">Sueldo base: $15.000 por quincena. Horas extra: $250 por hora. Pagado este mes: $ {{ pagado_mes|floatformat:2|intcomma }} (incluye $ {{ extra_pagado_mes|floatformat:2|intcomma }} de extras).</p>
         <div class="gr-table-wrap"><table class="gr-table"><thead><tr><th>Período</th><th>Base</th><th>Extras pagadas</th><th>Total pagado</th><th>Estado</th></tr></thead><tbody>
-            {% for l in liquidaciones_mes %}<tr><td>{{ l.fecha_inicio|date:'d/m' }} al {{ l.fecha_fin|date:'d/m/Y' }}</td><td>$ {{ l.sueldo_base|floatformat:2|intcomma }}</td><td>{{ l.horas_extra_pagadas|floatformat:2 }} h · $ {{ l.monto_horas_extra|floatformat:2|intcomma }}</td><td>$ {{ l.monto_pagado|floatformat:2|intcomma }}</td><td>Pagado {{ l.fecha_pago|date:'d/m/Y' }}</td></tr>{% empty %}<tr><td colspan="5" class="gr-empty">Todavía no hay pagos registrados para este mes.</td></tr>{% endfor %}
+            {% for l in liquidaciones_mes %}<tr><td>{{ l.fecha_inicio|date:'d/m' }} al {{ l.fecha_fin|date:'d/m/Y' }}</td><td>$ {{ l.sueldo_base|floatformat:2|intcomma }}</td><td>{{ l.horas_extra_pagadas|floatformat:2 }} h · $ {{ l.monto_horas_extra|floatformat:2|intcomma }}</td><td>$ {{ l.monto_pagado|floatformat:2|intcomma }}</td><td>Pagado {{ l.fecha_pago|date:'d/m/Y' }}</td></tr>{% empty %}<tr><td colspan="5" class="gr-empty">Todavía no hay pagos de sueldo base registrados para este mes.</td></tr>{% endfor %}
+            {% for pago in pagos_extras_mes %}<tr><td>Horas extra · {{ pago.fecha_inicio|date:'d/m' }} al {{ pago.fecha_fin|date:'d/m/Y' }}</td><td>—</td><td>{{ pago.horas_pagadas|floatformat:2 }} h · $ {{ pago.monto_pagado|floatformat:2|intcomma }}</td><td>$ {{ pago.monto_pagado|floatformat:2|intcomma }}</td><td>Pagado {{ pago.fecha_pago|date:'d/m/Y' }} · {{ pago.get_metodo_display }}</td></tr>{% endfor %}
         </tbody></table></div>
     </section>
 
@@ -69,10 +70,10 @@
     <p class="gr-note">Período seleccionado: <strong>{{ inicio|date:'d/m/Y' }} al {{ fin|date:'d/m/Y' }}</strong>{% if personalizado %} · {{ dias_laborables }} jornadas de lunes a viernes.{% endif %}</p>
     <div class="gr-grid print-hide">
         <section class="gr-card"><h2>Registrar hora extra</h2>
-            {% if liquidacion %}<div class="gr-paid">Esta quincena ya fue pagada; las horas extra quedaron cerradas.</div>{% else %}
+
             <form method="post" class="gr-form">{% csrf_token %}<input type="hidden" name="accion" value="agregar_hora_extra"><p class="gr-note">Elige «Un día» o «Varios días · lunes a viernes». Para varios días, indica desde y hasta, y las horas extra de <strong>cada día</strong>. Ejemplo: 1 hora por día del lunes al viernes suma 5 horas. Se omiten sábados y domingos; selecciona solo días efectivamente trabajados.</p>{{ form.non_field_errors }}<div class="gr-form-grid">
                 {% for field in form %}<div class="{% if field.name == 'notas' %}wide{% endif %}"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% for error in field.errors %}<small style="color:#b42318">{{ error }}</small>{% endfor %}</div>{% endfor %}
-            </div><p class="gr-note">Puedes ingresar fracciones de hora en incrementos de 15 minutos (por ejemplo, 1,5).</p><button class="gr-button" type="submit">Guardar horas extra</button></form>{% endif %}
+            </div><p class="gr-note">Puedes ingresar fracciones de hora en incrementos de 15 minutos (por ejemplo, 1,5).</p><button class="gr-button" type="submit">Guardar horas extra</button></form>
         </section>
         <script>
         (function(){
@@ -84,13 +85,27 @@
         </script>
         <section class="gr-card"><h2>Pago del período</h2>
             {% if liquidacion %}<div class="gr-paid">Pagado el {{ liquidacion.fecha_pago|date:'d/m/Y' }} · $ {{ liquidacion.monto_pagado|floatformat:2|intcomma }} · {{ liquidacion.get_metodo_display }}</div>{% if liquidacion.gasto %}<p class="gr-note">Gasto vinculado: {{ liquidacion.gasto.concepto }}.</p>{% endif %}
-            {% elif superpuesto %}<div class="gr-alert error">Este período incluye días ya pagados. Revisa el historial mensual y elige solo fechas pendientes.</div>{% else %}<p>Base ${{ sueldo_quincenal|floatformat:2|intcomma }} + extras ${{ monto_horas_extra|floatformat:2|intcomma }} = <strong>${{ total_quincena|floatformat:2|intcomma }}</strong>.</p>
+            {% elif superpuesto %}<div class="gr-alert error">Este período incluye días ya pagados. Revisa el historial mensual y elige solo fechas pendientes.</div>{% else %}<p>Sueldo base: <strong>${{ sueldo_quincenal|floatformat:2|intcomma }}</strong>. Las horas extra se pagan por separado.</p>
             <form method="post">{% csrf_token %}<input type="hidden" name="accion" value="pagar_quincena"><label for="metodo-pago">Método de pago</label><select id="metodo-pago" name="metodo" required style="width:100%;padding:10px;border:1px solid #cbdedc;border-radius:9px"><option value="efectivo">Efectivo</option><option value="transferencia">Transferencia</option><option value="tarjeta">Tarjeta</option></select><label class="gr-payrow"><input type="checkbox" name="afecta_caja" checked> Descontar de la caja abierta (solo si el dinero salió de esa caja)</label><button class="gr-button" type="submit" onclick="return confirm('¿Registrar el pago del período seleccionado por ${{ total_quincena|floatformat:2 }}?')">Registrar pago</button></form>{% endif %}
         </section>
     </div>
 
-    <section class="gr-card print-hide"><h2>Horas extra del período</h2><div class="gr-table-wrap"><table class="gr-table"><thead><tr><th>Fecha</th><th>Horas</th><th>Importe</th><th>Notas</th>{% if not liquidacion %}<th></th>{% endif %}</tr></thead><tbody>
-        {% for extra in extras %}<tr><td>{{ extra.fecha|date:'d/m/Y' }}</td><td>{{ extra.horas|floatformat:2 }}</td><td>$ {{ extra.importe_extra|floatformat:2|intcomma }}</td><td>{{ extra.notas|default:'—' }}</td>{% if not liquidacion %}<td><form method="post" onsubmit="return confirm('¿Eliminar estas horas extra?')">{% csrf_token %}<input type="hidden" name="accion" value="eliminar_hora_extra"><input type="hidden" name="hora_extra_id" value="{{ extra.id }}"><button class="gr-button danger" type="submit">Eliminar</button></form></td>{% endif %}</tr>{% empty %}<tr><td class="gr-empty" colspan="{% if liquidacion %}4{% else %}5{% endif %}">No hay horas extra registradas en esta quincena.</td></tr>{% endfor %}
+    <section class="gr-card print-hide"><h2>Pago de horas extra · separado del sueldo</h2>
+        <p>Pendientes en el período seleccionado: <strong>{{ horas_pendientes|floatformat:2 }} h · $ {{ monto_extras_pendientes|floatformat:2|intcomma }}</strong>.</p>
+        <p class="gr-note">Este pago incluye solamente las horas extra pendientes. Puedes pagarlas antes o después del sueldo, con otro método de pago. Cada pago genera su propio gasto automáticamente.</p>
+        {% if horas_pendientes %}
+        <form method="post">{% csrf_token %}<input type="hidden" name="accion" value="pagar_extras">
+            <label for="metodo-extras">Método de pago de las extras</label>
+            <select id="metodo-extras" name="metodo" required><option value="efectivo">Efectivo</option><option value="transferencia">Transferencia</option><option value="tarjeta">Tarjeta</option></select>
+            <label class="gr-payrow"><input type="checkbox" name="afecta_caja" checked> Descontar de la caja abierta (solo si salió de esa caja)</label>
+            <button class="gr-button" type="submit" onclick="return confirm('¿Registrar solamente las horas extra pendientes por ${{ monto_extras_pendientes|floatformat:2 }}?')">Pagar horas extra</button>
+        </form>{% else %}<p class="gr-paid">No hay horas extra pendientes de pago en este período.</p>{% endif %}
+    </section>
+    <section class="gr-card"><h2>Pagos de horas extra del mes</h2><div class="gr-table-wrap"><table class="gr-table"><thead><tr><th>Período</th><th>Horas</th><th>Importe</th><th>Fecha de pago</th><th>Método</th></tr></thead><tbody>
+        {% for pago in pagos_extras_mes %}<tr><td>{{ pago.fecha_inicio|date:'d/m/Y' }} al {{ pago.fecha_fin|date:'d/m/Y' }}</td><td>{{ pago.horas_pagadas|floatformat:2 }}</td><td>$ {{ pago.monto_pagado|floatformat:2|intcomma }}</td><td>{{ pago.fecha_pago|date:'d/m/Y' }}</td><td>{{ pago.get_metodo_display }}</td></tr>{% empty %}<tr><td colspan="5">Sin pagos separados de horas extra en este mes.</td></tr>{% endfor %}
+    </tbody></table></div></section>
+    <section class="gr-card print-hide"><h2>Horas extra del período</h2><div class="gr-table-wrap"><table class="gr-table"><thead><tr><th>Fecha</th><th>Horas</th><th>Importe</th><th>Notas</th><th>Estado</th><th></th></tr></thead><tbody>
+        {% for extra in extras %}<tr><td>{{ extra.fecha|date:'d/m/Y' }}</td><td>{{ extra.horas|floatformat:2 }}</td><td>$ {{ extra.importe_extra|floatformat:2|intcomma }}</td><td>{{ extra.notas|default:'—' }}</td><td>{% if extra.pago_extras_id or extra.liquidacion_historica_id %}Pagada{% else %}Pendiente{% endif %}</td><td>{% if not extra.pago_extras_id and not extra.liquidacion_historica_id %}<form method="post" onsubmit="return confirm('¿Eliminar estas horas extra?')">{% csrf_token %}<input type="hidden" name="accion" value="eliminar_hora_extra"><input type="hidden" name="hora_extra_id" value="{{ extra.id }}"><button class="gr-button danger" type="submit">Eliminar</button></form>{% endif %}</td></tr>{% empty %}<tr><td class="gr-empty" colspan="6">No hay horas extra registradas en esta quincena.</td></tr>{% endfor %}
     </tbody></table></div></section>
 </div>
 {% endblock %}

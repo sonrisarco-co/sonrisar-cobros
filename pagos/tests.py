@@ -116,8 +116,86 @@ class CargaExtrasRangoTests(TestCase):
         self.assertFalse(HoraExtraRecepcionista.objects.exists())
 
     def test_fecha_pagada_bloquea_todo_el_lote(self):
-        LiquidacionRecepcionista.objects.create(
+        historica = LiquidacionRecepcionista.objects.create(
             recepcionista=self.persona, fecha_inicio=date(2026,10,21), fecha_fin=date(2026,10,21),
             sueldo_base=1500, monto_pagado=1500, metodo='transferencia')
+        HoraExtraRecepcionista.objects.create(recepcionista=self.persona, fecha=date(2026,10,21), horas=1, liquidacion_historica=historica)
         self.cargar(modo='rango', fecha='2026-10-19', hasta='2026-10-23', horas='1')
-        self.assertFalse(HoraExtraRecepcionista.objects.exists())
+        self.assertEqual(HoraExtraRecepcionista.objects.count(), 1)
+
+from .models import PagoExtrasRecepcionista
+from unittest.mock import patch
+
+
+class PagosSeparadosExtrasTests(TestCase):
+    def setUp(self):
+        self.persona, _ = Recepcionista.objects.get_or_create(nombre='Geisha Labrada')
+        self.extra = HoraExtraRecepcionista.objects.create(
+            recepcionista=self.persona, fecha=date(2026,10,20), horas=Decimal('2'))
+
+    def ejecutar(self, accion, **datos):
+        req = RequestFactory().post('/pagos/horas-recepcionista/?inicio=2026-10-19&fin=2026-10-30',
+                                    dict(accion=accion, metodo=datos.pop('metodo', 'transferencia'), **datos))
+        req.session = {'finanzas_pin_ok': True}
+        req._messages = FallbackStorage(req)
+        return horas_recepcionista(req)
+
+    def test_sueldo_y_extras_independientes_y_sin_duplicados(self):
+        self.ejecutar('pagar_quincena', metodo='efectivo')
+        sueldo = LiquidacionRecepcionista.objects.get()
+        self.assertEqual(sueldo.metodo, 'efectivo')
+        self.assertEqual(sueldo.monto_pagado, Decimal('15000'))
+        self.assertEqual(sueldo.monto_horas_extra, Decimal('0'))
+        self.extra.refresh_from_db()
+        self.assertIsNone(self.extra.pago_extras_id)
+        self.ejecutar('pagar_extras')
+        pago = PagoExtrasRecepcionista.objects.get()
+        self.assertEqual(pago.monto_pagado, Decimal('500'))
+        self.assertEqual(pago.gasto.metodo, 'transferencia')
+        self.assertFalse(pago.gasto.afecta_caja)
+        self.assertIsNone(pago.gasto.caja_id)
+        self.ejecutar('pagar_extras')
+        self.assertEqual(PagoExtrasRecepcionista.objects.count(), 1)
+        self.assertEqual(Gasto.objects.count(), 2)
+        self.extra.refresh_from_db()
+        self.assertEqual(self.extra.pago_extras_id, pago.pk)
+        self.ejecutar('eliminar_hora_extra', hora_extra_id=self.extra.pk)
+        self.assertTrue(HoraExtraRecepcionista.objects.filter(pk=self.extra.pk).exists())
+
+    def test_extras_antes_del_sueldo_y_nuevas_extras_despues(self):
+        self.ejecutar('pagar_extras')
+        self.assertFalse(LiquidacionRecepcionista.objects.exists())
+        self.ejecutar('pagar_quincena')
+        self.ejecutar('agregar_hora_extra', fecha='2026-10-21', horas='1')
+        self.ejecutar('pagar_extras')
+        self.assertEqual(PagoExtrasRecepcionista.objects.count(), 2)
+        self.assertEqual(sum(Gasto.objects.values_list('monto',flat=True)), Decimal('15750'))
+
+    def test_caja_cerrada_y_metodo_invalido_no_crean_pago(self):
+        from types import SimpleNamespace
+        from caja.models import CashSession
+        with patch.object(CashSession, 'obtener_caja_del_dia', return_value=SimpleNamespace(estado=CashSession.Status.CERRADA)):
+            self.ejecutar('pagar_extras', afecta_caja='on')
+        req = RequestFactory().post('/pagos/horas-recepcionista/?inicio=2026-10-19&fin=2026-10-30',
+                                    {'accion':'pagar_extras','metodo':'invalido'})
+        req.session={'finanzas_pin_ok':True}; req._messages=FallbackStorage(req)
+        horas_recepcionista(req)
+        self.assertFalse(PagoExtrasRecepcionista.objects.exists())
+        self.assertFalse(Gasto.objects.exists())
+
+    def test_migracion_conserva_extras_historicas_como_pagadas(self):
+        from importlib import import_module
+        from django.apps import apps
+        from django.db import connection
+        historica = LiquidacionRecepcionista.objects.create(
+            recepcionista=self.persona, fecha_inicio=date(2026,10,19), fecha_fin=date(2026,10,30),
+            sueldo_base=15000, monto_pagado=15500, horas_extra_pagadas=2,
+            monto_horas_extra=500, metodo='efectivo')
+        migracion = import_module('pagos.migrations.0023_horaextrarecepcionista_liquidacion_historica_and_more')
+        migracion.vincular_extras_historicas(apps, SimpleNamespace(connection=connection))
+        self.extra.refresh_from_db()
+        self.assertEqual(self.extra.liquidacion_historica_id, historica.pk)
+        self.ejecutar('pagar_extras')
+        self.assertFalse(PagoExtrasRecepcionista.objects.exists())
+        historica.refresh_from_db()
+        self.assertEqual(historica.monto_pagado, Decimal('15500'))

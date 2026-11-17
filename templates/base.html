@@ -28,10 +28,10 @@
     {% endif %}
 
     <main class="app-container">
+        {% include "live_status.html" %}
         {% block content %}{% endblock %}
     </main>
 
     {% block extra_js %}{% endblock %}
-    {% include "live_status.html" %}
 </body>
 </html>

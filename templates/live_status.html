@@ -1,12 +1,13 @@
 {% load static %}
 {% if request.cobros_live_revision %}
-<div id="cobros-live-status" hidden
+<div id="cobros-live-status"
      data-url="{% url 'cobros_live_revision' %}"
      data-revision="{{ request.cobros_live_revision }}"
      data-manual="{{ request.cobros_live_manual|yesno:'true,false' }}"
-     style="position:fixed; right:1rem; bottom:1rem; z-index:1000; max-width:calc(100vw - 2rem); padding:.65rem 1rem; border:1px solid #b6d9d6; background:#f1faf9; color:#174744; border-radius:.5rem;">
-    <span role="status">Hay cambios nuevos.</span>
-    <button type="button">Actualizar</button>
+     style="display:flex; justify-content:flex-end; align-items:center; flex-wrap:wrap; gap:.4rem .75rem; margin:0 auto .75rem; padding:.5rem 1rem; max-width:1560px; font-size:.875rem; color:#174744;">
+    <span role="status">Comprobando actualización automática…</span>
+    <span data-live-time hidden></span>
+    <button type="button" hidden>Actualizar</button>
 </div>
-<script defer src="{% static 'js/cobros_live.js' %}?v=1"></script>
+<script defer src="{% static 'js/cobros_live.js' %}?v=2"></script>
 {% endif %}

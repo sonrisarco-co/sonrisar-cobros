@@ -5,6 +5,11 @@
     if (!status) return;
 
     const button = status.querySelector('button');
+    const message = status.querySelector('[role="status"]');
+    const lastCheck = status.querySelector('[data-live-time]');
+    const timeFormat = new Intl.DateTimeFormat('es-UY', {
+        hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+    });
     const manual = status.dataset.manual === 'true';
     const fields = 'input:not([type="hidden"]):not([type="submit"]):not([type="button"]), textarea, select';
     const original = new WeakMap();
@@ -33,7 +38,6 @@
     function refresh(force = false) {
         if (!pending || leaving || document.hidden) return;
         const busy = editing();
-        status.hidden = false;
         button.disabled = Boolean(busy);
         if (busy || (manual && !force) || (!force && Date.now() - lastInteraction < 1500)) return;
         leaving = true;
@@ -50,20 +54,25 @@
                 signal: typeof AbortSignal.timeout === 'function' ? AbortSignal.timeout(6000) : undefined,
             });
             if (response.type === 'opaqueredirect' || response.status === 401 || response.status === 403) {
-                const message = status.querySelector('[role="status"]');
                 message.textContent = 'La sesión terminó. Volvé a ingresar para actualizar.';
                 pending = true;
-                status.hidden = false;
+                button.hidden = false;
                 button.disabled = Boolean(editing());
                 return;
             }
-            if (!response.ok) return;
+            if (!response.ok) throw new Error('Revision request failed');
             const {revision} = await response.json();
+            if (typeof revision !== 'string') throw new Error('Invalid revision');
+            lastCheck.textContent = 'Última comprobación ' + timeFormat.format(new Date());
+            lastCheck.hidden = false;
             pending = revision !== status.dataset.revision;
-            status.hidden = !pending;
+            button.hidden = !pending;
+            const label = pending ? 'Hay cambios nuevos'
+                : manual ? 'Avisos de cambios activos' : 'Actualización automática activa';
+            if (message.textContent !== label) message.textContent = label;
             refresh();
         } catch (_) {
-            // Retry on the next check after a temporary network failure.
+            message.textContent = 'Sin conexión con la actualización automática. Reintentando…';
         } finally {
             checking = false;
         }
@@ -84,4 +93,5 @@
     window.addEventListener('pageshow', () => { leaving = false; check(); });
     document.addEventListener('visibilitychange', check);
     window.setInterval(check, 4000);
+    check();
 }());

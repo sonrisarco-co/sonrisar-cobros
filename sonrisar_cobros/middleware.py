@@ -4,8 +4,11 @@ from django.conf import settings
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.cache import add_never_cache_headers
 
 from pagos.models import SesionAcceso
+
+from .live import LIVE_PAGES, PIN_ON_RELOAD, REVISION_ROUTE, current_revision
 
 
 class AccessControlMiddleware:
@@ -26,10 +29,22 @@ class AccessControlMiddleware:
             login_url = reverse("acceso_login")
             return redirect(f"{login_url}?next={request.get_full_path()}")
 
-        if request.user.is_authenticated and not request.path.startswith("/admin/"):
+        if (request.user.is_authenticated
+                and not request.path.startswith("/admin/")
+                and request.path != reverse(REVISION_ROUTE)):
             self._registrar_actividad(request)
 
-        return self.get_response(request)
+        response = self.get_response(request)
+        if hasattr(request, "cobros_live_revision"):
+            add_never_cache_headers(response)
+        return response
+
+    def process_view(self, request, view_func, view_args, view_kwargs):
+        view_name = request.resolver_match.view_name
+        if request.method == "GET" and request.user.is_authenticated and view_name in LIVE_PAGES:
+            # Capture the revision before the view reads the financial records.
+            request.cobros_live_revision = current_revision()
+            request.cobros_live_manual = view_name in PIN_ON_RELOAD
 
     @staticmethod
     def _registrar_actividad(request):

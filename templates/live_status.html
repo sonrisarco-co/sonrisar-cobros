@@ -1,0 +1,12 @@
+{% load static %}
+{% if request.cobros_live_revision %}
+<div id="cobros-live-status" hidden
+     data-url="{% url 'cobros_live_revision' %}"
+     data-revision="{{ request.cobros_live_revision }}"
+     data-manual="{{ request.cobros_live_manual|yesno:'true,false' }}"
+     style="position:fixed; right:1rem; bottom:1rem; z-index:1000; max-width:calc(100vw - 2rem); padding:.65rem 1rem; border:1px solid #b6d9d6; background:#f1faf9; color:#174744; border-radius:.5rem;">
+    <span role="status">Hay cambios nuevos.</span>
+    <button type="button">Actualizar</button>
+</div>
+<script defer src="{% static 'js/cobros_live.js' %}?v=1"></script>
+{% endif %}

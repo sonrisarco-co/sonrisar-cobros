@@ -3,9 +3,10 @@ from django.urls import path, include
 
 from django.conf import settings
 from django.conf.urls.static import static
-from . import access_views
+from . import access_views, live
 
 urlpatterns = [
+    path("actualizacion/revision/", live.revision, name=live.REVISION_ROUTE),
     path("", access_views.home_redirect, name="home"),
     path("cuenta/ingresar/", access_views.access_login, name="acceso_login"),
     path("cuenta/salir/", access_views.access_logout, name="acceso_logout"),

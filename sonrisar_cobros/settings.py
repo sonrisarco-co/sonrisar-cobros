@@ -75,6 +75,7 @@ ALLOWED_HOSTS = env_list(
     "127.0.0.1,localhost,sonrisar-cobros-1.onrender.com"
 )
 
+CSRF_FAILURE_VIEW = "sonrisar_cobros.access_views.csrf_failure"
 CSRF_TRUSTED_ORIGINS = env_list(
     "DJANGO_CSRF_TRUSTED_ORIGINS",
     "https://sonrisar-cobros-1.onrender.com"

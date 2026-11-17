@@ -4,6 +4,8 @@ from django.contrib.auth.decorators import user_passes_test
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.views.csrf import csrf_failure as default_csrf_failure
+from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_http_methods, require_POST
 
 from pagos.models import SesionAcceso
@@ -14,6 +16,7 @@ def home_redirect(request):
     return redirect("caja:tablero" if request.user.is_authenticated else "acceso_login")
 
 
+@never_cache
 @require_http_methods(["GET", "POST"])
 def access_login(request):
     if request.user.is_authenticated:
@@ -52,6 +55,17 @@ def access_login(request):
             return redirect(destino)
 
     return render(request, "cuentas/login.html", {"next": request.GET.get("next", "")})
+
+
+@never_cache
+def csrf_failure(request, reason=""):
+    if (request.method == "POST" and request.path == reverse("acceso_login")
+            and reason == "CSRF token from POST incorrect."
+            and request.user.is_authenticated):
+        # A successful login rotates the token. A duplicate submission can
+        # arrive with the previous token after the browser has a session.
+        return redirect("caja:tablero")
+    return default_csrf_failure(request, reason=reason)
 
 
 @require_POST

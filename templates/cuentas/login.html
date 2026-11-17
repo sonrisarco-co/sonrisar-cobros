@@ -24,5 +24,21 @@
         <div class="campo"><label for="password">Contraseña</label><input id="password" type="password" name="password" autocomplete="current-password" required></div>
         <button type="submit">Ingresar</button>
     </form>
+    <script>
+        const form = document.querySelector('.login-card');
+        const button = form.querySelector('button[type="submit"]');
+        form.addEventListener('submit', event => {
+            if (button.disabled) {
+                event.preventDefault();
+                return;
+            }
+            button.disabled = true;
+            button.textContent = 'Ingresando…';
+        });
+        window.addEventListener('pageshow', () => {
+            button.disabled = false;
+            button.textContent = 'Ingresar';
+        });
+    </script>
 </body>
 </html>

@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="es-UY">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Planilla de pagos con CFE | Sonrisar</title>
+    <style>
+        body { margin: 24px auto; padding: 0 16px; max-width: 1100px; font: 15px system-ui, sans-serif; color: #162b30; }
+        h1 { margin: 6px 0; }
+        p { margin: 8px 0; }
+        nav { display: flex; gap: 12px; flex-wrap: wrap; margin: 20px 0; }
+        nav a, nav button { font: inherit; font-weight: 600; color: #116763; background: #effaf8; border: 1px solid #26aba5; border-radius: 8px; padding: 8px 12px; text-decoration: none; cursor: pointer; }
+        .tabla { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+        th, td { border-bottom: 1px solid #bfcfce; padding: 8px; text-align: left; }
+        thead, tfoot { background: #effaf8; }
+        tbody td:nth-child(n+7), thead th:nth-child(n+7), tfoot td { text-align: right; white-space: nowrap; }
+        tfoot { font-weight: 700; }
+        @page { size: A4 landscape; margin: 12mm; }
+        @media print {
+            body { margin: 0; padding: 0; font-size: 10pt; }
+            nav { display: none; }
+            .tabla { overflow: visible; }
+            tr { break-inside: avoid; }
+            tfoot { display: table-row-group; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <strong>Sonrisar · Centro Odontológico</strong>
+        <h1>Planilla de pagos con CFE emitido</h1>
+        <p>
+            {% if desde %}Desde {{ desde|date:"d/m/Y" }}{% endif %}
+            {% if hasta %}Hasta {{ hasta|date:"d/m/Y" }}{% endif %}
+            {% if not desde and not hasta %}Todo el historial{% endif %}
+            · {{ filas|length }} pagos
+        </p>
+        {% if facture_sandbox %}<p>Configuración actual de Facture en modo de prueba.</p>{% endif %}
+    </header>
+    <nav aria-label="Opciones de la planilla">
+        <a href="{% url 'pagos:historial' %}?{{ consulta_pagina }}">Volver a CFE emitidos</a>
+        <button type="button" onclick="window.print()">Imprimir</button>
+        <a href="?{{ consulta_pagina }}&amp;salida=excel">Descargar Excel</a>
+    </nav>
+    {% if filas %}
+    <div class="tabla">
+        <table>
+            <thead>
+                <tr>{% for columna in columnas %}<th scope="col">{{ columna }}</th>{% endfor %}</tr>
+            </thead>
+            <tbody>
+                {% for emision, fecha, tipo, serie, numero, medio, tasa, neto, iva, total in filas %}
+                <tr>
+                    <td>{{ emision|date:"d/m/Y"|default:"Sin registrar" }}</td>
+                    <td>{{ fecha|date:"d/m/Y" }}</td>
+                    <td>{{ tipo }}</td>
+                    <td>{{ serie }}</td>
+                    <td>{{ numero }}</td>
+                    <td>{{ medio }}</td>
+                    <td>{{ tasa|floatformat:"-2" }}%</td>
+                    <td>{{ neto|floatformat:2 }}</td>
+                    <td>{{ iva|floatformat:2 }}</td>
+                    <td>{{ total|floatformat:2 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th scope="row" colspan="7">Totales de la planilla</th>
+                    {% for total in totales %}<td>{{ total|floatformat:2 }}</td>{% endfor %}
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+    {% else %}
+    <p>No hay pagos con CFE emitido en el período seleccionado.</p>
+    {% endif %}
+</body>
+</html>

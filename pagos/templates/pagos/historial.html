@@ -99,6 +99,8 @@
                 <label>{{ filtro_cfe.desde.label }} {{ filtro_cfe.desde }}</label>
                 <label>{{ filtro_cfe.hasta.label }} {{ filtro_cfe.hasta }}</label>
                 <button class="hp-btn-back" type="submit">Filtrar</button>
+                <button class="hp-btn-back" type="submit" name="salida" value="planilla">Ver planilla / Imprimir</button>
+                <button class="hp-btn-back" type="submit" name="salida" value="excel">Descargar Excel</button>
                 {% if filtro_cfe.desde.value or filtro_cfe.hasta.value %}
                 <a href="?cfe=emitidos">Limpiar fechas</a>
                 {% endif %}

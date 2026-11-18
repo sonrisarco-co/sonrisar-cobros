@@ -39,6 +39,7 @@ from .models import (
     PagoCompraProveedor
 )
 from .forms import FiltroFechaCFEForm, HoraExtraRecepcionistaForm, PagoSueldoRecepcionistaForm
+from .planilla_cfe import COLUMNAS, descargar_planilla_cfe, filas_planilla_cfe
 
 from .facture_service import (
     probar_conexion,
@@ -391,6 +392,25 @@ def historial(request):
                 pagos_qs = pagos_qs.filter(cfe_fecha_emision__gte=desde)
             if hasta:
                 pagos_qs = pagos_qs.filter(cfe_fecha_emision__lte=hasta)
+            salida = request.GET.get("salida")
+            if salida in ("planilla", "excel"):
+                pagos_planilla = pagos_qs.prefetch_related(None).only(
+                    "fecha", "cfe_fecha_emision", "cfe_tipo", "cfe_serie", "cfe_numero",
+                    "metodo", "tipo_tarjeta", "tasa_iva_cfe", "monto",
+                ).iterator(chunk_size=1000)
+                if salida == "excel":
+                    return descargar_planilla_cfe(pagos_planilla)
+
+                filas = list(filas_planilla_cfe(pagos_planilla))
+                return render(request, "pagos/planilla_cfe.html", {
+                    "columnas": COLUMNAS,
+                    "filas": filas,
+                    "totales": [sum(fila[indice] for fila in filas) for indice in (7, 8, 9)],
+                    "desde": desde,
+                    "hasta": hasta,
+                    "consulta_pagina": urlencode(parametros_pagina),
+                    "facture_sandbox": settings.FACTURE_MODO == "sandbox",
+                })
         else:
             pagos_qs = pagos_qs.none()
 

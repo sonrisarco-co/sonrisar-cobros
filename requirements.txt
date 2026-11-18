@@ -5,3 +5,4 @@ whitenoise
 Pillow==10.4.0
 reportlab
 dj-database-url
+openpyxl==3.1.5

@@ -2,6 +2,25 @@ from django import forms
 from .models import Pago, HoraExtraRecepcionista
 
 
+class FiltroFechaCFEForm(forms.Form):
+    desde = forms.DateField(
+        label="Desde", required=False,
+        widget=forms.DateInput(format="%Y-%m-%d", attrs={"type": "date"}),
+    )
+    hasta = forms.DateField(
+        label="Hasta", required=False,
+        widget=forms.DateInput(format="%Y-%m-%d", attrs={"type": "date"}),
+    )
+
+    def clean(self):
+        datos = super().clean()
+        desde = datos.get("desde")
+        hasta = datos.get("hasta")
+        if desde and hasta and desde > hasta:
+            self.add_error("hasta", "La fecha final debe ser igual o posterior a la inicial.")
+        return datos
+
+
 class PagoForm(forms.ModelForm):
 
     class Meta:

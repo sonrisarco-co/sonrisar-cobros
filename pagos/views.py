@@ -4,7 +4,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from .models import Pago
 from django.core.paginator import Paginator
-from django.db.models import Sum, Q, Prefetch
+from django.db.models import F, Sum, Q, Prefetch
 from django.db import transaction, IntegrityError
 from collections import OrderedDict
 import json
@@ -38,7 +38,7 @@ from .models import (
     CompraProveedor,
     PagoCompraProveedor
 )
-from .forms import HoraExtraRecepcionistaForm, PagoSueldoRecepcionistaForm
+from .forms import FiltroFechaCFEForm, HoraExtraRecepcionistaForm, PagoSueldoRecepcionistaForm
 
 from .facture_service import (
     probar_conexion,
@@ -350,6 +350,7 @@ def historial(request):
             "cfe_tipo",
             "cfe_serie",
             "cfe_numero",
+            "cfe_fecha_emision",
             "cfe_error",
             "facture_cfe_id",
             "tipo_tarjeta",
@@ -369,6 +370,29 @@ def historial(request):
         )
         .order_by("-fecha", "-id")
     )
+
+    solo_cfe = request.GET.get("cfe") == "emitidos"
+    filtro_cfe = None
+    parametros_pagina = {}
+    if solo_cfe:
+        parametros_pagina["cfe"] = "emitidos"
+        parametros_pagina.update({
+            campo: request.GET[campo] for campo in ("desde", "hasta")
+            if request.GET.get(campo)
+        })
+        filtro_cfe = FiltroFechaCFEForm(parametros_pagina)
+        pagos_qs = pagos_qs.filter(cfe_estado=Pago.CFE_EMITIDO).order_by(
+            F("cfe_fecha_emision").desc(nulls_last=True), "-fecha", "-id"
+        )
+        if filtro_cfe.is_valid():
+            desde = filtro_cfe.cleaned_data["desde"]
+            hasta = filtro_cfe.cleaned_data["hasta"]
+            if desde:
+                pagos_qs = pagos_qs.filter(cfe_fecha_emision__gte=desde)
+            if hasta:
+                pagos_qs = pagos_qs.filter(cfe_fecha_emision__lte=hasta)
+        else:
+            pagos_qs = pagos_qs.none()
 
     paginator = Paginator(pagos_qs, 120)
     page_number = request.GET.get("page")
@@ -393,11 +417,11 @@ def historial(request):
     pagos_por_mes = OrderedDict()
 
     for pago in page_obj.object_list:
-        fecha_local = localtime(pago.fecha)
-        mes_nombre = (
-            f"{meses_es[fecha_local.month]} "
-            f"{fecha_local.year}"
-        )
+        fecha_grupo = pago.cfe_fecha_emision if solo_cfe else localtime(pago.fecha)
+        if fecha_grupo:
+            mes_nombre = f"{meses_es[fecha_grupo.month]} {fecha_grupo.year}"
+        else:
+            mes_nombre = "Sin fecha de emisión registrada"
 
         if mes_nombre not in pagos_por_mes:
             pagos_por_mes[mes_nombre] = []
@@ -434,6 +458,9 @@ def historial(request):
             "pagos_por_mes": pagos_por_mes,
             "page_obj": page_obj,
             "total_pagos": paginator.count,
+            "solo_cfe": solo_cfe,
+            "filtro_cfe": filtro_cfe,
+            "consulta_pagina": urlencode(parametros_pagina),
             "facture_modo": getattr(
                 settings,
                 "FACTURE_MODO",

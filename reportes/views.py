@@ -15,6 +15,8 @@ from caja.models import MovimientoCaja
 from caja.clasificacion import ingresos_desde_resguardo
 
 from .utils_pdf import generar_pdf_reporte
+from .ingresos_pdf import generar_ingresos_anuales_pdf
+from django.views.decorators.cache import never_cache
 
 
 # ---------------------------------------
@@ -248,6 +250,7 @@ def ingresos_diarios(request):
     })
 
 
+@never_cache
 def ingresos_anuales(request):
     bloqueo = _validar_pin_reportes(request)
     if bloqueo:
@@ -278,12 +281,21 @@ def ingresos_anuales(request):
             "total": sum(valores, cero),
         })
 
+    filas = list(zip(*(mes["valores"] for mes in meses)))
+    total = sum(por_fecha.values(), cero)
+    if request.GET.get("formato") == "pdf":
+        return FileResponse(
+            generar_ingresos_anuales_pdf(year, meses, filas, total),
+            filename=f"Ingresos-Sonrisar-{year:04d}.pdf",
+            content_type="application/pdf",
+        )
+
     return render(request, "reportes/ingresos_anuales.html", {
         "year": year,
         "aviso": aviso,
         "meses": meses,
-        "filas": zip(*(mes["valores"] for mes in meses)),
-        "total": sum(por_fecha.values(), cero),
+        "filas": filas,
+        "total": total,
     })
 
 

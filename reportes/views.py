@@ -198,6 +198,16 @@ def reporte_mensual(request, year, month):
     return render(request, "reportes/mensual.html", contexto)
 
 
+def _totales_por_dia(pagos):
+    return dict(
+        pagos.order_by()
+        .annotate(dia=TruncDate("fecha"))
+        .values("dia")
+        .annotate(total=Sum("monto"))
+        .values_list("dia", "total")
+    )
+
+
 def ingresos_diarios(request):
     bloqueo = _validar_pin_reportes(request)
     if bloqueo:
@@ -213,13 +223,8 @@ def ingresos_diarios(request):
     else:
         aviso = ""
 
-    totales = dict(
+    totales = _totales_por_dia(
         Pago.objects.filter(fecha__year=inicio.year, fecha__month=inicio.month)
-        .order_by()
-        .annotate(dia=TruncDate("fecha"))
-        .values("dia")
-        .annotate(total=Sum("monto"))
-        .values_list("dia", "total")
     )
     dias = [
         inicio.replace(day=numero)
@@ -240,6 +245,45 @@ def ingresos_diarios(request):
         "total": sum(totales.values(), cero),
         "orden": orden,
         "aviso": aviso,
+    })
+
+
+def ingresos_anuales(request):
+    bloqueo = _validar_pin_reportes(request)
+    if bloqueo:
+        return bloqueo
+
+    year_actual = timezone.localdate().year
+    try:
+        year = int(request.GET.get("year", year_actual))
+        if not 1 <= year <= 9999:
+            raise ValueError
+    except ValueError:
+        year = year_actual
+        aviso = "El año ingresado no es válido. Se muestra el año actual."
+    else:
+        aviso = ""
+
+    cero = Decimal("0.00")
+    por_fecha = _totales_por_dia(Pago.objects.filter(fecha__year=year))
+    meses = []
+    for mes, nombre in enumerate(MESES_ES[1:], start=1):
+        valores = [
+            por_fecha.get(date(year, mes, dia), cero)
+            for dia in range(1, monthrange(year, mes)[1] + 1)
+        ]
+        meses.append({
+            "nombre": nombre,
+            "valores": valores + [None] * (31 - len(valores)),
+            "total": sum(valores, cero),
+        })
+
+    return render(request, "reportes/ingresos_anuales.html", {
+        "year": year,
+        "aviso": aviso,
+        "meses": meses,
+        "filas": zip(*(mes["valores"] for mes in meses)),
+        "total": sum(por_fecha.values(), cero),
     })
 
 

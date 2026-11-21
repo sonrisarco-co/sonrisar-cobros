@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Comparación anual de ingresos | Sonrisar Cobros{% endblock %}
+
+{% block extra_css %}
+<style>
+    .annual-report { color: #0f172a; margin: 20px auto; }
+    .annual-report h1 { margin: 12px 0 4px; font-size: clamp(24px, 4vw, 34px); }
+    .annual-report p { margin: 0 0 12px; color: #475569; }
+    .annual-report a { color: #0f766e; font-weight: 600; }
+    .annual-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 16px 0; }
+    .annual-tools form { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0; }
+    .annual-tools input, .annual-tools button { font: inherit; padding: 7px 10px; border-radius: 8px; }
+    .annual-tools input { width: 7em; border: 1px solid #94a3b8; }
+    .annual-tools button { background: #0f766e; border: 1px solid #0f766e; color: white; cursor: pointer; }
+    .annual-table-scroll { overflow-x: auto; }
+    .annual-table { width: 100%; min-width: 960px; border-collapse: collapse; background: white; font-variant-numeric: tabular-nums; }
+    .annual-table th, .annual-table td { border: 1px solid #cbd5e1; padding: 5px 7px; text-align: right; white-space: nowrap; }
+    .annual-table thead, .annual-table tfoot { background: #e8f7f5; }
+    .annual-table tbody tr:nth-child(even) { background: #f8fafc; }
+    .annual-table td.unavailable { color: #64748b; text-align: center; }
+    .annual-report .annual-total { margin-top: 12px; font-weight: 700; }
+    @media print {
+        @page { size: A4 landscape; margin: 8mm; }
+        body { background: white !important; }
+        body::before, .access-bar, #cobros-live-status, .annual-navigation, .annual-tools { display: none !important; }
+        .app-container, .annual-report { max-width: none; width: auto; margin: 0; padding: 0; }
+        .annual-report h1 { margin: 0 0 2mm; font-size: 15pt; }
+        .annual-report p { margin-bottom: 2mm; font-size: 9pt; }
+        .annual-table-scroll { overflow: visible; }
+        .annual-table { min-width: 0; font-size: 8pt; }
+        .annual-table th, .annual-table td { padding: 1mm 1.25mm; }
+        .annual-table tr { break-inside: avoid; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="annual-report">
+    <nav class="annual-navigation" aria-label="Reportes">
+        <a href="{% url 'reportes:ingresos_diarios' %}">Volver a ingresos diarios</a>
+    </nav>
+    <h1 id="annual-title">Comparación anual de ingresos · {{ year|stringformat:"d" }}</h1>
+    <p>Sonrisar Cobros · Pagos cobrados por fecha de registro, en pesos uruguayos.</p>
+
+    <div class="annual-tools">
+        <form method="get">
+            <label for="annual-year">Año</label>
+            <input id="annual-year" type="number" name="year" min="1" max="9999" value="{{ year|stringformat:'d' }}" required>
+            <button type="submit">Ver año</button>
+        </form>
+        <button type="button" onclick="window.print()">Imprimir</button>
+    </div>
+
+    {% if aviso %}<p role="status">{{ aviso }}</p>{% endif %}
+
+    <div class="annual-table-scroll" role="region" aria-labelledby="annual-title" tabindex="0">
+        <table class="annual-table">
+            <thead>
+                <tr>
+                    <th scope="col">Día</th>
+                    {% for mes in meses %}<th scope="col">{{ mes.nombre }}</th>{% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for fila in filas %}
+                    <tr>
+                        <th scope="row">{{ forloop.counter }}</th>
+                        {% for valor in fila %}
+                            {% if valor is None %}
+                                <td class="unavailable" aria-label="Fecha inexistente">—</td>
+                            {% else %}
+                                <td>{{ valor|floatformat:"2g" }}</td>
+                            {% endif %}
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th scope="row">Total</th>
+                    {% for mes in meses %}<td><strong>{{ mes.total|floatformat:"2g" }}</strong></td>{% endfor %}
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+    <p class="annual-total">Total anual $ {{ total|floatformat:"2g" }}</p>
+</section>
+{% endblock %}

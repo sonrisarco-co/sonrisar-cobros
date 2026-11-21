@@ -52,3 +52,25 @@ class IngresosDiariosTests(TestCase):
         filas = self.client.get(self.url, parametros).context["filas"]
         self.assertEqual(filas[0], (date(2024, 2, 2), "Viernes", Decimal("0.00")))
         self.assertEqual(filas[-1][0], date(2024, 2, 29))
+
+    def test_comparacion_anual_incluye_meses_vacios_y_dia_bisiesto(self):
+        url = reverse("reportes:ingresos_anuales")
+        self.assertEqual(self.client.get(url).status_code, 302)
+        sesion = self.client.session
+        sesion["finanzas_pin_ok"] = True
+        sesion.save()
+        for fecha, monto in [
+            (datetime(2024, 3, 1, 2, tzinfo=timezone.utc), "20.00"),
+            (datetime(2024, 3, 1, 3, tzinfo=timezone.utc), "5.00"),
+            (datetime(2025, 1, 1, 3, tzinfo=timezone.utc), "99.00"),
+        ]:
+            Pago.objects.create(fecha=fecha, monto=Decimal(monto), metodo=Pago.EFECTIVO)
+
+        respuesta = self.client.get(url, {"year": "2024"})
+        self.assertContains(respuesta, "Imprimir")
+        meses = respuesta.context["meses"]
+        self.assertEqual(len(meses), 12)
+        self.assertEqual(meses[0]["total"], Decimal("0.00"))
+        self.assertEqual(meses[1]["valores"][28:], [Decimal("20.00"), None, None])
+        self.assertEqual(meses[2]["valores"][0], Decimal("5.00"))
+        self.assertEqual(respuesta.context["total"], Decimal("25.00"))

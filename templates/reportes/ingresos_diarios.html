@@ -30,6 +30,7 @@
 {% block content %}
 <section class="daily-report">
     <a href="{% url 'reportes:selector' %}">Volver a Reportes</a>
+    <a href="{% url 'reportes:ingresos_anuales' %}?year={{ year|stringformat:'d' }}">Ver comparación anual</a>
     <h1>Ingresos diarios</h1>
     <p>Pagos cobrados según la fecha de registro en Sonrisar Cobros.</p>
 

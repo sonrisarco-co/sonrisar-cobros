@@ -16,7 +16,7 @@
     .annual-table-scroll { overflow-x: auto; }
     .annual-table { width: 100%; min-width: 960px; border-collapse: collapse; background: white; font-variant-numeric: tabular-nums; }
     .annual-table th, .annual-table td { border: 1px solid #cbd5e1; padding: 5px 7px; text-align: right; white-space: nowrap; }
-    .annual-table thead, .annual-table tfoot { background: #e8f7f5; }
+    .annual-table thead, .annual-table .annual-month-totals { background: #e8f7f5; }
     .annual-table tbody tr:nth-child(even) { background: #f8fafc; }
     .annual-table td.unavailable { color: #64748b; text-align: center; }
     .annual-report .annual-total { margin-top: 12px; font-weight: 700; }
@@ -28,9 +28,12 @@
         .annual-report h1 { margin: 0 0 2mm; font-size: 15pt; }
         .annual-report p { margin-bottom: 2mm; font-size: 9pt; }
         .annual-table-scroll { overflow: visible; }
-        .annual-table { min-width: 0; font-size: 8pt; }
-        .annual-table th, .annual-table td { padding: 1mm 1.25mm; }
+        .annual-table { min-width: 0; font-size: 8pt; line-height: 1.15; }
+        .annual-table th, .annual-table td { padding: .55mm 1.2mm; }
+        .annual-table tfoot { display: table-row-group; }
+        .annual-table .annual-month-totals > * { border-top: 1.5pt solid #0f766e; }
         .annual-table tr { break-inside: avoid; }
+        .annual-report .annual-total { margin: 2mm 0 0; text-align: right; }
     }
 </style>
 {% endblock %}
@@ -77,8 +80,8 @@
                 {% endfor %}
             </tbody>
             <tfoot>
-                <tr>
-                    <th scope="row">Total</th>
+                <tr class="annual-month-totals">
+                    <th scope="row">Subtotal</th>
                     {% for mes in meses %}<td><strong>{{ mes.total|floatformat:"2g" }}</strong></td>{% endfor %}
                 </tr>
             </tfoot>

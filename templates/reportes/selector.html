@@ -382,6 +382,32 @@
             }
         }
 
+        .income-reports {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+            gap: 12px;
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid #e2ecee;
+        }
+
+        .income-reports a {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            min-height: 52px;
+            padding: 12px 16px;
+            border: 1px solid #bce6e2;
+            border-radius: 16px;
+            background: #eefafa;
+            color: #115e59;
+            text-decoration: none;
+            font-weight: 700;
+        }
+
+        .income-reports a:hover { background: #ddf5f3; border-color: #26aba5; }
+        .income-reports a:focus-visible { outline: 2px solid #0f766e; outline-offset: 3px; }
     </style>
 
 </head>
@@ -521,12 +547,10 @@
 
             </form>
 
-            <p>
-                <a href="{% url 'reportes:ingresos_diarios' %}">Ver planilla de ingresos diarios</a>
-            </p>
-            <p>
-                <a href="{% url 'reportes:ingresos_anuales' %}">Ver comparación anual de ingresos</a>
-            </p>
+            <nav class="income-reports" aria-label="Planillas de ingresos">
+                <a href="{% url 'reportes:ingresos_diarios' %}">Ingresos diarios <span aria-hidden="true">→</span></a>
+                <a href="{% url 'reportes:ingresos_anuales' %}">Comparación anual <span aria-hidden="true">→</span></a>
+            </nav>
         </section>
 
     </main>

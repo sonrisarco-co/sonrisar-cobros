@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Ingresos diarios | Sonrisar Cobros{% endblock %}
+
+{% block extra_css %}
+<style>
+    .daily-report { max-width: 840px; margin: 24px auto; color: #0f172a; }
+    .daily-report a { color: #0f766e; font-weight: 600; }
+    .daily-report h1 { margin: 12px 0 6px; font-size: clamp(26px, 5vw, 38px); }
+    .daily-report p { margin: 0 0 20px; color: #475569; }
+    .daily-filters { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin-bottom: 20px; }
+    .daily-filters label { display: grid; gap: 5px; font-weight: 600; }
+    .daily-filters input, .daily-filters select, .daily-filters button {
+        min-height: 42px; padding: 8px 12px; border-radius: 9px; font: inherit;
+    }
+    .daily-filters input, .daily-filters select { border: 1px solid #94a3b8; background: white; color: inherit; }
+    .daily-filters button { border: 1px solid #0f766e; background: #0f766e; color: white; cursor: pointer; }
+    .daily-table { width: 100%; border-collapse: collapse; background: white; font-variant-numeric: tabular-nums; }
+    .daily-table caption { padding: 10px 0; text-align: left; font-weight: 700; }
+    .daily-table td, .daily-table th { padding: 9px 12px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+    .daily-table thead, .daily-table tfoot { background: #e8f7f5; }
+    .daily-table .daily-amount { text-align: right; white-space: nowrap; }
+    @media (max-width: 480px) {
+        .daily-table td, .daily-table th { padding: 8px 6px; }
+        .daily-filters label { flex: 1 1 100%; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="daily-report">
+    <a href="{% url 'reportes:selector' %}">Volver a Reportes</a>
+    <h1>Ingresos diarios</h1>
+    <p>Pagos cobrados según la fecha de registro en Sonrisar Cobros.</p>
+
+    <form method="get" class="daily-filters">
+        <label>
+            Mes
+            <input type="month" name="periodo" value="{{ periodo }}" required>
+        </label>
+        <label>
+            Ordenar por
+            <select name="orden">
+                <option value="fecha"{% if orden == "fecha" %} selected{% endif %}>Fecha</option>
+                <option value="mayor"{% if orden == "mayor" %} selected{% endif %}>Monto de mayor a menor</option>
+                <option value="menor"{% if orden == "menor" %} selected{% endif %}>Monto de menor a mayor</option>
+            </select>
+        </label>
+        <button type="submit">Aplicar</button>
+    </form>
+
+    {% if aviso %}<p role="status">{{ aviso }}</p>{% endif %}
+    <table class="daily-table">
+        <caption>{{ mes_nombre }} {{ year|stringformat:"d" }}</caption>
+        <thead>
+            <tr>
+                <th scope="col">Fecha</th>
+                <th scope="col">Día</th>
+                <th scope="col" class="daily-amount">Cobrado (UYU)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for fecha, dia, monto in filas %}
+                <tr>
+                    <td>{{ fecha|date:"d/m/Y" }}</td>
+                    <td>{{ dia }}</td>
+                    <td class="daily-amount">$ {{ monto|floatformat:"2g" }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <th scope="row" colspan="2">Total del mes</th>
+                <td class="daily-amount"><strong>$ {{ total|floatformat:"2g" }}</strong></td>
+            </tr>
+        </tfoot>
+    </table>
+</section>
+{% endblock %}

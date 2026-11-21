@@ -2,8 +2,12 @@
 from django.shortcuts import render, redirect
 from django.http import FileResponse, HttpResponse
 from django.db.models import Sum
+from django.db.models.functions import TruncDate
+from django.utils import timezone
 from urllib.parse import quote
-from datetime import datetime
+from calendar import monthrange
+from datetime import date, datetime
+from decimal import Decimal
 import datetime as datetime_module
 
 from pagos.models import Pago, Gasto, DevolucionPaciente
@@ -20,6 +24,7 @@ MESES_ES = [
     "", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
     "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
 ]
+DIAS_ES = ("Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo")
 
 
 # ---------------------------------------
@@ -191,6 +196,51 @@ def reporte_mensual(request, year, month):
 
     contexto = obtener_contexto_reporte(year, month)
     return render(request, "reportes/mensual.html", contexto)
+
+
+def ingresos_diarios(request):
+    bloqueo = _validar_pin_reportes(request)
+    if bloqueo:
+        return bloqueo
+
+    hoy = timezone.localdate()
+    periodo_ingresado = request.GET.get("periodo", f"{hoy:%Y-%m}")
+    try:
+        inicio = date.fromisoformat(f"{periodo_ingresado}-01")
+    except ValueError:
+        inicio = hoy.replace(day=1)
+        aviso = "El mes ingresado no es válido. Se muestra el mes actual."
+    else:
+        aviso = ""
+
+    totales = dict(
+        Pago.objects.filter(fecha__year=inicio.year, fecha__month=inicio.month)
+        .order_by()
+        .annotate(dia=TruncDate("fecha"))
+        .values("dia")
+        .annotate(total=Sum("monto"))
+        .values_list("dia", "total")
+    )
+    dias = [
+        inicio.replace(day=numero)
+        for numero in range(1, monthrange(inicio.year, inicio.month)[1] + 1)
+    ]
+    cero = Decimal("0.00")
+    filas = [(dia, DIAS_ES[dia.weekday()], totales.get(dia, cero)) for dia in dias]
+
+    orden = request.GET.get("orden", "fecha")
+    if orden in ("mayor", "menor"):
+        filas.sort(key=lambda fila: fila[2], reverse=orden == "mayor")
+
+    return render(request, "reportes/ingresos_diarios.html", {
+        "periodo": f"{inicio.year:04d}-{inicio.month:02d}",
+        "mes_nombre": MESES_ES[inicio.month],
+        "year": inicio.year,
+        "filas": filas,
+        "total": sum(totales.values(), cero),
+        "orden": orden,
+        "aviso": aviso,
+    })
 
 
 # ---------------------------------------

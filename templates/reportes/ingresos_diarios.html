@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load importes %}
 
 {% block title %}Ingresos diarios | Sonrisar Cobros{% endblock %}
 
@@ -65,14 +66,14 @@
                 <tr>
                     <td>{{ fecha|date:"d/m/Y" }}</td>
                     <td>{{ dia }}</td>
-                    <td class="daily-amount">$ {{ monto|floatformat:"2g" }}</td>
+                    <td class="daily-amount">$ {{ monto|importe_uy }}</td>
                 </tr>
             {% endfor %}
         </tbody>
         <tfoot>
             <tr>
                 <th scope="row" colspan="2">Total del mes</th>
-                <td class="daily-amount"><strong>$ {{ total|floatformat:"2g" }}</strong></td>
+                <td class="daily-amount"><strong>$ {{ total|importe_uy }}</strong></td>
             </tr>
         </tfoot>
     </table>

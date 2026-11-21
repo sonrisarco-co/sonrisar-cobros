@@ -67,10 +67,15 @@ class IngresosDiariosTests(TestCase):
             Pago.objects.create(fecha=fecha, monto=Decimal(monto), metodo=Pago.EFECTIVO)
 
         respuesta = self.client.get(url, {"year": "2024"})
-        self.assertContains(respuesta, "Imprimir")
+        self.assertContains(respuesta, "PDF para imprimir")
         meses = respuesta.context["meses"]
         self.assertEqual(len(meses), 12)
         self.assertEqual(meses[0]["total"], Decimal("0.00"))
         self.assertEqual(meses[1]["valores"][28:], [Decimal("20.00"), None, None])
         self.assertEqual(meses[2]["valores"][0], Decimal("5.00"))
         self.assertEqual(respuesta.context["total"], Decimal("25.00"))
+
+        pdf = self.client.get(url, {"year": "2024", "formato": "pdf"})
+        self.assertEqual(pdf["Content-Type"], "application/pdf")
+        contenido = b"".join(pdf.streaming_content)
+        self.assertIn(b"/Count 1", contenido)

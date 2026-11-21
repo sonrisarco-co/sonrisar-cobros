@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load importes %}
 
 {% block title %}Comparación anual de ingresos | Sonrisar Cobros{% endblock %}
 
@@ -12,6 +13,7 @@
     .annual-tools form { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0; }
     .annual-tools input, .annual-tools button { font: inherit; padding: 7px 10px; border-radius: 8px; }
     .annual-tools input { width: 7em; border: 1px solid #94a3b8; }
+    .annual-tools .annual-print { padding: 7px 10px; border: 1px solid #0f766e; border-radius: 8px; text-decoration: none; }
     .annual-tools button { background: #0f766e; border: 1px solid #0f766e; color: white; cursor: pointer; }
     .annual-table-scroll { overflow-x: auto; }
     .annual-table { width: 100%; min-width: 960px; border-collapse: collapse; background: white; font-variant-numeric: tabular-nums; }
@@ -52,7 +54,7 @@
             <input id="annual-year" type="number" name="year" min="1" max="9999" value="{{ year|stringformat:'d' }}" required>
             <button type="submit">Ver año</button>
         </form>
-        <button type="button" onclick="window.print()">Imprimir</button>
+        <a class="annual-print" href="?year={{ year|stringformat:'d' }}&amp;formato=pdf" target="_blank" rel="noopener">PDF para imprimir</a>
     </div>
 
     {% if aviso %}<p role="status">{{ aviso }}</p>{% endif %}
@@ -73,7 +75,7 @@
                             {% if valor is None %}
                                 <td class="unavailable" aria-label="Fecha inexistente">—</td>
                             {% else %}
-                                <td>{{ valor|floatformat:"2g" }}</td>
+                                <td>{{ valor|importe_uy }}</td>
                             {% endif %}
                         {% endfor %}
                     </tr>
@@ -82,11 +84,11 @@
             <tfoot>
                 <tr class="annual-month-totals">
                     <th scope="row">Subtotal</th>
-                    {% for mes in meses %}<td><strong>{{ mes.total|floatformat:"2g" }}</strong></td>{% endfor %}
+                    {% for mes in meses %}<td><strong>{{ mes.total|importe_uy }}</strong></td>{% endfor %}
                 </tr>
             </tfoot>
         </table>
     </div>
-    <p class="annual-total">Total anual $ {{ total|floatformat:"2g" }}</p>
+    <p class="annual-total">Total anual $ {{ total|importe_uy }}</p>
 </section>
 {% endblock %}

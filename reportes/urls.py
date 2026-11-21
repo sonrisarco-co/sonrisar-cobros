@@ -6,6 +6,7 @@ app_name = "reportes"
 urlpatterns = [
     path("selector/", views.selector, name="selector"),
     path("ingresos-diarios/", views.ingresos_diarios, name="ingresos_diarios"),
+    path("ingresos-anuales/", views.ingresos_anuales, name="ingresos_anuales"),
     path("<int:year>/<int:month>/", views.reporte_mensual, name="reporte_mensual"),
     path("<int:year>/<int:month>/pdf/", views.exportar_pdf, name="reporte_pdf"),
 ]
